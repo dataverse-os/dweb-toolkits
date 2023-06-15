@@ -1,0 +1,29 @@
+{
+  "name": "@dataverse/utils-toolkit",
+  "version": "1.0.0",
+  "description": "",
+  "module": "dist/esm/index.js",
+  "main": "dist/cjs/index.js",
+  "types": "dist/esm/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build:esm": "tsc -p tsconfig.json",
+    "build:cjs": "tsc -p tsconfig-cjs.json",
+    "build": "pnpm build:esm && pnpm build:cjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@dataverse/runtime-connector": "^1.0.57",
+    "@ethersproject/abstract-provider": "^5.7.0",
+    "@ethersproject/abstract-signer": "^5.7.0",
+    "@ethersproject/properties": "^5.7.0",
+    "@pushprotocol/restapi": "^1.3.3",
+    "ethers": "^5.7.2",
+    "typescript": "^4.9.5"
+  },
+  "gitHead": "f5a1271629dbebb436e4fb962fee4be1154539c0"
+}

@@ -1,0 +1,19 @@
+type livepeerasset
+  @createModel(accountRelation: LIST, description: "livepeerasset") {
+    owner: DID! @documentAccount
+    asset_id: String @string(maxLength: 300000000)
+    hash: String @string(maxLength: 300000000)
+    name: String @string(maxLength: 300000000)
+    size: Int
+    source_type: String @string(maxLength: 300000000)
+    status_phase: String @string(maxLength: 300000000)
+    status_updated_at: Int
+    user_id: String @string(maxLength: 300000000)
+    storage: String @string(maxLength: 300000000)
+    created_at: Int
+    videoSpec_format: String @string(maxLength: 300000000)
+    videoSpec_duration: Float
+    playback_id: String @string(maxLength: 300000000)
+    playback_url: String @string(maxLength: 300000000)
+    download_url: String @string(maxLength: 300000000)
+}

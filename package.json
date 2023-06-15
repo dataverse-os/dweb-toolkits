@@ -1,0 +1,9 @@
+{
+  "name": "root",
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "lerna": "^7.0.1"
+  }
+}
