@@ -1,6 +1,15 @@
 {
   "$schema": "node_modules/lerna/schemas/lerna-schema.json",
-  "version": "1.0.10",
+  "version": "1.0.15",
   "npmClient": "pnpm",
-  "ignore": ["livepeer-demo", "push-demo", "tableland-demo"]
+  "ignore": [
+    "livepeer-demo",
+    "push-demo",
+    "tableland-demo"
+  ],
+  "command": {
+    "publish": {
+      "gitTagVersion": false
+    }
+  }
 }

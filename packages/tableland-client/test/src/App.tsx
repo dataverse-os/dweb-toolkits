@@ -2,7 +2,6 @@ import React, { useContext, useEffect, useState } from "react";
 import "./App.scss";
 import Client, {
   ChainId,
-  ModelName,
   Network,
   TablelandClient,
 } from "@dataverse/tableland-client-toolkit";
@@ -15,10 +14,7 @@ import { WALLET } from "@dataverse/runtime-connector";
 import { Context } from ".";
 
 const appName = "tableland_test10";
-const modelIds = {
-  [ModelName.TABLE]:
-    "kjzl6hvfrbw6c5zvcxkbclvybdjuq2owc8c49l223y9bz4radnxu9uu23mp4elj",
-};
+const modelId = "kjzl6hvfrbw6c5zvcxkbclvybdjuq2owc8c49l223y9bz4radnxu9uu23mp4elj";
 
 const App = () => {
   const { runtimeConnector } = useContext(Context);
@@ -41,7 +37,7 @@ const App = () => {
       const client = new Client({
         runtimeConnector,
         network: Network.MUMBAI,
-        modelIds,
+        modelId,
       });
       setClient(client);
     }

@@ -1,22 +1,16 @@
-import {
-  MirrorFile,
-  RuntimeConnector,
-  StreamContent,
-} from "@dataverse/runtime-connector";
+import { RuntimeConnector, StreamContent } from "@dataverse/runtime-connector";
 import * as PushAPI from "@pushprotocol/restapi";
 import { ENV } from "@pushprotocol/restapi/src/lib/constants";
 import { getICAPAddress } from "./utils";
-import { RuntimeConnectorSigner, FolderHelper } from "@dataverse/utils-toolkit";
-import { ModelRecord } from "./types";
-
-export { ENV };
+import { RuntimeConnectorSigner, StreamHelper } from "@dataverse/utils-toolkit";
+import { ModelIds } from "./types";
 
 class PushClientBase {
   public appName: string;
   public runtimeConnector: RuntimeConnector;
   public signer: RuntimeConnectorSigner;
   public env: ENV;
-  public modelIds: ModelRecord;
+  public modelIds: ModelIds;
 
   constructor({
     runtimeConnector,
@@ -25,7 +19,7 @@ class PushClientBase {
     env,
   }: {
     runtimeConnector: RuntimeConnector;
-    modelIds: ModelRecord;
+    modelIds: ModelIds;
     appName: string;
     env: ENV;
   }) {
@@ -45,7 +39,7 @@ export class PushNotificationClient extends PushClientBase {
     env,
   }: {
     runtimeConnector: RuntimeConnector;
-    modelIds: ModelRecord;
+    modelIds: ModelIds;
     appName: string;
     env: ENV;
   }) {
@@ -61,8 +55,8 @@ export class PushNotificationClient extends PushClientBase {
     channel: string,
     title: string,
     body: string,
-    img: string,
-    cta: string
+    img?: string,
+    cta?: string
   ) {
     await this._checkChannelExist();
 
@@ -107,8 +101,8 @@ export class PushNotificationClient extends PushClientBase {
       payload: {
         title,
         body,
-        img,
-        cta,
+        img: img ?? "",
+        cta: img ?? "",
       },
       channel, // your channel address
       env: this.env,
@@ -196,16 +190,17 @@ export class PushNotificationClient extends PushClientBase {
 
   async getNotificationList() {
     const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    const notificationStreams = await this.runtimeConnector.loadStreamsBy({modelId: this.modelIds.notification, pkh:pkh})
+    const notificationStreams = await this.runtimeConnector.loadStreamsBy({
+      modelId: this.modelIds.notification,
+      pkh: pkh,
+    });
     const notification = [];
     for (const key in notificationStreams) {
       // loop through the RecordType
       if (Object.prototype.hasOwnProperty.call(notificationStreams, key)) {
-        console.log("content: ", notificationStreams[key].streamContent)
-        notification.push(notificationStreams[key].streamContent.content)
+        notification.push(notificationStreams[key].streamContent.content);
       }
     }
-    console.log("notification : ", notification);
     return notification;
   }
 
@@ -213,8 +208,8 @@ export class PushNotificationClient extends PushClientBase {
     channelDetail: any,
     title: string,
     body: string,
-    img: string,
-    cta: string
+    img = "",
+    cta = ""
   ) => {
     return {
       cta,
@@ -275,26 +270,13 @@ export class PushNotificationClient extends PushClientBase {
   }
 
   private async _isChannelInfoStreamExist() {
-    const fileFilter = (file: MirrorFile) => {
-      return file.contentType === this.modelIds.channel;
-    };
+    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const streams = await this.runtimeConnector.loadStreamsBy({
+      modelId: this.modelIds.channel,
+      pkh: pkh,
+    });
 
-    const matchedHandler = (_: MirrorFile) => {
-      return true;
-    };
-
-    const unmatchedHandler = () => {
-      return false;
-    };
-
-    const res = await FolderHelper.traverseFolders(
-      this.runtimeConnector,
-      fileFilter,
-      matchedHandler,
-      unmatchedHandler
-    );
-
-    return res;
+    return Object.keys(streams).length > 0;
   }
 }
 
@@ -306,7 +288,7 @@ export class PushChatClient extends PushClientBase {
     env,
   }: {
     runtimeConnector: RuntimeConnector;
-    modelIds: ModelRecord;
+    modelIds: ModelIds;
     appName: string;
     env: ENV;
   }) {
@@ -339,25 +321,18 @@ export class PushChatClient extends PushClientBase {
 
   async decryptPushGPGKey() {
     const user = await this.getPushChatUser(await this.signer.getAddress());
-    if (!user) throw new Error("user not exist");
-    // ** check if GPGKey Exist in the folder
+    if (!user) {
+      throw new Error("user not exist");
+    }
     const { exist, value } = await this._checkCache(this.modelIds.user_pgp_key);
     if (exist) {
       return await this._unlockPgpKey(value);
-      // return value.streamContent.content.
     } else {
       const pgpKey = await PushAPI.chat.decryptPGPKey({
         encryptedPGPPrivateKey: user.encryptedPrivateKey,
         account: user.wallets,
         signer: this.signer,
-        // additionalMeta?: {
-        //     NFTPGP_V1?: {
-        //         password: string;
-        //     };
-        // };
         env: this.env,
-        // toUpgrade?: boolean;
-        // progressHook?: (progress: ProgressHookType) => void;
       });
       await this._persistPgpKey(pgpKey);
       return pgpKey;
@@ -370,10 +345,10 @@ export class PushChatClient extends PushClientBase {
     messageType: "Text" | "Image" | "File" | "GIF" | "MediaURL"
   ) {
     const user = await this.getPushChatUser(await this.signer.getAddress());
-    if (user == null) throw new Error("user not exist");
-    // need to decrypt the encryptedPvtKey to pass in the api using helper function
+    if (!user) {
+      throw new Error("user not exist");
+    }
     const pgpDecryptedPvtKey = await this.decryptPushGPGKey();
-    // actual api
     const msg = await PushAPI.chat.send({
       messageContent,
       messageType, // "Text" | "Image" | "File" | "GIF"
@@ -393,9 +368,7 @@ export class PushChatClient extends PushClientBase {
 
   async fetchUserChats() {
     const address = await this.signer.getAddress();
-    // need to decrypt the encryptedPvtKey to pass in the api using helper function
     const pgpDecryptedPvtKey = await this.decryptPushGPGKey();
-    // Actual api
     const chats = await PushAPI.chat.chats({
       account: `eip155:${address}`,
       toDecrypt: true,
@@ -405,25 +378,31 @@ export class PushChatClient extends PushClientBase {
       limit: 10,
     });
 
-    const streamContent = this._generateChatMessageStreamContent(chats[0].msg);
-
-    const fileFilter = (file: MirrorFile) => {
-      return file.content.timestamp === streamContent.timestamp;
+    const msgStreamContent = this._generateChatMessageStreamContent(
+      chats[0].msg
+    );
+    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const streams = await this.runtimeConnector.loadStreamsBy({
+      modelId: this.modelIds.message,
+      pkh: pkh,
+    });
+    const streamFilter = (streamContent: StreamContent) => {
+      return streamContent.content.timestamp === msgStreamContent.timestamp;
     };
-
-    const matchedHandler = async (_: MirrorFile) => {
+    const unmatchedHandler = async () => {
       await this.runtimeConnector.createStream({
         modelId: this.modelIds.message,
-        streamContent,
+        streamContent: msgStreamContent,
       });
     };
 
-    await FolderHelper.traverseFolders(
-      this.runtimeConnector,
-      fileFilter,
-      matchedHandler,
-      () => {}
+    await StreamHelper.traverseStreams(
+      streams,
+      streamFilter,
+      () => {},
+      unmatchedHandler
     );
+
     return chats;
   }
 
@@ -487,25 +466,34 @@ export class PushChatClient extends PushClientBase {
     const streamContents =
       this._batchGenerateChatMessageStreamContent(chatHistory);
 
-    streamContents.forEach((streamContent) => {
-      const fileFilter = (file: MirrorFile) => {
-        return file.content.timestamp === streamContent.timestamp;
-      };
+    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const streams = await this.runtimeConnector.loadStreamsBy({
+      modelId: this.modelIds.message,
+      pkh: pkh,
+    });
 
-      const matchedHandler = async () => {
+    streamContents.map(async (msgStreamContent) => {
+      const streamFilter = (streamContent: StreamContent) => {
+        return streamContent.content.timestamp === msgStreamContent.timestamp;
+      };
+      const unmatchedHandler = async () => {
+        if (msgStreamContent.link === null) {
+          msgStreamContent.link = undefined;
+        }
         await this.runtimeConnector.createStream({
           modelId: this.modelIds.message,
-          streamContent,
+          streamContent: msgStreamContent,
         });
       };
 
-      FolderHelper.traverseFolders(
-        this.runtimeConnector,
-        fileFilter,
-        matchedHandler,
-        () => {}
+      StreamHelper.traverseStreams(
+        streams,
+        streamFilter,
+        () => {},
+        unmatchedHandler
       );
     });
+
     return chatHistory;
   }
 
@@ -522,20 +510,21 @@ export class PushChatClient extends PushClientBase {
     }
   }
 
-  async getMsgList() {
+  async getMessageList() {
     const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    const streams = await this.runtimeConnector.loadStreamsBy({modelId: this.modelIds.message, pkh:pkh})
+    const streams = await this.runtimeConnector.loadStreamsBy({
+      modelId: this.modelIds.message,
+      pkh: pkh,
+    });
     const messages = [];
     for (const key in streams) {
-      // loop through the RecordType
       if (Object.prototype.hasOwnProperty.call(streams, key)) {
-        console.log("content: ", streams[key].streamContent)
-        messages.push(streams[key].streamContent.content)
+        messages.push(streams[key].streamContent.content);
       }
     }
-    console.log("notification : ", messages);
     return messages;
   }
+
   private async _checkCache(modelId: string) {
     const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
     const stream = await this.runtimeConnector.loadStreamsBy({
@@ -551,16 +540,18 @@ export class PushChatClient extends PushClientBase {
 
   private async _unlockPgpKey(value: any) {
     for (const key in value) {
-      // loop through the RecordType
       if (Object.prototype.hasOwnProperty.call(value, key)) {
-        const indexFileId = value[key].streamContent.file.indexFileId;
-        const unlocked = await this.runtimeConnector.unlock({ indexFileId });
-        const pgpContent = unlocked.streamContent.content as {
-          pgp_key: string;
-          encrypted: string;
-        };
-
-        return pgpContent.pgp_key;
+        const indexFileId = value[key].streamContent.file?.indexFileId;
+        if (indexFileId) {
+          const unlocked = await this.runtimeConnector.unlock({ indexFileId });
+          const pgpContent = unlocked.streamContent.content as {
+            pgp_key: string;
+            encrypted: string;
+          };
+          return pgpContent.pgp_key;
+        } else {
+          return value[key].streamContent.content.pgp_key;
+        }
       }
     }
     throw new Error("cannot get pgp key from folder");

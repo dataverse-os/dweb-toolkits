@@ -1,24 +1,28 @@
-import {WALLET} from "@dataverse/runtime-connector";
-import React, {useContext, useMemo, useState} from "react";
-import {Context} from "./main";
+import { WALLET } from "@dataverse/runtime-connector";
+import React, { useContext, useMemo, useState } from "react";
+import { Context } from "./main";
 import "./App.scss";
-import {getICAPAddress, ModelName, PushChatClient, PushNotificationClient,} from "@dataverse/push-client-toolkit";
-import {ENV} from "@pushprotocol/restapi/src/lib/constants";
+import {
+  getICAPAddress,
+  ModelType,
+  PushChatClient,
+  PushNotificationClient,
+} from "@dataverse/push-client-toolkit";
+import { ENV } from "@pushprotocol/restapi/src/lib/constants";
 
-const modelRecord = {
-  [ModelName.MESSAGE]: import.meta.env.VITE_CHAT_MESSAGE_MODEL_ID,
-  [ModelName.USER_PGP_KEY]: import.meta.env.VITE_CHAT_PGP_KEY_MODEL_ID,
-  [ModelName.CHANNEL]: import.meta.env.VITE_CHANNEL_MODEL_ID,
-  [ModelName.NOTIFICATION]: import.meta.env.VITE_NOTIFICATION_MODEL_ID,
+const modelIds = {
+  [ModelType.MESSAGE]: import.meta.env.VITE_CHAT_MESSAGE_MODEL_ID,
+  [ModelType.USER_PGP_KEY]: import.meta.env.VITE_CHAT_PGP_KEY_MODEL_ID,
+  [ModelType.CHANNEL]: import.meta.env.VITE_CHANNEL_MODEL_ID,
+  [ModelType.NOTIFICATION]: import.meta.env.VITE_NOTIFICATION_MODEL_ID,
 };
 
-console.log("modelRecord: ", modelRecord);
 const App = () => {
   const { runtimeConnector } = useContext(Context);
   const pushNotificationClient = useMemo(() => {
     return new PushNotificationClient({
       runtimeConnector,
-      modelIds: modelRecord,
+      modelIds: modelIds,
       appName: import.meta.env.VITE_APP_NAME,
       env: ENV.STAGING,
     });
@@ -26,7 +30,7 @@ const App = () => {
   const pushChatClient = useMemo(() => {
     return new PushChatClient({
       runtimeConnector,
-      modelIds: modelRecord,
+      modelIds: modelIds,
       appName: import.meta.env.VITE_APP_NAME,
       env: ENV.STAGING,
     });
@@ -36,6 +40,9 @@ const App = () => {
   // push notification
   const [title, setTitle] = useState<string>();
   const [body, setBody] = useState<string>();
+  const [img, setImg] = useState<string>();
+  const [cta, setCTA] = useState<string>();
+
   const [subscribeChannel, setSubscribeChannel] = useState<string>();
   const [queryChannel, setQueryChannel] = useState<string>();
   const [sendChannel, setSendChannel] = useState<string>();
@@ -93,12 +100,11 @@ const App = () => {
       console.error("account undefined");
       return;
     }
-    const notifications =
-      await pushNotificationClient.getNotificationsByUser(
-        getICAPAddress(account),
-        1,
-        100
-      );
+    const notifications = await pushNotificationClient.getNotificationsByUser(
+      getICAPAddress(account),
+      1,
+      100
+    );
     console.log("[getNotificationsByUser]notifications:", notifications);
   };
 
@@ -136,7 +142,9 @@ const App = () => {
     const res = await pushNotificationClient.sendNotification(
       sendChannel,
       title,
-      body
+      body,
+      img,
+      cta
     );
     console.log("[sendNotification]res:", res);
   };
@@ -250,6 +258,7 @@ const App = () => {
       console.error("undefined chatterForHistory");
       return;
     }
+    console.log("import.meta.env.VITE_CHAT_MESSAGE_MODEL_ID:", import.meta.env.VITE_CHAT_MESSAGE_MODEL_ID)
     const res = await pushChatClient.fetchHistoryChats(chatterForHistory, 20);
     console.log("[getHistoryChats]res:", res);
   };
@@ -257,12 +266,12 @@ const App = () => {
   const getNotifications = async () => {
     const noticeList = await pushNotificationClient.getNotificationList();
     console.log("noticeList: ", noticeList);
-  }
+  };
 
-  const getMessages = async () => {
-    const msgList = await pushChatClient.getMsgList();
+  const getMessageList = async () => {
+    const msgList = await pushChatClient.getMessageList();
     console.log("msgList: ", msgList);
-  }
+  };
 
   return (
     <div id="App">
@@ -352,6 +361,18 @@ const App = () => {
             value={body || ""}
             placeholder={"notification body"}
             onChange={(event) => setBody(event.target.value)}
+          />
+          <input
+            type="text"
+            value={img || ""}
+            placeholder={"notification img"}
+            onChange={(event) => setImg(event.target.value)}
+          />
+          <input
+            type="text"
+            value={cta || ""}
+            placeholder={"notification cta"}
+            onChange={(event) => setCTA(event.target.value)}
           />
           <button
             disabled={did && sendChannel && title && body ? false : true}
@@ -513,18 +534,10 @@ const App = () => {
           >
             getHistoryChats
           </button>
-          <br/>
-          <button
-              onClick={getNotifications}
-          >
-            getNotifications
-          </button>
-          <br/>
-          <button
-              onClick={getMessages}
-          >
-            getMessages
-          </button>
+          <br />
+          <button onClick={getNotifications}>getNotifications</button>
+          <br />
+          <button onClick={getMessageList}>getMessageList</button>
         </div>
       </div>
     </div>

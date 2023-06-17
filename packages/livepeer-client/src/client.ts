@@ -1,6 +1,5 @@
-import { FolderHelper } from "@dataverse/utils-toolkit";
 import {
-  MirrorFile,
+  DatatokenVars,
   RuntimeConnector,
   StreamContent,
 } from "@dataverse/runtime-connector";
@@ -12,6 +11,7 @@ import {
   studioProvider,
 } from "@livepeer/react";
 import axios, { AxiosInstance } from "axios";
+import { StreamHelper } from "@dataverse/utils-toolkit";
 
 export { LivepeerConfig, createReactClient, ReactClient };
 
@@ -73,10 +73,9 @@ export class LivepeerClient {
     return this.http.delete(assetId);
   }
 
-  public async persistAssetMeta(assetMeta: any) {
+  public persistAssetMeta(assetMeta: any) {
     const livepeerAsset: StreamContent = this._generateAssetMeta(assetMeta);
-
-    await this.runtimeConnector.createStream({
+    return this.runtimeConnector.createStream({
       modelId: this.modelId,
       streamContent: livepeerAsset,
     });
@@ -96,75 +95,71 @@ export class LivepeerClient {
     }
     return assets;
   }
+
   public async updateAssetMeta(assetMeta: any) {
     const livepeerAsset: StreamContent = this._generateAssetMeta(assetMeta);
+    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const streams = await this.runtimeConnector.loadStreamsBy({
+      modelId: this.modelId,
+      pkh: pkh,
+    });
 
-    const fileFilter = (file: MirrorFile) => {
-      return file.content.contentType === this.modelId;
+    const streamFilter = (streamContent: StreamContent) => {
+      return streamContent.content.asset_id == livepeerAsset.asset_id;
     };
-
-    const matchedHandler = async (mirrorFile: MirrorFile) => {
+    const updateStream = async (streamContent: StreamContent) => {
       await this.runtimeConnector.updateStream({
-        streamId: mirrorFile.indexFileId,
+        streamId: streamContent.file.contentId,
         streamContent: livepeerAsset,
       });
     };
 
-    return FolderHelper.traverseFolders(
-      this.runtimeConnector,
-      fileFilter,
-      matchedHandler,
+    await StreamHelper.traverseStreams(
+      streams,
+      streamFilter,
+      updateStream,
       () => {}
     );
   }
 
-  public async removeAssetMetaByAssetId(assetId: string) {
-    const fileFilter = (mirrorFile: MirrorFile) => {
-      return (
-        mirrorFile.contentType === this.modelId &&
-        mirrorFile.content.asset_id == assetId
-      );
-    };
-
-    const matchedHandler = async (mirrorFile: MirrorFile) => {
-      await this.runtimeConnector.removeFiles({
-        indexFileIds: [mirrorFile.indexFileId],
-        syncImmediately: true,
-      });
-    };
-
-    return FolderHelper.traverseFolders(
-      this.runtimeConnector,
-      fileFilter,
-      matchedHandler,
-      () => {}
-    );
-  }
-
-  public async removeIndexFileById(mirrorFile: MirrorFile, ...params: any[]) {
-    if (mirrorFile.content.assetId == params[0]) {
-      await this.runtimeConnector.removeFiles({
-        indexFileIds: [mirrorFile.indexFileId],
-        syncImmediately: true,
+  public async monetizeAssetMeta({
+    address,
+    streamId,
+    lensNickName,
+    datatokenVars,
+  }: {
+    address: string;
+    streamId: string;
+    lensNickName?: string;
+    datatokenVars: Omit<DatatokenVars, "streamId">;
+  }) {
+    if (!datatokenVars.profileId) {
+      datatokenVars.profileId = await this._getProfileId({
+        address,
+        lensNickName,
       });
     }
+
+    await this.runtimeConnector.monetizeFile({
+      streamId,
+      datatokenVars,
+    });
   }
 
   private _generateAssetMeta(assetMeta: StreamContent) {
     const encrypted = JSON.stringify({
-      asset_id: true,
       storage: false,
       playback_id: true,
       playback_url: true,
       download_url: true,
     });
+    console.log("assetMeta: ", assetMeta);
     return {
       asset_id: assetMeta.id,
       hash: JSON.stringify(assetMeta.hash),
       name: assetMeta.name,
       size: assetMeta.size,
-      source_type:
-        assetMeta.source.type == undefined ? "" : assetMeta.source.type,
+      source_type: assetMeta.source.type ? assetMeta.source.type : "",
       status_phase: assetMeta.status.phase,
       status_updated_at: assetMeta.status.updatedAt,
       user_id: assetMeta.userId,
@@ -177,5 +172,29 @@ export class LivepeerClient {
       download_url: assetMeta.downloadUrl,
       encrypted,
     };
+  }
+
+  private async _getProfileId({
+    address,
+    lensNickName,
+  }: {
+    address: string;
+    lensNickName?: string;
+  }) {
+    const lensProfiles = await this.runtimeConnector.getProfiles(address);
+
+    let profileId;
+    if (lensProfiles?.[0]?.id) {
+      profileId = lensProfiles?.[0]?.id;
+    } else {
+      if (!lensNickName) {
+        throw "Please pass in lensNickName";
+      }
+      if (!/^[\da-z]{5,26}$/.test(lensNickName) || lensNickName.length > 26) {
+        throw "Only supports lower case characters, numbers, must be minimum of 5 length and maximum of 26 length";
+      }
+      profileId = await this.runtimeConnector.createProfile(lensNickName);
+    }
+    return profileId;
   }
 }

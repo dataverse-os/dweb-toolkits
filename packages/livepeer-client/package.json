@@ -1,6 +1,6 @@
 {
   "name": "@dataverse/livepeer-client-toolkit",
-  "version": "1.0.10",
+  "version": "1.0.15",
   "description": "",
   "module": "dist/esm/index.js",
   "main": "dist/cjs/index.js",
@@ -19,7 +19,7 @@
   "license": "ISC",
   "dependencies": {
     "@dataverse/runtime-connector": "^1.0.57",
-    "@dataverse/utils-toolkit": "1.0.0",
+    "@dataverse/utils-toolkit": "^1.0.15",
     "@livepeer/react": "^2.5.2",
     "axios": "^1.4.0",
     "react": "^18.2.0",
@@ -33,5 +33,5 @@
   "devDependencies": {
     "@types/react": "^18.2.9"
   },
-  "gitHead": "f5a1271629dbebb436e4fb962fee4be1154539c0"
+  "gitHead": "485030d97deeff637e89dcb5137492f5e74046fa"
 }

@@ -9,7 +9,7 @@ export const config = {
         {
             isPublicDomain: false, // default
             schemaName: "livepeerasset.graphql",
-            encryptable: ["asset_id", "storage", "playback_id", "playback_url", "download_url"]
+            encryptable: ["storage", "playback_id", "playback_url", "download_url"]
         }
         /*dataverse.config.ts*/
     ],

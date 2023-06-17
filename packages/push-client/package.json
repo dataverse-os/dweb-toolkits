@@ -1,6 +1,6 @@
 {
   "name": "@dataverse/push-client-toolkit",
-  "version": "1.0.10",
+  "version": "1.0.15",
   "description": "",
   "module": "dist/esm/index.js",
   "main": "dist/cjs/index.js",
@@ -19,7 +19,7 @@
   "license": "ISC",
   "dependencies": {
     "@dataverse/runtime-connector": "^1.0.57",
-    "@dataverse/utils-toolkit": "1.0.0",
+    "@dataverse/utils-toolkit": "^1.0.15",
     "@ethersproject/abstract-provider": "^5.7.0",
     "@ethersproject/abstract-signer": "^5.7.0",
     "@ethersproject/properties": "^5.7.0",
@@ -27,5 +27,5 @@
     "ethers": "^5.7.2",
     "typescript": "^4.9.5"
   },
-  "gitHead": "f5a1271629dbebb436e4fb962fee4be1154539c0"
+  "gitHead": "485030d97deeff637e89dcb5137492f5e74046fa"
 }

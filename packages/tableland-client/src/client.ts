@@ -5,26 +5,26 @@ import {
 } from "@dataverse/runtime-connector";
 import { Database, helpers, Validator } from "@tableland/sdk";
 import { ChainId, TablelandContract, TransferEventSig } from "./constant";
-import { ModelRecord, Network } from "./types";
+import { Network } from "./types";
 import { BigNumberish, ethers } from "ethers";
 
 export class TablelandClient {
   runtimeConnector: RuntimeConnector;
   network: Network;
-  modelIds: ModelRecord;
+  modelId: string;
 
   constructor({
     runtimeConnector,
     network,
-    modelIds,
+    modelId,
   }: {
     runtimeConnector: RuntimeConnector;
     network: Network;
-    modelIds: ModelRecord;
+    modelId: string;
   }) {
     this.runtimeConnector = runtimeConnector;
     this.network = network;
-    this.modelIds = modelIds;
+    this.modelId = modelId;
   }
 
   public async createTable(
@@ -54,7 +54,7 @@ export class TablelandClient {
         columns: columns,
         created_at: new Date().toISOString()
       }
-      await this.persistTable(this.modelIds.table, tableContent);
+      await this.persistTable(this.modelId, tableContent);
 
       return {
         tableName,
@@ -76,7 +76,7 @@ export class TablelandClient {
   private async loadTableStreams() {
     const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
     return await this.runtimeConnector.loadStreamsBy({
-      modelId: this.modelIds.table,
+      modelId: this.modelId,
       pkh: pkh,
     });
   }

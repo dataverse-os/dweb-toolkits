@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useCreateAsset, useUpdateAsset } from "@livepeer/react";
-import Client from "livepeer-client";
+import Client from "@dataverse/livepeer-client-toolkit";
 
 interface IProps {
   livepeerClient: Client;
@@ -36,8 +36,8 @@ export const AssetsCreator = ({ livepeerClient }: IProps) => {
       if(!asset) {
         throw new Error('Asset undefined');
       }
-      const res = await livepeerClient.createAssetMetaStream(asset[0]);
-      console.log("livepeerClient createAssetMetaStream res: ", res);
+      const res = await livepeerClient.persistAssetMeta(asset[0]);
+      console.log("livepeerClient persistAssetMeta res: ", res);
       setAsset(asset[0]);
       console.log("File uploaded successfully");
       setLoading(false);
@@ -57,8 +57,8 @@ export const AssetsCreator = ({ livepeerClient }: IProps) => {
       if(!asset) {
         throw new Error('Asset undefined');
       }
-      const res = await livepeerClient.updateAssetMetaStream((asset as any)[0]);
-      console.log("livepeerClient updateAssetMetaStream res: ", res);
+      const res = await livepeerClient.updateAssetMeta(asset);
+      console.log("livepeerClient updateAssetMeta res: ", res);
       setAsset(asset);
       console.log("Asset saved to Ipfs successfully");
       setLoading(false);

@@ -1,2 +1,2 @@
-export * from "./folder";
+export * from "./stream";
 export * from "./signer";

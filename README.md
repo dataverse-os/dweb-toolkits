@@ -1,11 +1,9 @@
 # External-Toolkits
 
-This git repo is a monorepo that contains several toolkits for developers to easily integrate DataverseOS with various Web3 protocols: 
-- [Tableland](https://tableland.xyz/)
-- [Livepeer](https://livepeer.org/)
-- [Push Protocol](https://push.org/)
+This git repo is a monorepo that contains several toolkits for developers to easily integrate DataverseOS with various Web3 protocols.
 
 ## Overview
+
 <img src="https://s2.loli.net/2023/06/15/b2dtlR7r4NyOYfe.jpg" />
 
 ## Purpose
@@ -18,14 +16,18 @@ This git repo is a monorepo that contains several toolkits for developers to eas
 
 ## Project List
 
-The list of projects that have been integrated into toolkits is as follows.
+The project list is as follows:
 
-| Projects  | Categories | Website                   |
-| --------- | ---------- | ------------------------- |
-| Tableland | Database   | https://tableland.xyz/    |
-| Livepeer  | Media      | https://livepeer.org/     |
-| Push      | Social     | https://staging.push.org/ |
-| ...       | ...        | ...                       |
+| Projects  | Categories         | Website                   | Status   |
+| --------- | ------------------ | ------------------------- | -------- |
+| Tableland | Database           | https://tableland.xyz/    | Complete |
+| Livepeer  | Media              | https://livepeer.org/     | Complete |
+| Push      | Social             | https://staging.push.org/ | Complete |
+| Lens      | Social             | https://www.lens.xyz/     | Todo     |
+| Snapshot  | Voting Platform    | https://snapshot.org/     | Todo     |
+| Dework    | Project Management | https://dework.xyz/       | Todo     |
+| XMTP      | Social             | https://xmtp.org/         | Todo     |
+| ...       | ...                | ...                       | ...      |
 
 More projects will be integrated into the toolkit in the future, making it easier for developers to use.
 
@@ -39,30 +41,31 @@ pnpm install
 
 ## Build
 
-```sh
-npx lerna run build --scope={package}
-```
+Build packages:
 
-Note that the `--scope` option can be used to run a specific test package, which can be helpful when working with large applications. 
-
-e.g 
 ```sh
-npx lerna run build --scope=@dataverse/tableland-client-toolkit
-```
-If `--scope={package}` is not added, all packages will be compiled.
-```sh
-npx lerna run build
+pnpm build
 ```
 
 ## Test
 
+Developers can run test demo seperately which build from the corresponding package:
+
 ```sh
-npx lerna run test --scope={package}
+pnpm test:livepeer-client
+```
+
+```sh
+pnpm test:push-client
+```
+
+```sh
+pnpm test:tableland-client
 ```
 
 However, it is important to note that before running the test demo, it should be checked whether a configuration file `.env` is required for the demo to run. If it is required, a `.env.example` file will be found in the `test` directory, and you can simply create a new `.env` file following the example shown in `.env.example` and enter your own key.
 
-For example, the test demo for the livepeer-client package requires the following environment variables to be input:
+For example, the test demo for the [livepeer-client](./packages/livepeer-client/test) package requires the following environment variables to be input:
 
 ```env
 VITE_APP_NAME=
@@ -73,8 +76,9 @@ VITE_LIVEPEER_API_KEY=
 After completing the value of environment variables, just run the demo:
 
 ```sh
-npx lerna run test --scope=@dataverse/livepeer-client-toolkit
+pnpm test:livepeer-client
 ```
+
 if successful, you can visit the demo at `http://localhost:5173/`.
 
 An example(livepeer demo):
