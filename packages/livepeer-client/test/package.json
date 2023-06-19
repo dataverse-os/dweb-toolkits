@@ -17,8 +17,7 @@
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
     "react-spinners": "^0.13.8",
-    "react-toastify": "^9.1.3",
-    "@dataverse/runtime-connector": "^1.0.57"
+    "react-toastify": "^9.1.3"
   },
   "devDependencies": {
     "@types/react": "^18.0.37",

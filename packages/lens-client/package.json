@@ -18,7 +18,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@dataverse/runtime-connector": "^1.0.57",
     "@dataverse/utils-toolkit": "^1.0.15",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
