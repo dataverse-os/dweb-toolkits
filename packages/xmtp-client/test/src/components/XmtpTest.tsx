@@ -1,12 +1,8 @@
 import {useState} from 'react'
+import {XmtpClient, ModelIds, ModelType, DecodedMessage, ListMessagesOptions} from "@dataverse/xmtp-client-toolkit";
 import {Extension, RESOURCE, RuntimeConnector, WALLET} from "@dataverse/runtime-connector";
 import {RuntimeConnectorSigner} from "@dataverse/utils-toolkit";
-import {Client as XClient} from "@xmtp/xmtp-js"
-import {XmtpClient} from "../xmtp-utils/xmtp-client";
 import {APP_NAME, KEY_CACHE_MODEL_ID, MESSAGE_MODEL_ID, MsgRecipient,} from "../xmtp-utils/constants";
-import {ListMessagesOptions} from "@xmtp/xmtp-js/dist/types/src/Client";
-import {DecodedMessage} from "@xmtp/xmtp-js/dist/types/src/Message";
-import {ModelIds, ModelType} from "../xmtp-utils/types";
 
 const runtimeConnector = new RuntimeConnector(Extension);
 const signer = new RuntimeConnectorSigner(runtimeConnector);
@@ -60,24 +56,10 @@ function XmtpTest() {
     setIsCurrentPkhValid(isCurrentPkhValid);
   };
 
-  const getXmtpClient = async () => {
-    const keys = await XClient.getKeys(signer, {env: "production"});
-    return XClient.create(null, {
-      env: "production",
-      privateKeyOverride: keys,
-    });
-  }
   const canMessage = async () => {
     const isOnNetwork = await xmtp.isOnNetwork("0xb5AB443DfF53F0e397a9E0778A3343Cbaf4D001a", "production")
     console.log("isOnProdNetwork: ", isOnNetwork);
   }
-
-
-  // const newConversation = async () => {
-  //   const xmtp = await getXmtpClient();
-  //   const conversations = xmtp.conversations;
-  //   console.log("conversations: ", conversations);
-  // }
 
   const allConversations = async () => {
     const allConversations = await xmtp.allConversations();
@@ -86,11 +68,6 @@ function XmtpTest() {
       console.log(`Saying GM to ${conversation.peerAddress}`);
       await conversation.send("gm");
     }
-  }
-  const createClientWithNoCache = async () => {
-    await XClient.create(signer, {
-      // persistConversations: false,
-    });
   }
 
   const sendMessage = async () => {
@@ -105,19 +82,6 @@ function XmtpTest() {
     console.log("res : ", res);
   }
 
-  const listMessages = async () => {
-    const xmtp = await getXmtpClient();
-    for (const conversation of await xmtp.conversations.list()) {
-      // All parameters are optional and can be omitted
-      const opts = {
-        // Only show messages from last 24 hours        startTime: new Date(new Date().setDate(new Date().getDate() - 1)),
-        endTime: new Date(),
-      };
-      const messagesInConversation = await conversation.messages(opts);
-      console.log("messagesInConversation: ", messagesInConversation);
-    }
-  }
-
   const listTargetConversation = async() => {
     const user = {
       to: MsgRecipient,
@@ -125,7 +89,6 @@ function XmtpTest() {
         endTime: new Date()
       } as ListMessagesOptions
     }
-    // @ts-ignore
     const msgs = await xmtp.getMessageWith(user)
     console.log("messagesInConversation: ", msgs);
   }
@@ -176,19 +139,15 @@ function XmtpTest() {
       }
       console.log("msg: ", message);
       await createMsgStream(message);
-
-
       console.log(`New message from ${message.senderAddress}: ${message.content}`);
     }
   }
 
   const createMsgStream = async (message: DecodedMessage) => {
     const date = new Date().toISOString();
-
     const encrypted = JSON.stringify({
       content: true,
     });
-
     console.log("data: ", date);
     console.log("data from msg: ", message.sent);
 
@@ -231,15 +190,7 @@ function XmtpTest() {
         <hr/>
         <button onClick={canMessage}>canMessage</button>
         <hr/>
-{/*        <button onClick={newConversation}>newConversation</button>
-        <hr/>
-        <button onClick={startNewConversation}>startNewConversation</button>
-        <hr/>*/}
-        <button onClick={createClientWithNoCache}>createClientWithNoCache</button>
-        <hr/>
         <button onClick={sendMessage}>sendMessage</button>
-        <hr/>
-        <button onClick={listMessages}>listMessages</button>
         <hr/>
         <button onClick={listTargetConversation}>listTargetConversation</button>
         <hr/>

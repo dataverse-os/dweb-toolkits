@@ -1,10 +1,8 @@
 import {RuntimeConnector} from "@dataverse/runtime-connector";
 import {RuntimeConnectorSigner} from "@dataverse/utils-toolkit";
-import {Client} from "@xmtp/xmtp-js";
 import {ModelIds, XmtpEnv} from "./types";
+import {Client, DecodedMessage} from "@xmtp/xmtp-js";
 import {ListMessagesOptions, ListMessagesPaginatedOptions} from "@xmtp/xmtp-js/dist/types/src/Client";
-import {stringToUint8Array, uint8ArrayToString} from "./constants";
-import {DecodedMessage} from "@xmtp/xmtp-js/dist/types/src/Message";
 
 export class XmtpClient {
 
@@ -41,7 +39,7 @@ export class XmtpClient {
     if(exist) {
       console.log("hit key cache ......");
       const keys = await this._unlockKeys(value);
-      return stringToUint8Array(keys);
+      return this.stringToUint8Array(keys);
     }
 
     console.log("process get keys ......");
@@ -55,7 +53,6 @@ export class XmtpClient {
     if(this.xmtp == undefined) {
       console.log("create new xmtp ");
       const keys = await this.getKeys();
-      console.log("keys:  ", keys);
       this.xmtp = await Client.create(null, {
         env: this.env,
         privateKeyOverride: keys,
@@ -134,7 +131,6 @@ export class XmtpClient {
         const indexFileId = value[key].streamContent.file?.indexFileId;
         if (indexFileId) {
           const unlocked = await this.runtimeConnector.unlock({ indexFileId });
-          console.log("_unlockKeys: ", unlocked.streamContent.content);
           const streamContent = unlocked.streamContent.content as {
             keys: string;
             encrypted: string;
@@ -156,13 +152,13 @@ export class XmtpClient {
 
     const streamContent = {
       sender_address: message.senderAddress,
-      recipient_address: message.recipienAddress?? "",
+      recipient_address: message.recipientAddress?? "",
       content: message.content,
       content_topic: message.contentTopic,
       content_type: JSON.stringify(message.contentType),
       message_id: message.id,
       message_version: message.messageVersion,
-      created_at: message.send,
+      created_at: message.sent,
       encrypted: encrypted,
     }
 
@@ -175,7 +171,7 @@ export class XmtpClient {
   }
 
   private async _persistKeys(keys: Uint8Array) {
-    const keysStr = uint8ArrayToString(keys);
+    const keysStr = this.uint8ArrayToString(keys);
     const encrypted = JSON.stringify({
       keys: true,
     });
@@ -203,5 +199,21 @@ export class XmtpClient {
     } else {
       return { exist: true, value: stream };
     }
+  }
+
+  uint8ArrayToString = (uint8Array: Uint8Array): string => {
+    let charArray = [];
+    for (let i = 0; i < uint8Array.length; i++) {
+      charArray.push(String.fromCharCode(uint8Array[i]));
+    }
+    return charArray.join('');
+  }
+
+  stringToUint8Array = (str: string): Uint8Array => {
+    let uint8Array = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++) {
+      uint8Array[i] = str.charCodeAt(i);
+    }
+    return uint8Array;
   }
 }

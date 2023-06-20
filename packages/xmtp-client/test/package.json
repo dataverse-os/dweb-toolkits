@@ -12,6 +12,7 @@
   "dependencies": {
     "@dataverse/runtime-connector": "^1.0.57",
     "@dataverse/utils-toolkit": "*",
+    "@dataverse/xmtp-client-toolkit": "*",
     "@xmtp/xmtp-js": "^7.10.0",
     "buffer": "^6.0.3",
     "ethers": "^5.7.1",
