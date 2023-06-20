@@ -1,11 +1,9 @@
 import {useState} from 'react'
 import {XmtpClient, ModelIds, ModelType, DecodedMessage, ListMessagesOptions} from "@dataverse/xmtp-client-toolkit";
 import {Extension, RESOURCE, RuntimeConnector, WALLET} from "@dataverse/runtime-connector";
-import {RuntimeConnectorSigner} from "@dataverse/utils-toolkit";
 import {APP_NAME, KEY_CACHE_MODEL_ID, MESSAGE_MODEL_ID, MsgRecipient,} from "../xmtp-utils/constants";
 
 const runtimeConnector = new RuntimeConnector(Extension);
-const signer = new RuntimeConnectorSigner(runtimeConnector);
 const app = APP_NAME;
 // const modelId = MESSAGE_MODEL_ID;
 const modelIds = {
@@ -77,12 +75,12 @@ function XmtpTest() {
     }
     console.log("msg: ", msg)
     const res = await xmtp.sendMessageTo(
-     msg
+      msg
     )
     console.log("res : ", res);
   }
 
-  const listTargetConversation = async() => {
+  const listTargetConversation = async () => {
     const user = {
       to: MsgRecipient,
       opt: {
@@ -96,7 +94,7 @@ function XmtpTest() {
   const listMessageWithPaginated = async () => {
     const user = {
       to: MsgRecipient,
-    opts:{ pageSize: 50}
+      opts: {pageSize: 50}
     }
     const pages = await xmtp.getMessageWithPaginated(user)
     console.log("pages: ", pages);
@@ -153,7 +151,7 @@ function XmtpTest() {
 
     const streamContent = {
       sender_address: message.senderAddress,
-      recipient_address: message.recipienAddress?? "",
+      recipient_address: message.recipienAddress ?? "",
       content: message.content,
       content_topic: message.contentTopic,
       content_type: JSON.stringify(message.contentType),
@@ -170,6 +168,11 @@ function XmtpTest() {
 
     console.log("create stream return : ", res);
   };
+
+  const listMessages = async () => {
+    const msgArray = await xmtp.listMessages();
+    console.log("msgArray: ", msgArray);
+  }
 
 
   return (
@@ -202,8 +205,8 @@ function XmtpTest() {
         <hr/>
         <button onClick={listenForNewMsgInAllConversation}>listenForNewMsgInAllConversation</button>
         <hr/>
-        {/*        <button onClick={sendMessageWithAttachment}>sendMessageWithAttachment</button>
-        <hr/>*/}
+        <button onClick={listMessages}>listMessages</button>
+        <hr/>
       </div>
     </>
   )

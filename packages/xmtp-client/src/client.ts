@@ -5,16 +5,12 @@ import {Client, DecodedMessage} from "@xmtp/xmtp-js";
 import {ListMessagesOptions, ListMessagesPaginatedOptions} from "@xmtp/xmtp-js/dist/types/src/Client";
 
 export class XmtpClient {
-
   public appName: string;
   public runtimeConnector: RuntimeConnector
   public signer: RuntimeConnectorSigner
   public modelIds: ModelIds
   public env: XmtpEnv
-
   public xmtp: Client | undefined
-  // public modelIds: ModelIds;
-
 
   constructor({
                 runtimeConnect,
@@ -34,90 +30,81 @@ export class XmtpClient {
     this.signer = new RuntimeConnectorSigner(this.runtimeConnector);
   }
 
-  async getKeys(){
+  async sendMessageTo({user, msg}: {user: string, msg: string}) {
+    const xmtp = await this._lazyInitClient();
+    await this.assertUserOnNetwork(user);
+    const conversation = await xmtp.conversations.newConversation(user);
+    const decodedMsg = await conversation.send(msg);
+    await this._persistMessage(decodedMsg);
+    return decodedMsg;
+  }
+
+  async allConversations(){
+    const xmtp = await this._lazyInitClient();
+    return xmtp.conversations.list();
+  }
+
+  async getMessageWith({user, opts}: {user: string, opts: ListMessagesOptions}) {
+    await this.assertUserOnNetwork(user);
+    const xmtp = await this._lazyInitClient();
+    const conversation = await xmtp.conversations.newConversation(user);
+    return conversation.messages(opts);
+  }
+
+  async getMessageWithPaginated({user, opts}: {user: string, opts?: ListMessagesPaginatedOptions }) {
+    const xmtp = await this._lazyInitClient();
+    await this.assertUserOnNetwork(user);
+    const conversation = await xmtp.conversations.newConversation(user);
+    return conversation.messagesPaginated(opts);
+  }
+
+  async listMessages(){
+    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const streams = await this.runtimeConnector.loadStreamsBy({
+      modelId: this.modelIds.message,
+      pkh: pkh,
+    });
+    const messages = [];
+    for (const key in streams) {
+      if (Object.prototype.hasOwnProperty.call(streams, key)) {
+        messages.push(streams[key].streamContent.content);
+      }
+    }
+    return messages;
+  }
+
+  async getConversationStream() {
+    const xmtp = await this._lazyInitClient();
+    return xmtp.conversations.stream();
+  }
+
+  async getMessageStreamWith(user: string) {
+    await this.assertUserOnNetwork(user);
+    const xmtp = await this._lazyInitClient();
+    const conversation = await xmtp.conversations.newConversation(user);
+    return conversation.streamMessages();
+  }
+
+  async getMessageStreamOfAllConversation() {
+    const xmtp = await this._lazyInitClient();
+    return xmtp.conversations.streamAllMessages();
+  }
+
+  private async getKeys(){
     const {exist, value } = await this._checkCache(this.modelIds.keys_cache);
     if(exist) {
       console.log("hit key cache ......");
       const keys = await this._unlockKeys(value);
       return this.stringToUint8Array(keys);
     }
-
-    console.log("process get keys ......");
     const keys = await Client.getKeys(this.signer, {env: this.env});
     await this._persistKeys(keys)
     return keys;
-    // return await Client.getKeys(this.signer, {env: this.env});
-  }
-
-  async lazyInitClient(){
-    if(this.xmtp == undefined) {
-      console.log("create new xmtp ");
-      const keys = await this.getKeys();
-      this.xmtp = await Client.create(null, {
-        env: this.env,
-        privateKeyOverride: keys,
-      })
-      return this.xmtp as Client;
-    }
-    console.log("use old xmtp ");
-    return this.xmtp as Client;
-  }
-
-  async allConversations(){
-    const xmtp = await this.lazyInitClient();
-    return xmtp.conversations.list();
-  }
-
-  async getMessageWith({to, opts}: {to: string, opts: ListMessagesOptions}) {
-    await this.assertUserOnNetwork(to);
-    const xmtp = await this.lazyInitClient();
-    const conversation = await xmtp.conversations.newConversation(to);
-    return conversation.messages(opts);
-  }
-
-  async getMessageWithPaginated({to, opts}: {to: string, opts?: ListMessagesPaginatedOptions }) {
-    const xmtp = await this.lazyInitClient();
-    await this.assertUserOnNetwork(to);
-    const conversation = await xmtp.conversations.newConversation(to);
-    console.log("conversation " , conversation);
-    return conversation.messagesPaginated(opts);
-  }
-
-  async sendMessageTo({to, msg}: {to: string, msg: string}) {
-    console.log("sendMessageTo： ", to, msg)
-    const xmtp = await this.lazyInitClient();
-    await this.assertUserOnNetwork(to);
-    const conversation = await xmtp.conversations.newConversation(to);
-    const decodedMsg = await conversation.send(msg);
-    await this._persistMessage(decodedMsg);
-    return decodedMsg;
-  }
-
-  // todo:
-  async listMessages(){
-    console.log("to be implemented ")
-  }
-
-  async getConversationStream() {
-    const xmtp = await this.lazyInitClient();
-    return xmtp.conversations.stream();
-  }
-
-  async getMessageStreamWith(user: string) {
-    await this.assertUserOnNetwork(user);
-    const xmtp = await this.lazyInitClient();
-    const conversation = await xmtp.conversations.newConversation(user);
-    return conversation.streamMessages();
-  }
-
-  async getMessageStreamOfAllConversation() {
-    const xmtp = await this.lazyInitClient();
-    return await xmtp.conversations.streamAllMessages();
   }
 
   private async assertUserOnNetwork(to: string) {
     if (!await this.isOnNetwork(to, this.env)) {
-      throw new Error(`${to} is not in network`);
+      throw new Error(`${to} is not on network`);
     }
   }
 
@@ -145,7 +132,6 @@ export class XmtpClient {
   }
 
   private async _persistMessage(message: DecodedMessage){
-
     const encrypted = JSON.stringify({
       content: true,
     });
@@ -166,7 +152,6 @@ export class XmtpClient {
       modelId: this.modelIds.message,
       streamContent: streamContent,
     });
-
     console.log("create stream return : ", res);
   }
 
@@ -185,6 +170,18 @@ export class XmtpClient {
       streamContent: streamContent,
     });
     console.log("create key cache : ", res);
+  }
+
+  private async _lazyInitClient(){
+    if(this.xmtp == undefined) {
+      const keys = await this.getKeys();
+      this.xmtp = await Client.create(null, {
+        env: this.env,
+        privateKeyOverride: keys,
+      })
+      return this.xmtp as Client;
+    }
+    return this.xmtp as Client;
   }
 
   private async _checkCache(modelId: string) {
