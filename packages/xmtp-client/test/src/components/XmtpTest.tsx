@@ -1,14 +1,14 @@
 import {useState} from 'react'
 import {XmtpClient, ModelIds, ModelType, DecodedMessage, ListMessagesOptions} from "@dataverse/xmtp-client-toolkit";
 import {Extension, RESOURCE, RuntimeConnector, WALLET} from "@dataverse/runtime-connector";
-import {APP_NAME, KEY_CACHE_MODEL_ID, MESSAGE_MODEL_ID, MsgRecipient,} from "../xmtp-utils/constants";
+import { MsgRecipient,} from "../xmtp-utils/constants";
+import {Client} from "@xmtp/xmtp-js";
 
 const runtimeConnector = new RuntimeConnector(Extension);
-const app = APP_NAME;
-// const modelId = MESSAGE_MODEL_ID;
+const app = import.meta.env.VITE_APP_NAME;
 const modelIds = {
-  [ModelType.MESSAGE]: MESSAGE_MODEL_ID,
-  [ModelType.KEYS_CACHE]: KEY_CACHE_MODEL_ID,
+  [ModelType.MESSAGE]: import.meta.env.VITE_MESSAGE_MODEL_ID,
+  [ModelType.KEYS_CACHE]: import.meta.env.VITE_KEY_CACHE_MODEL_ID,
 } as ModelIds;
 
 const xmtp = new XmtpClient({
@@ -70,7 +70,7 @@ function XmtpTest() {
 
   const sendMessage = async () => {
     const msg = {
-      to: "0xb5AB443DfF53F0e397a9E0778A3343Cbaf4D001a",
+      user: "0xb5AB443DfF53F0e397a9E0778A3343Cbaf4D001a",
       msg: "hello, lady"
     }
     console.log("msg: ", msg)
@@ -82,18 +82,18 @@ function XmtpTest() {
 
   const listTargetConversation = async () => {
     const user = {
-      to: MsgRecipient,
-      opt: {
+      user: MsgRecipient,
+      opts: {
         endTime: new Date()
       } as ListMessagesOptions
     }
-    const msgs = await xmtp.getMessageWith(user)
-    console.log("messagesInConversation: ", msgs);
+    const msgList = await xmtp.getMessageWith(user)
+    console.log("messagesInConversation: ", msgList);
   }
 
   const listMessageWithPaginated = async () => {
     const user = {
-      to: MsgRecipient,
+      user: MsgRecipient,
       opts: {pageSize: 50}
     }
     const pages = await xmtp.getMessageWithPaginated(user)
@@ -120,7 +120,7 @@ function XmtpTest() {
   const listenForNewMsgInConversation = async () => {
     const msgStream = await xmtp.getMessageStreamWith(MsgRecipient);
     for await (const message of msgStream) {
-      if (message.senderAddress === xmtp.xmtp.address) {
+      if (message.senderAddress === (xmtp.xmtp as Client).address) {
         // This message was sent from me
         continue;
       }
@@ -131,7 +131,7 @@ function XmtpTest() {
   const listenForNewMsgInAllConversation = async () => {
     const stream = await xmtp.getMessageStreamOfAllConversation();
     for await (const message of stream) {
-      if (message.senderAddress === xmtp.xmtp.address) {
+      if (message.senderAddress === (xmtp.xmtp as Client).address) {
         // This message was sent from me
         continue;
       }
@@ -151,13 +151,13 @@ function XmtpTest() {
 
     const streamContent = {
       sender_address: message.senderAddress,
-      recipient_address: message.recipienAddress ?? "",
+      recipient_address: message.recipientAddress ?? "",
       content: message.content,
       content_topic: message.contentTopic,
       content_type: JSON.stringify(message.contentType),
       message_id: message.id,
       message_version: message.messageVersion,
-      created_at: message.send,
+      created_at: message.sent,
       encrypted: encrypted,
     }
 
