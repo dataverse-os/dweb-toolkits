@@ -10,14 +10,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "@dataverse/runtime-connector": "^1.0.57",
     "@dataverse/utils-toolkit": "*",
     "@xmtp/xmtp-js": "^7.10.0",
-    "rollup-plugin-node-polyfills": "^0.2.1",
     "buffer": "^6.0.3",
-    "ethers": "^5.7.1"
+    "ethers": "^5.7.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rollup-plugin-node-polyfills": "^0.2.1",
+    "xmtp-content-type-remote-attachment": "^1.0.7"
   },
   "devDependencies": {
     "@types/react": "^18.0.37",
