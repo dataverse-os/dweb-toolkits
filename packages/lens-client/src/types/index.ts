@@ -9,6 +9,15 @@ export type ProfileStruct = {
   followNFTURI: string;
 };
 
+export type CreateProfileData = {
+  to: string;
+  handle: string;
+  imageURI: string;
+  followModule: string;
+  followModuleInitData: any[];
+  followNFTURI: string;
+};
+
 export type PostData = {
   profileId: BigNumberish;
   contentURI: string;
@@ -16,4 +25,15 @@ export type PostData = {
   collectModuleInitData: any[];
   referenceModule: string;
   referenceModuleInitData: any[];
+};
+
+export type EventPostCreated = {
+  profileId: BigNumberish;
+  pubId: BigNumberish;
+};
+
+export type EventCollected = {
+  collector: string;
+  profileId: BigNumberish;
+  pubId: BigNumberish;
 };

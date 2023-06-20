@@ -2,9 +2,8 @@ import "./App.scss";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { Currency, WALLET } from "@dataverse/runtime-connector";
 import { Context } from "./main";
-import Client, { LENS_CONTRACTS_ADDRESS } from "@dataverse/lens-client-toolkit";
+import Client from "@dataverse/lens-client-toolkit";
 import { getCurrencyAddress } from "./utils";
-import JsonFile from "./LensHub.json";
 import { BigNumber, Contract, ethers } from "ethers";
 
 const App = () => {
@@ -16,6 +15,7 @@ const App = () => {
   }, []);
   const [account, setAccount] = useState<string>();
   const [did, setDid] = useState<string>();
+  const [isProfileCreator, setIsProfileCreator] = useState<boolean>();
   const [profiles, setProfiles] = useState<string>("");
   const [profileId, setProfileId] = useState<string>();
   const [getProfileRes, setGetProfileRes] = useState<string>("");
@@ -33,47 +33,48 @@ const App = () => {
   useEffect(() => {
     if (account) {
       getProfiles();
+      initProfileCreatorWhitelisted();
     }
   }, [account]);
 
   useEffect(() => {
-    if (did) {
-      console.log("start test mint...");
-      lensClient.testMint();
+    if (profiles.length > 0) {
+      setProfileId(JSON.parse(profiles)[0].id);
     }
-  }, [did]);
+  }, [profiles]);
 
-  const testWithEthers = async () => {
-    const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+  // const testWithEthers = async () => {
+  //   const provider = new ethers.providers.Web3Provider(
+  //     (window as any).ethereum
+  //   );
 
-    // MetaMask requires requesting permission to connect users accounts
-    await provider.send("eth_requestAccounts", []);
+  //   // MetaMask requires requesting permission to connect users accounts
+  //   await provider.send("eth_requestAccounts", []);
 
-    // The MetaMask plugin also allows signing transactions to
-    // send ether and pay to change state within the blockchain.
-    // For this, you need the account signer...
-    const signer = provider.getSigner();
+  //   // The MetaMask plugin also allows signing transactions to
+  //   // send ether and pay to change state within the blockchain.
+  //   // For this, you need the account signer...
+  //   const signer = provider.getSigner();
 
-    const lensHub = new Contract(
-      "0x60Ae865ee4C725cd04353b5AAb364553f56ceF82",
-      JsonFile.abi,
-      signer
-    );
+  //   const lensHub = new Contract(
+  //     "0x60Ae865ee4C725cd04353b5AAb364553f56ceF82",
+  //     JsonFile.abi,
+  //     signer
+  //   );
 
-    const tx = await lensHub.setFollowModule(
-      BigNumber.from("0x023a"),
-      "0x8c822Fc029EBdE62Da1Ed1072534c5e112dAE48c",
-      []
-    );
-    // const tx = await lensHub.setFollowModule(
-    //   BigNumber.from("0x023"),
-    //   "0x8c822Fc029EBdE62Da1Ed1072534c5e112dAE48c",
-    //   []
-    // );
-    console.log("tx:", tx);
-    const res = await tx.wait();
-    console.log("res:", res);
-  };
+  //   const tx = await lensHub.createProfile({
+  //     to: "0xD0167B1cc6CAb1e4e7C6f38d09EA35171d00b68e",
+  //     handle: "canvas2",
+  //     imageURI:
+  //       "https://gateway.ipfscdn.io/ipfs/QmQPuXJ7TTg7RpNjHeAR4NrGtDVSAwoP2qD4VdZF2vAJiR",
+  //     followModule: "0x0000000000000000000000000000000000000000",
+  //     followModuleInitData: [],
+  //     followNFTURI: "https://github.com/dataverse-os",
+  //   });
+  //   console.log("tx:", tx);
+  //   const res = await tx.wait();
+  //   console.log("res:", res);
+  // };
 
   const connectIdentity = async () => {
     const { address, wallet } = await lensClient.runtimeConnector.connectWallet(
@@ -89,15 +90,29 @@ const App = () => {
     console.log("connected");
   };
 
+  const initProfileCreatorWhitelisted = async () => {
+    if (!account) {
+      return;
+    }
+    const res = await lensClient.isProfileCreatorWhitelisted(account);
+    setIsProfileCreator(res);
+  };
+
   const createProfile = async () => {
-    if (!handle) {
+    if (!account || !handle) {
       return;
     }
     if (!/^[\da-z]{5,26}$/.test(handle) || handle.length > 26) {
       throw "Only supports lower case characters, numbers, must be minimum of 5 length and maximum of 26 length";
     }
-    const profileId = await lensClient.createProfile(handle);
-    setCreateLensProfileRes(profileId);
+    const res = await lensClient.createProfile({
+      to: account,
+      handle,
+      imageURI:
+        "https://gateway.ipfscdn.io/ipfs/QmQPuXJ7TTg7RpNjHeAR4NrGtDVSAwoP2qD4VdZF2vAJiR",
+    });
+    console.log("[createProfile]res:", res);
+    // setCreateLensProfileRes(profileId);
   };
 
   const getProfiles = async () => {
@@ -173,6 +188,24 @@ const App = () => {
     setCreatePostRes(JSON.stringify(res));
   };
 
+  const createFeeCollectPost = async () => {
+    if (!account || !profileId) {
+      return;
+    }
+    const res = await lensClient.createFeeCollectPost({
+      profileId,
+      contentURI: "https://github.com/dataverse-os",
+      collectModuleInitParams: {
+        amount: 10e8,
+        currency: getCurrencyAddress(Currency.WMATIC),
+        recipient: account,
+        referralFee: 0,
+        followerOnly: false,
+      },
+    });
+    setCreatePostRes(JSON.stringify(res));
+  };
+
   const collect = async () => {
     if (!profileId || !pubId) {
       return;
@@ -182,6 +215,17 @@ const App = () => {
       pubId,
     });
     setCollectRes(JSON.stringify(res));
+  };
+
+  const getCollectNFT = async () => {
+    if (!profileId || !pubId) {
+      return;
+    }
+    const collectNFT = await lensClient.getCollectNFT({
+      profileId,
+      pubId,
+    });
+    setCollectNFT(collectNFT);
   };
 
   const isCollected = async () => {
@@ -209,10 +253,6 @@ const App = () => {
           <button onClick={connectIdentity}>Connect Identity</button>
         </div>
       </div>
-
-      <button onClick={testWithEthers}>
-        TestWithEthers
-      </button>
 
       <div className="app-body">
         <div className="test-item">
@@ -245,11 +285,13 @@ const App = () => {
         </div>
         <div className="test-item">
           <button
-            disabled={handle ? false : true}
+            disabled={handle && isProfileCreator ? false : true}
             onClick={createProfile}
             className="block"
           >
-            createProfile
+            {isProfileCreator === false
+              ? "createProfile(Creator not Whitelisted)"
+              : "createProfile"}
           </button>
           <div className="title">Handle(Nick Name)</div>
           <input
@@ -298,12 +340,6 @@ const App = () => {
             value={profileId || ""}
             onChange={(event) => setProfileId(event.target.value)}
           />
-          <div className="title">FeeFollowModule</div>
-          <input
-            type="text"
-            disabled
-            value={LENS_CONTRACTS_ADDRESS.FeeFollowModule}
-          />
           {/* <div className="title">Result</div>
           <div className="textarea">{getProfileIdByHandleRes}</div> */}
         </div>
@@ -313,6 +349,9 @@ const App = () => {
           </button>
           <button onClick={createRevertCollectPost} className="block">
             createRevertCollectPost
+          </button>
+          <button onClick={createFeeCollectPost} className="block">
+            createFeeCollectPost
           </button>
           <div className="title">ProfileId</div>
           <input
@@ -331,13 +370,43 @@ const App = () => {
           >
             collect
           </button>
-          <div className="title">Pub Id</div>
+          <div className="title">ProfileId</div>
           <input
             type="text"
+            value={profileId || ""}
+            onChange={(event) => setProfileId(event.target.value)}
+          />
+          <div className="title">PubId</div>
+          <input
+            type="text"
+            value={pubId || ""}
             onChange={(event) => setPubId(event.target.value)}
           />
           <div className="title">Result</div>
           <div className="textarea">{collectRes}</div>
+        </div>
+        <div className="test-item">
+          <button
+            disabled={profileId && pubId ? false : true}
+            onClick={getCollectNFT}
+            className="block"
+          >
+            getCollectNFT
+          </button>
+          <div className="title">ProfileId</div>
+          <input
+            type="text"
+            value={profileId || ""}
+            onChange={(event) => setProfileId(event.target.value)}
+          />
+          <div className="title">PubId</div>
+          <input
+            type="text"
+            value={pubId || ""}
+            onChange={(event) => setPubId(event.target.value)}
+          />
+          <div className="title">Result (CollectNFT address)</div>
+          <div className="textarea">{collectNFT}</div>
         </div>
         <div className="test-item">
           <button
