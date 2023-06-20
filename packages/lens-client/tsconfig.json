@@ -4,8 +4,13 @@
         "./src/**/*"
     ],
     "compilerOptions": {
-        "rootDir": "src",
+        "rootDir": ".",
         "outDir": "./dist/esm",
-        "jsx": "react-jsx"
+        "jsx": "react-jsx",
+        "resolveJsonModule": true,
+        "composite": true
     },
+    "files": [
+        "./contracts/LensHub.sol/LensHub.json"
+    ]
 }

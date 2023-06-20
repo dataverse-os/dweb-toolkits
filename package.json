@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "lerna": "^7.0.1",
-    "@dataverse/runtime-connector": "^1.0.59"
+    "@dataverse/runtime-connector": "^1.0.59",
+    "ethers": "^5.7.2"
   }
 }

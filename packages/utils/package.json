@@ -21,7 +21,6 @@
     "@ethersproject/abstract-signer": "^5.7.0",
     "@ethersproject/properties": "^5.7.0",
     "@pushprotocol/restapi": "^1.3.3",
-    "ethers": "^5.7.2",
     "typescript": "^4.9.5"
   },
   "gitHead": "485030d97deeff637e89dcb5137492f5e74046fa"
