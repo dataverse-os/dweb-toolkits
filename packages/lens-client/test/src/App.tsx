@@ -4,6 +4,8 @@ import { Currency, WALLET } from "@dataverse/runtime-connector";
 import { Context } from "./main";
 import Client, { LENS_CONTRACTS_ADDRESS } from "@dataverse/lens-client-toolkit";
 import { getCurrencyAddress } from "./utils";
+import JsonFile from "./LensHub.json";
+import { BigNumber, Contract, ethers } from "ethers";
 
 const App = () => {
   const { runtimeConnector } = useContext(Context);
@@ -19,17 +21,59 @@ const App = () => {
   const [getProfileRes, setGetProfileRes] = useState<string>("");
   const [handle, setHandle] = useState<string>();
   const [createLensProfileRes, setCreateLensProfileRes] = useState<string>("");
-  const [getProfileIdByHandleRes, setGetProfileIdByHandleRes] = useState<string>();
+  const [getProfileIdByHandleRes, setGetProfileIdByHandleRes] =
+    useState<string>();
   const [collectNFT, setCollectNFT] = useState<string>();
   const [collector, setCollector] = useState<string>();
-  const [createFreeCollectPostRes, setCreateFreeCollectPostRes] = useState<string>("");
+  const [createPostRes, setCreatePostRes] = useState<string>("");
   const [pubId, setPubId] = useState<string>();
   const [collectRes, setCollectRes] = useState<string>();
   const [isCollectedRes, setIsCollectedRes] = useState<string>();
 
   useEffect(() => {
-    getProfiles();
+    if (account) {
+      getProfiles();
+    }
   }, [account]);
+
+  useEffect(() => {
+    if (did) {
+      console.log("start test mint...");
+      lensClient.testMint();
+    }
+  }, [did]);
+
+  const testWithEthers = async () => {
+    const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+
+    // MetaMask requires requesting permission to connect users accounts
+    await provider.send("eth_requestAccounts", []);
+
+    // The MetaMask plugin also allows signing transactions to
+    // send ether and pay to change state within the blockchain.
+    // For this, you need the account signer...
+    const signer = provider.getSigner();
+
+    const lensHub = new Contract(
+      "0x60Ae865ee4C725cd04353b5AAb364553f56ceF82",
+      JsonFile.abi,
+      signer
+    );
+
+    const tx = await lensHub.setFollowModule(
+      BigNumber.from("0x023a"),
+      "0x8c822Fc029EBdE62Da1Ed1072534c5e112dAE48c",
+      []
+    );
+    // const tx = await lensHub.setFollowModule(
+    //   BigNumber.from("0x023"),
+    //   "0x8c822Fc029EBdE62Da1Ed1072534c5e112dAE48c",
+    //   []
+    // );
+    console.log("tx:", tx);
+    const res = await tx.wait();
+    console.log("res:", res);
+  };
 
   const connectIdentity = async () => {
     const { address, wallet } = await lensClient.runtimeConnector.connectWallet(
@@ -65,13 +109,13 @@ const App = () => {
   };
 
   const getProfile = async () => {
-    if(!profileId) {
+    if (!profileId) {
       return;
     }
     const res = await lensClient.getProfile(profileId);
     console.log("[getProfile]res:", res);
     setGetProfileRes(JSON.stringify(res));
-  }
+  };
 
   const getProfileIdByHandle = async () => {
     if (!handle) {
@@ -83,44 +127,62 @@ const App = () => {
   };
 
   const setFeeFollowModule = async () => {
-    if(!profileId || !account) {
+    if (!profileId || !account) {
       return;
     }
     await lensClient.setFeeFollowModule({
       profileId,
-      followModule: LENS_CONTRACTS_ADDRESS.RevertFollowModule,
       moduleInitParams: {
         amount: 10e10,
         currency: getCurrencyAddress(Currency.WMATIC),
-        recipient: account
-      }
-    })
-  }
+        recipient: account,
+      },
+    });
+  };
+
+  const setRevertFollowModule = async () => {
+    if (!profileId || !account) {
+      return;
+    }
+    const res = await lensClient.setRevertFollowModule(profileId);
+    console.log("[setRevertFollowModule]res:", res);
+  };
 
   const createFreeCollectPost = async () => {
-    if(!profileId) {
+    if (!profileId) {
       return;
     }
     const res = await lensClient.createFreeCollectPost({
       profileId,
       contentURI: "https://github.com/dataverse-os",
       collectModuleInitParams: {
-        followerOnly: false
-      }
+        followerOnly: false,
+      },
     });
-    setCreateFreeCollectPostRes(JSON.stringify(res));
-  }
+    setCreatePostRes(JSON.stringify(res));
+  };
+
+  const createRevertCollectPost = async () => {
+    if (!profileId) {
+      return;
+    }
+    const res = await lensClient.createRevertCollectPost({
+      profileId,
+      contentURI: "https://github.com/dataverse-os",
+    });
+    setCreatePostRes(JSON.stringify(res));
+  };
 
   const collect = async () => {
-    if(!profileId || !pubId) {
+    if (!profileId || !pubId) {
       return;
     }
     const res = await lensClient.collect({
       profileId,
-      pubId
+      pubId,
     });
     setCollectRes(JSON.stringify(res));
-  }
+  };
 
   const isCollected = async () => {
     if (!collectNFT || !collector) {
@@ -148,6 +210,10 @@ const App = () => {
         </div>
       </div>
 
+      <button onClick={testWithEthers}>
+        TestWithEthers
+      </button>
+
       <div className="app-body">
         <div className="test-item">
           <button
@@ -171,7 +237,7 @@ const App = () => {
           <div className="title">ProfileId</div>
           <input
             type="text"
-            value={profileId || ''}
+            value={profileId || ""}
             onChange={(event) => setProfileId(event.target.value)}
           />
           <div className="title">Result</div>
@@ -188,7 +254,7 @@ const App = () => {
           <div className="title">Handle(Nick Name)</div>
           <input
             type="text"
-            value={handle || ''}
+            value={handle || ""}
             onChange={(event) => setHandle(event.target.value)}
           />
           <div className="title">Result</div>
@@ -205,7 +271,7 @@ const App = () => {
           <div className="title">Handle(Nick Name)</div>
           <input
             type="text"
-            value={handle || ''}
+            value={handle || ""}
             onChange={(event) => setHandle(event.target.value)}
           />
           <div className="title">Result</div>
@@ -219,10 +285,17 @@ const App = () => {
           >
             setFeeFollowModule
           </button>
+          <button
+            disabled={profileId && account ? false : true}
+            onClick={setRevertFollowModule}
+            className="block"
+          >
+            setRevertFollowModule
+          </button>
           <div className="title">ProfileId</div>
           <input
             type="text"
-            value={profileId || ''}
+            value={profileId || ""}
             onChange={(event) => setProfileId(event.target.value)}
           />
           <div className="title">FeeFollowModule</div>
@@ -235,20 +308,20 @@ const App = () => {
           <div className="textarea">{getProfileIdByHandleRes}</div> */}
         </div>
         <div className="test-item">
-          <button
-            onClick={createFreeCollectPost}
-            className="block"
-          >
+          <button onClick={createFreeCollectPost} className="block">
             createFreeCollectPost
+          </button>
+          <button onClick={createRevertCollectPost} className="block">
+            createRevertCollectPost
           </button>
           <div className="title">ProfileId</div>
           <input
             type="text"
-            value={profileId || ''}
+            value={profileId || ""}
             onChange={(event) => setProfileId(event.target.value)}
           />
           <div className="title">Result</div>
-          <div className="textarea">{createFreeCollectPostRes}</div>
+          <div className="textarea">{createPostRes}</div>
         </div>
         <div className="test-item">
           <button

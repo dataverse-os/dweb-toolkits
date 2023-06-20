@@ -54,30 +54,72 @@ export class LensClient {
     return profileId;
   }
 
+  public async setRevertFollowModule(profileId: BigNumberish) {
+    const res = await this.runtimeConnector.contractCall({
+      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      abi: LensHubJson.abi,
+      method: "setFollowModule",
+      params: [profileId, LENS_CONTRACTS_ADDRESS.RevertFollowModule, []],
+      mode: Mode.Write,
+    });
+
+    console.log("[setFollowModule]res:", res);
+  }
+
+  public async testMint() {
+    const res = await this.runtimeConnector.contractCall({
+      contractAddress: "0xd2e8B003B2650B34B00B43FE09142c0c6C9345b7",
+      abi: [
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "tokenId",
+              "type": "uint256"
+            }
+          ],
+          "name": "mint",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        }
+      ],
+      method: "mint",
+      params: [BigInt(10)],
+      mode: Mode.Write
+    })
+    console.log("mint success, res:", res);
+  }
+
   public async setFeeFollowModule({
     profileId,
-    followModule,
-  }: // moduleInitData,
-  {
+    moduleInitParams,
+  }: {
     profileId: BigNumberish;
-    followModule: string;
-    moduleInitParams?: {
+    moduleInitParams: {
       amount: BigNumberish;
       currency: string;
       recipient: string;
     };
   }) {
-    // const moduleInitDataBytes = ethers.utils.defaultAbiCoder.encode(
-    //   ["uint256", "address", "address"],
-    //   [moduleInitData.amount, moduleInitData.currency, moduleInitData.recipient]
-    // );
-    // const moduleInitDataBytes = [];
-    // console.log("moduleInitDataBytes:", moduleInitDataBytes);
+    const moduleInitData = ethers.utils.defaultAbiCoder.encode(
+      ["uint256", "address", "address"],
+      [
+        moduleInitParams.amount,
+        moduleInitParams.currency,
+        moduleInitParams.recipient,
+      ]
+    );
+
     const res = await this.runtimeConnector.contractCall({
       contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
       abi: LensHubJson.abi,
       method: "setFollowModule",
-      params: [profileId, followModule, []],
+      params: [
+        profileId,
+        LENS_CONTRACTS_ADDRESS.FeeFollowModule,
+        moduleInitData,
+      ],
       mode: Mode.Write,
     });
 
@@ -109,7 +151,7 @@ export class LensClient {
       followerOnly: boolean;
     };
   }) {
-    console.log("start")
+    console.log("start");
     const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
       ["bool"],
       [collectModuleInitParams.followerOnly]
@@ -124,7 +166,7 @@ export class LensClient {
       referenceModuleInitData: [],
     };
 
-    console.log("postData:", postData)
+    console.log("postData:", postData);
 
     const res = await this.runtimeConnector.contractCall({
       contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
@@ -134,27 +176,60 @@ export class LensClient {
       mode: Mode.Write,
     });
 
-    console.log("[createFreeCollectPost]res:", res)
+    console.log("[createFreeCollectPost]res:", res);
+    return res;
+  }
+
+  public async createRevertCollectPost({
+    profileId,
+    contentURI,
+  }: {
+    profileId: BigNumberish;
+    contentURI: string;
+  }) {
+    const postData: PostData = {
+      profileId,
+      contentURI,
+      collectModule: LENS_CONTRACTS_ADDRESS.RevertCollectModule,
+      collectModuleInitData: [],
+      referenceModule: ethers.constants.AddressZero,
+      referenceModuleInitData: [],
+    };
+
+    console.log("postData:", postData);
+
+    const res = await this.runtimeConnector.contractCall({
+      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      abi: LensHubJson.abi,
+      method: "post",
+      params: [postData],
+      mode: Mode.Write,
+    });
+
+    console.log("[createRevertCollectPost]res:", res);
     return res;
   }
 
   public async collect({
     profileId,
     pubId,
-    collectModuleValidateParams
-  }:{
-    profileId: BigNumberish,
-    pubId: BigNumberish,
+    collectModuleValidateParams,
+  }: {
+    profileId: BigNumberish;
+    pubId: BigNumberish;
     collectModuleValidateParams?: {
-      currency: string,
-      amount: BigNumberish
-    }
+      currency: string;
+      amount: BigNumberish;
+    };
   }) {
     let collectModuleValidateData;
-    if(collectModuleValidateParams) {
+    if (collectModuleValidateParams) {
       collectModuleValidateData = ethers.utils.defaultAbiCoder.encode(
         ["address", "uint256"],
-        [collectModuleValidateParams.currency, collectModuleValidateParams.amount]
+        [
+          collectModuleValidateParams.currency,
+          collectModuleValidateParams.amount,
+        ]
       );
     } else {
       collectModuleValidateData = [];
