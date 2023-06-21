@@ -1,7 +1,7 @@
 import { RuntimeConnector, StreamContent } from "@dataverse/runtime-connector";
 import { RuntimeConnectorSigner, StreamHelper } from "@dataverse/utils-toolkit";
 import { ModelIds, XmtpEnv } from "./types";
-import { Client, DecodedMessage } from "@xmtp/xmtp-js";
+import { Client, DecodedMessage, SendOptions } from "@xmtp/xmtp-js";
 import {
   ListMessagesOptions,
   ListMessagesPaginatedOptions,
@@ -46,6 +46,18 @@ export class XmtpClient {
     const xmtp = await this._lazyInitClient();
     const conversation = await xmtp.conversations.newConversation(user);
     const decodedMsg = await conversation.send(msg);
+    await this._persistMessage(decodedMsg);
+    return decodedMsg;
+  }
+
+  public async sendAttachmentTo({ user, content, options}: { user: string; content: any, options? : SendOptions }) {
+    if (!(await this.isUserOnNetwork(user, this.env))) {
+      throw new Error(`${user} is not on network`);
+    }
+
+    const xmtp = await this._lazyInitClient();
+    const conversation = await xmtp.conversations.newConversation(user);
+    const decodedMsg = await conversation.send(content, options);
     await this._persistMessage(decodedMsg);
     return decodedMsg;
   }

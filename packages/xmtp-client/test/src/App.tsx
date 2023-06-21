@@ -28,6 +28,19 @@ import {Buffer} from "buffer";
 
 const runtimeConnector = new RuntimeConnector(Extension);
 
+async function decodeAttachment(decodedMsg: DecodedMessage, xmtpClient: XmtpClient) {
+  console.log("process download and decode ",);
+  const attachmentFromRemote: Attachment = await RemoteAttachmentCodec.load(
+    decodedMsg.content,
+    (xmtpClient.xmtp as Client)
+  );
+
+  console.log("attachmentFromRemote.filename: ", attachmentFromRemote.filename);
+  console.log("attachmentFromRemote.mineType: ", attachmentFromRemote.mimeType);
+  console.log("attachmentFromRemote.data: ", attachmentFromRemote.data);
+  console.log("decodedMsg.content.url ", decodedMsg.content.url);
+}
+
 function App() {
   const msgReceiver = useMemo(() => {
     return "0x30C7832F3912e45C46F762F0D727F77B181d240D";
@@ -162,6 +175,10 @@ function App() {
         continue;
       }
       console.log("[listenNewMsgInAllConversation]: New message:", message);
+      if(message.contentType.typeId === "remoteStaticAttachment") {
+        console.log("hit remoteStaticAttachment");
+        await decodeAttachment(message, xmtpClient);
+      }
       const res = await createMsgStream(message);
       console.log(
         "[listenNewMsgInAllConversation]: stream created, res:",
@@ -240,40 +257,17 @@ function App() {
       contentLength: attachment.data.byteLength,
     };
 
-    const conversation = await (xmtpClient.xmtp as Client).conversations.newConversation(MsgRecipient02);
-
-    const decodedMsg = await conversation.send(remoteAttachment, {
+    const options = {
       contentFallback: "[Attachment] Cannot display ${remoteAttachment.filename}. This app does not support attachments yet.",
       contentType: ContentTypeRemoteAttachment
+    }
+
+    const decodedMsg = await xmtpClient.sendAttachmentTo({
+      user: MsgRecipient02,
+      content: remoteAttachment,
+      options: options
     });
-
-    console.log("decodedMsg: ", decodedMsg);
-    console.log("process download and decode ", );
-    const attachmentFromRemote: Attachment = await RemoteAttachmentCodec.load(
-      decodedMsg.content,
-      (xmtpClient.xmtp as Client)
-    );
-
-    console.log("attachmentFromRemote.filename: ", attachmentFromRemote.filename);
-    console.log("attachmentFromRemote.mineType: ", attachmentFromRemote.mimeType);
-    console.log("attachmentFromRemote.data: ", attachmentFromRemote.data);
-    console.log("file data: ", data);
-
-    const objectURL = URL.createObjectURL(
-      new Blob([Buffer.from(attachment.data)], {
-        type: attachment.mimeType,
-      }),
-    );
-
-    // const objUrlFromRemote = uint8ArrayToObjUrl(attachmentFromRemote.data, attachmentFromRemote.mimeType);
-    // console.log("objUrlFromRemote: ", objUrlFromRemote);
-    console.log("objectURL: ", objectURL);
-    console.log("decodedMsg.content.url ", decodedMsg.content.url);
-    // await Client.sendMessageFromHook(remoteAttachment, {
-    //   contentFallback: "[Attachment] Cannot display ${remoteAttachment.filename}. This app does not support attachments yet."
-    //   contentType: ContentTypeRemoteAttachment,
-    // });
-
+    await decodeAttachment(decodedMsg, xmtpClient);
   }
   const handleUploadFile = async () => {
     if (!file) {
