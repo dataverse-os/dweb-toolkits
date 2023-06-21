@@ -1,5 +1,8 @@
-import {ListMessagesOptions, ListMessagesPaginatedOptions} from "@xmtp/xmtp-js/dist/types/src/Client";
-import {Client, DecodedMessage, ApiUrls} from "@xmtp/xmtp-js";
+import {
+  ListMessagesOptions,
+  ListMessagesPaginatedOptions,
+} from "@xmtp/xmtp-js/dist/types/src/Client";
+import { DecodedMessage, ApiUrls } from "@xmtp/xmtp-js";
 
 export type XmtpEnv = keyof typeof ApiUrls;
 
@@ -9,4 +12,9 @@ export enum ModelType {
 }
 
 export type ModelIds = Record<ModelType, string>;
-export {ListMessagesOptions, ListMessagesPaginatedOptions, Client, DecodedMessage }
+
+export {
+  ListMessagesOptions,
+  ListMessagesPaginatedOptions,
+  DecodedMessage,
+};

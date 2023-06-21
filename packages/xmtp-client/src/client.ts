@@ -1,66 +1,87 @@
-import {RuntimeConnector, StreamContent} from "@dataverse/runtime-connector";
-import {RuntimeConnectorSigner, StreamHelper} from "@dataverse/utils-toolkit";
-import {ModelIds, XmtpEnv} from "./types";
-import {Client, DecodedMessage} from "@xmtp/xmtp-js";
-import {ListMessagesOptions, ListMessagesPaginatedOptions} from "@xmtp/xmtp-js/dist/types/src/Client";
+import { RuntimeConnector, StreamContent } from "@dataverse/runtime-connector";
+import { RuntimeConnectorSigner, StreamHelper } from "@dataverse/utils-toolkit";
+import { ModelIds, XmtpEnv } from "./types";
+import { Client, DecodedMessage } from "@xmtp/xmtp-js";
+import {
+  ListMessagesOptions,
+  ListMessagesPaginatedOptions,
+} from "@xmtp/xmtp-js/dist/types/src/Client";
+import { stringToUint8Array, uint8ArrayToString } from "./utils";
 
 export class XmtpClient {
   public appName: string;
-  public runtimeConnector: RuntimeConnector
-  public signer: RuntimeConnectorSigner
-  public modelIds: ModelIds
-  public env: XmtpEnv
-  public xmtp: Client | undefined
+  public runtimeConnector: RuntimeConnector;
+  public signer: RuntimeConnectorSigner;
+  public modelIds: ModelIds;
+  public env: XmtpEnv;
+  public xmtp?: Client;
 
   constructor({
-                runtimeConnect,
-                appName,
-                modelIds,
-                env
-              }: {
-    runtimeConnect: RuntimeConnector,
-    appName: string,
-    modelIds: ModelIds,
-    env: XmtpEnv,
+    runtimeConnector,
+    appName,
+    modelIds,
+    env,
+  }: {
+    runtimeConnector: RuntimeConnector;
+    appName: string;
+    modelIds: ModelIds;
+    env: XmtpEnv;
   }) {
-    this.runtimeConnector = runtimeConnect;
+    this.runtimeConnector = runtimeConnector;
     this.appName = appName;
     this.modelIds = modelIds;
     this.env = env;
     this.signer = new RuntimeConnectorSigner(this.runtimeConnector);
   }
 
-  async sendMessageTo({user, msg}: { user: string, msg: string }) {
+  public async sendMessageTo({ user, msg }: { user: string; msg: string }) {
+    if (!(await this.isUserOnNetwork(user, this.env))) {
+      throw new Error(`${user} is not on network`);
+    }
+
     const xmtp = await this._lazyInitClient();
-    await this._assertUserOnNetwork(user);
     const conversation = await xmtp.conversations.newConversation(user);
     const decodedMsg = await conversation.send(msg);
     await this._persistMessage(decodedMsg);
     return decodedMsg;
   }
 
-  async allConversations() {
+  public async getAllConversations() {
     const xmtp = await this._lazyInitClient();
     return xmtp.conversations.list();
   }
 
-  async getMessageWith({user, opts}: { user: string, opts: ListMessagesOptions }) {
-    await this._assertUserOnNetwork(user);
+  public async getMessageWithUser({
+    user,
+    options,
+    paginatedOptions,
+  }: {
+    user: string;
+    options?: ListMessagesOptions;
+    paginatedOptions?: ListMessagesPaginatedOptions;
+  }) {
+    if (!(await this.isUserOnNetwork(user, this.env))) {
+      throw new Error(`${user} is not on network`);
+    }
+
     const xmtp = await this._lazyInitClient();
     const conversation = await xmtp.conversations.newConversation(user);
-    const msgList = await conversation.messages(opts);
-    await this._persistMessages(msgList);
-    return msgList;
+
+    if (paginatedOptions) {
+      return conversation.messagesPaginated(paginatedOptions);
+    } else {
+      if (!options) {
+        options = {
+          endTime: new Date(),
+        } as ListMessagesOptions;
+      }
+      const msgList = await conversation.messages(options);
+      await this._persistMessages(msgList);
+      return msgList;
+    }
   }
 
-  async getMessageWithPaginated({user, opts}: { user: string, opts?: ListMessagesPaginatedOptions }) {
-    const xmtp = await this._lazyInitClient();
-    await this._assertUserOnNetwork(user);
-    const conversation = await xmtp.conversations.newConversation(user);
-    return conversation.messagesPaginated(opts);
-  }
-
-  async listMessages() {
+  async getPersistedMessages() {
     const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelIds.message,
@@ -80,39 +101,45 @@ export class XmtpClient {
     return xmtp.conversations.stream();
   }
 
-  async getMessageStreamWith(user: string) {
-    await this._assertUserOnNetwork(user);
+  async getMessageStream(user?: string) {
     const xmtp = await this._lazyInitClient();
-    const conversation = await xmtp.conversations.newConversation(user);
-    return conversation.streamMessages();
+    if (user) {
+      if (!(await this.isUserOnNetwork(user, this.env))) {
+        throw new Error(`${user} is not on network`);
+      }
+
+      const targetConversation = await xmtp.conversations.newConversation(user);
+      return targetConversation.streamMessages();
+    } else {
+      return xmtp.conversations.streamAllMessages();
+    }
   }
 
-  async getMessageStreamOfAllConversation() {
-    const xmtp = await this._lazyInitClient();
-    return xmtp.conversations.streamAllMessages();
+  async isUserOnNetwork(address: string, network: XmtpEnv) {
+    return Client.canMessage(address, { env: network });
   }
 
-  async isOnNetwork(address: string, network: XmtpEnv) {
-    return Client.canMessage(address, {env: network})
+  private async _lazyInitClient() {
+    if (!this.xmtp) {
+      const keys = await this._getKeys();
+      this.xmtp = await Client.create(null, {
+        env: this.env,
+        privateKeyOverride: keys,
+      });
+      return this.xmtp as Client;
+    }
+    return this.xmtp as Client;
   }
 
   private async _getKeys() {
-    const {exist, value} = await this._checkCache(this.modelIds.keys_cache);
+    const { exist, value } = await this._checkCache(this.modelIds.keys_cache);
     if (exist) {
-      console.log("hit key cache ......");
       const keys = await this._unlockKeys(value);
-      return this.stringToUint8Array(keys);
+      return stringToUint8Array(keys);
     }
-    const keys = await Client.getKeys(this.signer, {env: this.env});
-    await this._persistKeys(keys)
+    const keys = await Client.getKeys(this.signer, { env: this.env });
+    await this._persistKeys(keys);
     return keys;
-  }
-
-  private async _assertUserOnNetwork(to: string) {
-    console.log("assertUserOnNetwork to: ", to)
-    if (!await this.isOnNetwork(to, this.env)) {
-      throw new Error(`${to} is not on network`);
-    }
   }
 
   private async _unlockKeys(value: any) {
@@ -120,7 +147,7 @@ export class XmtpClient {
       if (Object.prototype.hasOwnProperty.call(value, key)) {
         const indexFileId = value[key].streamContent.file?.indexFileId;
         if (indexFileId) {
-          const unlocked = await this.runtimeConnector.unlock({indexFileId});
+          const unlocked = await this.runtimeConnector.unlock({ indexFileId });
           const streamContent = unlocked.streamContent.content as {
             keys: string;
             encrypted: string;
@@ -149,13 +176,12 @@ export class XmtpClient {
       message_version: message.messageVersion,
       created_at: message.sent,
       encrypted: encrypted,
-    }
+    };
 
-    const res = await this.runtimeConnector.createStream({
+    await this.runtimeConnector.createStream({
       modelId: this.modelIds.message,
       streamContent: streamContent,
     });
-    console.log("create stream return : ", res);
   }
 
   private async _persistMessages(msgList: DecodedMessage[]) {
@@ -167,75 +193,49 @@ export class XmtpClient {
 
     msgList.map(async (msg) => {
       const fileFilter = (streamContent: StreamContent) => {
-        return streamContent.content.message_id == msg.id
-      }
+        return streamContent.content.message_id == msg.id;
+      };
       const unMatchHandler = async () => {
         await this._persistMessage(msg);
-      }
+      };
 
-      const voidHandler = (_: StreamContent) => {
-      }
+      const voidHandler = (_: StreamContent) => {};
 
-      await StreamHelper.traverseStreams(streams, fileFilter, voidHandler, unMatchHandler);
+      await StreamHelper.traverseStreams(
+        streams,
+        fileFilter,
+        voidHandler,
+        unMatchHandler
+      );
     });
   }
 
   private async _persistKeys(keys: Uint8Array) {
-    const keysStr = this.uint8ArrayToString(keys);
+    const keysStr = uint8ArrayToString(keys);
     const encrypted = JSON.stringify({
       keys: true,
     });
 
     const streamContent = {
       keys: keysStr,
-      encrypted: encrypted
-    }
-    const res = await this.runtimeConnector.createStream({
+      encrypted: encrypted,
+    };
+    await this.runtimeConnector.createStream({
       modelId: this.modelIds.keys_cache,
       streamContent: streamContent,
     });
-    console.log("create key cache : ", res);
-  }
-
-  private async _lazyInitClient() {
-    if (this.xmtp == undefined) {
-      const keys = await this._getKeys();
-      this.xmtp = await Client.create(null, {
-        env: this.env,
-        privateKeyOverride: keys,
-      })
-      return this.xmtp as Client;
-    }
-    return this.xmtp as Client;
   }
 
   private async _checkCache(modelId: string) {
     const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    console.log("pkh: ", pkh);
     const stream = await this.runtimeConnector.loadStreamsBy({
       modelId: modelId,
       pkh: pkh,
     });
     if (Object.keys(stream).length == 0) {
-      return {exist: false, value: null};
+      return { exist: false, value: null };
     } else {
-      return {exist: true, value: stream};
+      return { exist: true, value: stream };
     }
-  }
-
-  uint8ArrayToString = (uint8Array: Uint8Array): string => {
-    let charArray = [];
-    for (let i = 0; i < uint8Array.length; i++) {
-      charArray.push(String.fromCharCode(uint8Array[i]));
-    }
-    return charArray.join('');
-  }
-
-  stringToUint8Array = (str: string): Uint8Array => {
-    let uint8Array = new Uint8Array(str.length);
-    for (let i = 0; i < str.length; i++) {
-      uint8Array[i] = str.charCodeAt(i);
-    }
-    return uint8Array;
   }
 }
