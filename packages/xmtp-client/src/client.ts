@@ -12,6 +12,7 @@ import {
   ListMessagesPaginatedOptions,
 } from "@xmtp/xmtp-js/dist/types/src/Client";
 import { stringToUint8Array, uint8ArrayToString } from "./utils";
+import {Attachment, AttachmentCodec, RemoteAttachmentCodec} from "xmtp-content-type-remote-attachment";
 
 export class XmtpClient {
   public appName: string;
@@ -73,6 +74,21 @@ export class XmtpClient {
     const decodedMsg = await conversation.send(content, options);
     await this._persistMessage(decodedMsg);
     return decodedMsg;
+  }
+
+  public async decodeAttachment(decodedMsg: DecodedMessage) {
+    const attachmentFromRemote: Attachment = await RemoteAttachmentCodec.load(
+      decodedMsg.content,
+      this.xmtp!
+    );
+    return attachmentFromRemote;
+  }
+
+  public async encodeAttachment(attachment: Attachment) {
+    return RemoteAttachmentCodec.encodeEncrypted(
+      attachment,
+      new AttachmentCodec()
+    );
   }
 
   public async getAllConversations() {

@@ -5,6 +5,12 @@ import Client, {
   ModelType,
   DecodedMessage,
   ListMessagesOptions,
+  Attachment,
+  AttachmentCodec,
+  ContentTypeRemoteAttachment,
+  RemoteAttachment,
+  RemoteAttachmentCodec,
+  fileToUint8Array
 } from "@dataverse/xmtp-client-toolkit";
 import {
   Extension,
@@ -12,26 +18,9 @@ import {
   RuntimeConnector,
   WALLET,
 } from "@dataverse/runtime-connector";
-import { Client as XmtpOfficalClient } from "@xmtp/xmtp-js";
 import Upload, {web3Storage} from "./web3-storage/web3-storage";
-import {
-  Attachment,
-  AttachmentCodec,
-  ContentTypeRemoteAttachment,
-  RemoteAttachment,
-  RemoteAttachmentCodec
-} from "xmtp-content-type-remote-attachment";
-import {fileToUint8Array} from "../../src/utils";
-import {Buffer} from "buffer";
 
 const runtimeConnector = new RuntimeConnector(Extension);
-
-// async function decodeAttachment(decodedMsg: DecodedMessage, xmtpClient: Client) {
-//   const attachmentFromRemote: Attachment = await RemoteAttachmentCodec.load(
-//     decodedMsg.content,
-//     xmtpClient.xmtp!
-//   );
-// }
 
 function App() {
   const msgReceiver = useMemo(() => {
@@ -174,10 +163,10 @@ function App() {
       console.log("[listenNewMsgInAllConversation]: New message:", message);
       if(message.contentType.typeId === "remoteStaticAttachment") {
         console.log("hit remoteStaticAttachment");
-        await RemoteAttachmentCodec.load(
-          message.content,
-          xmtpClient.xmtp!
+        const attachmentFromRemote: Attachment = await xmtpClient.decodeAttachment(
+          message
         );
+        console.log("attachmentFromRemote: ", attachmentFromRemote);
       }
       const res = await createMsgStream(message);
       console.log(
@@ -227,13 +216,8 @@ function App() {
       data: data,
     };
 
-    const encryptedEncoded = await RemoteAttachmentCodec.encodeEncrypted(
-      attachment,
-      new AttachmentCodec()
-    );
-
+    const encryptedEncoded = await xmtpClient.encodeAttachment(attachment);
     const upload = new Upload("", encryptedEncoded.payload);
-
     const cid = await web3Storage.storeFiles([upload]);
     const url = `https://${cid}.ipfs.w3s.link`;
 
@@ -253,16 +237,12 @@ function App() {
       contentType: ContentTypeRemoteAttachment
     }
 
-    const decodedMsg = await xmtpClient.sendAttachmentTo({
+    await xmtpClient.sendAttachmentTo({
       user: msgReceiver,
       content: remoteAttachment,
       options: options
     });
 
-    await RemoteAttachmentCodec.load(
-      decodedMsg.content,
-      xmtpClient.xmtp!
-    );
   }
   const handleUploadFile = async () => {
     if (!file) {
