@@ -61,15 +61,15 @@ export class LivepeerClient {
     );
   }
 
-  public async retrieveAssetById(assetId: string) {
+  public async retrieveVideo(assetId: string) {
     return this.http.get(assetId);
   }
 
-  public async retrieveAssets() {
+  public async retrieveVideos() {
     return this.http.get("");
   }
 
-  public async deleteAssetById(assetId: string) {
+  public async deleteVideo(assetId: string) {
     return this.http.delete(assetId);
   }
 
@@ -81,7 +81,7 @@ export class LivepeerClient {
     });
   }
 
-  public async getAssetMetaList() {
+  public async getVideoMetaList() {
     const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelId,
@@ -122,7 +122,7 @@ export class LivepeerClient {
     );
   }
 
-  public async monetizeAssetMeta({
+  public async monetizeVideoMeta({
     address,
     streamId,
     lensNickName,

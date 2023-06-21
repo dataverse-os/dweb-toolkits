@@ -33,7 +33,7 @@ export const LivepeerPlayer = ({ reactClient }: IProps) => {
             autohide: 3000,
           }}
           theme={{
-            borderStyles: { containerBorderStyle: "hidden" },
+            borderStyles: { containerBorderStyle: "solid" },
             radii: { containerBorderRadius: "10px" },
           }}
         />
