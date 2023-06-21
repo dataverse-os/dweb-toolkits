@@ -15,7 +15,7 @@ export const AssetsCreator = ({ livepeerClient, setStreamId }: IProps) => {
       setLoading(true);
       const res = await livepeerClient.uploadVideo(fileInput);
       console.log("File uploaded successfully, res:", res);
-      setStreamId(res.streamId);
+      setStreamId(res.stream.streamId);
       setLoading(false);
     } catch (err) {
       setLoading(false);

@@ -76,9 +76,13 @@ export class LivepeerClient {
 
     await http.put((postRes as any).url, rawVideoFile);
 
-    const persistRes = await this._persistAssetMeta((postRes as any).asset);
+    const videoMeta = (postRes as any).asset;
+    const stream = await this._persistAssetMeta(videoMeta);
     
-    return persistRes;
+    return {
+      videoMeta,
+      stream
+    };
   }
 
   public async retrieveVideo(assetId: string) {
