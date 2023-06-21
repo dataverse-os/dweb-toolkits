@@ -14,12 +14,23 @@ import {
   WALLET,
 } from "@dataverse/runtime-connector";
 import { Client } from "@xmtp/xmtp-js";
+import Upload, {web3Storage} from "./web3-storage/web3-storage";
+import {
+  Attachment,
+  AttachmentCodec,
+  ContentTypeRemoteAttachment,
+  RemoteAttachment,
+  RemoteAttachmentCodec
+} from "xmtp-content-type-remote-attachment";
+import {fileToUint8Array} from "../../src/utils";
+import {MsgRecipient02} from "./dev/constants";
+import {Buffer} from "buffer";
 
 const runtimeConnector = new RuntimeConnector(Extension);
 
 function App() {
   const msgReceiver = useMemo(() => {
-    return "0xD0167B1cc6CAb1e4e7C6f38d09EA35171d00b68e";
+    return "0x30C7832F3912e45C46F762F0D727F77B181d240D";
   }, []);
   const xmtpClient = useMemo(() => {
     return new XmtpClient({
@@ -35,6 +46,10 @@ function App() {
   const [address, setAddress] = useState("");
   const [pkh, setPkh] = useState("");
   const [isCurrentPkhValid, setIsCurrentPkhValid] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [fileCId, setFileCId] = useState(false);
+  const [fileUrl, setFileUrl] = useState("");
 
   const connectWallet = async () => {
     try {
@@ -67,12 +82,12 @@ function App() {
     setIsCurrentPkhValid(isCurrentPkhValid);
   };
 
-  const isMsgReceiverOnNetowork = async () => {
+  const isMsgReceiverOnNetwork = async () => {
     const isOnNetwork = await xmtpClient.isUserOnNetwork(
       msgReceiver,
       "production"
     );
-    console.log("[isMsgReceiverOnNetowork]:", isOnNetwork);
+    console.log("[isMsgReceiverOnNetwork]:", isOnNetwork);
   };
 
   const getAllConversations = async () => {
@@ -185,6 +200,102 @@ function App() {
     console.log("[getPersistedMessages]res:", res);
   };
 
+  const sentMessageWithAttachment = async () => {
+    const attFile = file as File;
+    const data = await fileToUint8Array(attFile)
+
+    const attachment: Attachment = {
+      filename: attFile.name,
+      mimeType: attFile.type,
+      data: data,
+    };
+
+    const objUrl = URL.createObjectURL(
+      new Blob([Buffer.from(data)], {
+        type: attachment.mimeType,
+      }),
+    )
+    console.log("objUrl: ", objUrl);
+
+    const encryptedEncoded = await RemoteAttachmentCodec.encodeEncrypted(
+      attachment,
+      new AttachmentCodec()
+    );
+
+    const upload = new Upload("", encryptedEncoded.payload);
+
+    const cid = await web3Storage.storeFiles([upload]);
+    const url = `https://${cid}.ipfs.w3s.link`;
+    console.log("cid: ", cid);
+    console.log("url: ", url);
+
+    const remoteAttachment: RemoteAttachment = {
+      url: url,
+      contentDigest: encryptedEncoded.digest,
+      salt: encryptedEncoded.salt,
+      nonce: encryptedEncoded.nonce,
+      secret: encryptedEncoded.secret,
+      scheme: "https://",
+      filename: attachment.filename,
+      contentLength: attachment.data.byteLength,
+    };
+
+    const conversation = await (xmtpClient.xmtp as Client).conversations.newConversation(MsgRecipient02);
+
+    const decodedMsg = await conversation.send(remoteAttachment, {
+      contentFallback: "[Attachment] Cannot display ${remoteAttachment.filename}. This app does not support attachments yet.",
+      contentType: ContentTypeRemoteAttachment
+    });
+
+    console.log("decodedMsg: ", decodedMsg);
+    console.log("process download and decode ", );
+    const attachmentFromRemote: Attachment = await RemoteAttachmentCodec.load(
+      decodedMsg.content,
+      (xmtpClient.xmtp as Client)
+    );
+
+    console.log("attachmentFromRemote.filename: ", attachmentFromRemote.filename);
+    console.log("attachmentFromRemote.mineType: ", attachmentFromRemote.mimeType);
+    console.log("attachmentFromRemote.data: ", attachmentFromRemote.data);
+    console.log("file data: ", data);
+
+    const objectURL = URL.createObjectURL(
+      new Blob([Buffer.from(attachment.data)], {
+        type: attachment.mimeType,
+      }),
+    );
+
+    // const objUrlFromRemote = uint8ArrayToObjUrl(attachmentFromRemote.data, attachmentFromRemote.mimeType);
+    // console.log("objUrlFromRemote: ", objUrlFromRemote);
+    console.log("objectURL: ", objectURL);
+    console.log("decodedMsg.content.url ", decodedMsg.content.url);
+    // await Client.sendMessageFromHook(remoteAttachment, {
+    //   contentFallback: "[Attachment] Cannot display ${remoteAttachment.filename}. This app does not support attachments yet."
+    //   contentType: ContentTypeRemoteAttachment,
+    // });
+
+  }
+  const handleUploadFile = async () => {
+    if (!file) {
+      throw new Error("Select a file to upload");
+    }
+    setUploading(true);
+    const cId = await web3Storage.storeFiles([file])
+    const url = `https://${cId}.ipfs.w3s.link`;
+    console.log("cId : ", cId);
+    console.log("url : ", url)
+    setUploading(false);
+    setFileUrl(url);
+  }
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      setFile(files[0]);
+    } else {
+      setFile(null);
+    }
+  };
+
   return (
     <div className="App">
       <button onClick={connectWallet}>connectWallet</button>
@@ -198,7 +309,7 @@ function App() {
         {isCurrentPkhValid !== undefined && String(isCurrentPkhValid)}
       </div>
       <hr />
-      <button onClick={isMsgReceiverOnNetowork}>isMsgReceiverOnNetowork</button>
+      <button onClick={isMsgReceiverOnNetwork}>isMsgReceiverOnNetwork</button>
       <hr />
       <button onClick={getAllConversations}>getAllConversations</button>
       <hr />
@@ -228,6 +339,17 @@ function App() {
       <hr />
       <button onClick={getPersistedMessages}>getPersistedMessages</button>
       <hr />
+      <div>
+        <input type="file" onChange={handleFileChange}/>
+        <button onClick={handleUploadFile} disabled={uploading}>
+          uploadFileToIpfs
+        </button>
+        <div className="blackText">{fileCId}</div>
+      </div>
+      <hr/>
+      <div>
+        <button onClick={sentMessageWithAttachment}>sentMessageWithAttachment</button>
+      </div>
     </div>
   );
 }

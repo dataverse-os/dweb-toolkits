@@ -1,10 +1,5 @@
 import {Conversation} from "@xmtp/xmtp-js";
 
-export {}
-export const MsgRecipient = "0xb5AB443DfF53F0e397a9E0778A3343Cbaf4D001a"
-export const MsgRecipient02 = "0x30C7832F3912e45C46F762F0D727F77B181d240D"
-
-
 export const  uint8ArrayToString = (uint8Array: Uint8Array): string => {
   let charArray = [];
   for (let i = 0; i < uint8Array.length; i++) {
