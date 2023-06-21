@@ -18,16 +18,16 @@ This git repo is a monorepo that contains several toolkits for developers to eas
 
 The project list is as follows:
 
-| Projects  | Categories         | Website                   | Status   |
-| --------- | ------------------ | ------------------------- | -------- |
-| Tableland | Database           | https://tableland.xyz/    | Complete |
-| Livepeer  | Media              | https://livepeer.org/     | Complete |
-| Push      | Social             | https://staging.push.org/ | Complete |
-| Lens      | Social             | https://www.lens.xyz/     | Todo     |
-| Snapshot  | Voting Platform    | https://snapshot.org/     | Todo     |
-| Dework    | Project Management | https://dework.xyz/       | Todo     |
-| XMTP      | Social             | https://xmtp.org/         | Todo     |
-| ...       | ...                | ...                       | ...      |
+| Projects  | Categories | Website                   | Status   |
+| --------- | ---------- | ------------------------- | -------- |
+| Tableland | Database   | https://tableland.xyz/    | Complete |
+| Livepeer  | Video      | https://livepeer.org/     | Complete |
+| Push      | Message    | https://staging.push.org/ | Complete |
+| XMTP      | Message    | https://xmtp.org/         | Complete |
+| Lens      | Social     | https://www.lens.xyz/     | Todo     |
+| Snapshot  | Dao        | https://snapshot.org/     | Todo     |
+| Dework    | Dao        | https://dework.xyz/       | Todo     |
+| ...       | ...        | ...                       | ...      |
 
 More projects will be integrated into the toolkit in the future, making it easier for developers to use.
 
