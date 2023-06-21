@@ -3,7 +3,7 @@ import { AssetsCreator, LivepeerPlayer } from "./components";
 import { LivepeerClient } from "@dataverse/livepeer-client-toolkit";
 import { useContext, useMemo, useState } from "react";
 import { LivepeerConfig } from "@livepeer/react";
-import { Currency, WALLET } from "@dataverse/runtime-connector";
+import { Currency, WALLET, StreamContent } from "@dataverse/runtime-connector";
 import { Context } from "./main";
 
 const App = () => {
@@ -25,6 +25,7 @@ const App = () => {
   }, []);
   const [address, setAddress] = useState<string>();
   const [streamId, setStreamId] = useState<string>();
+  const [streamContent, setStreamContent] = useState<StreamContent| null>( null);
 
   const retrieveVideo = async () => {
     const res = await livepeerClient.retrieveVideo(
@@ -76,8 +77,14 @@ const App = () => {
 
   const getVideoMetaList = async () => {
     const assets = await livepeerClient.getVideoMetaList();
+    setStreamContent(assets[0].streamContent)
     console.log("AssetMetaList:", assets);
   };
+
+  const unlockVideo = async () => {
+    const content = await livepeerClient.runtimeConnector.unlock({indexFileId: streamContent?.file.indexFileId });
+    console.log("unlock content: ", content);
+  }
 
   return (
     <>
@@ -97,6 +104,8 @@ const App = () => {
         <button onClick={getVideoMetaList}>getVideoMetaList</button>
         <br />
         <button onClick={monetizeVideoMeta}>monetizeVideoMeta</button>
+        <br />
+        <button onClick={unlockVideo}>unlockVideo</button>
         <br />
       </LivepeerConfig>
     </>
