@@ -15,7 +15,7 @@ import Client, {
 import {
   Extension,
   RESOURCE,
-  RuntimeConnector,
+  RuntimeConnector, StreamContent,
   WALLET,
 } from "@dataverse/runtime-connector";
 import Upload, { web3Storage } from "./web3-storage/web3-storage";
@@ -44,6 +44,7 @@ function App() {
   const [uploading, setUploading] = useState(false);
   const [fileCId, setFileCId] = useState(false);
   const [fileUrl, setFileUrl] = useState("");
+  const [msgStream, setMsgStream] = useState<StreamContent | null>(null);
 
   const connectWallet = async () => {
     try {
@@ -104,7 +105,9 @@ function App() {
         endTime: new Date(),
       } as ListMessagesOptions,
     };
-    const msgList = await xmtpClient.getMessageWithUser(user);
+    const msgList = await xmtpClient.getPersistedMessages();
+    setMsgStream(msgList[0]);
+
     console.log("[getMessageWithMsgReceiver]res:", msgList);
   };
 
@@ -259,6 +262,13 @@ function App() {
     }
   };
 
+  const unlockMessage = async () => {
+    console.log("msgStream: ", msgStream);
+    const res = await runtimeConnector.unlock({indexFileId: msgStream!.file.indexFileId});
+    console.log("msgStream.file?.indexFileId", msgStream!.file.indexFileId)
+    console.log(res);
+  }
+
   return (
     <div className="App">
       <button onClick={connectWallet}>connectWallet</button>
@@ -315,6 +325,10 @@ function App() {
           sentMessageWithAttachment
         </button>
       </div>
+      <hr />
+      <button onClick={unlockMessage}>
+        unlockMessage
+      </button>
     </div>
   );
 }

@@ -137,7 +137,7 @@ export class XmtpClient {
     const messages = [];
     for (const key in streams) {
       if (Object.prototype.hasOwnProperty.call(streams, key)) {
-        messages.push(streams[key].streamContent.content);
+        messages.push(streams[key].streamContent);
       }
     }
     return messages;
