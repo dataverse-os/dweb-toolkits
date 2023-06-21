@@ -1,7 +1,6 @@
 import "./App.css";
 import { useMemo, useState } from "react";
-import {
-  XmtpClient,
+import Client, {
   ModelIds,
   ModelType,
   DecodedMessage,
@@ -13,7 +12,7 @@ import {
   RuntimeConnector,
   WALLET,
 } from "@dataverse/runtime-connector";
-import { Client } from "@xmtp/xmtp-js";
+import { Client as XmtpOfficalClient } from "@xmtp/xmtp-js";
 import Upload, {web3Storage} from "./web3-storage/web3-storage";
 import {
   Attachment,
@@ -23,23 +22,16 @@ import {
   RemoteAttachmentCodec
 } from "xmtp-content-type-remote-attachment";
 import {fileToUint8Array} from "../../src/utils";
-import {MsgRecipient02} from "./dev/constants";
 import {Buffer} from "buffer";
 
 const runtimeConnector = new RuntimeConnector(Extension);
 
-async function decodeAttachment(decodedMsg: DecodedMessage, xmtpClient: XmtpClient) {
-  console.log("process download and decode ",);
-  const attachmentFromRemote: Attachment = await RemoteAttachmentCodec.load(
-    decodedMsg.content,
-    (xmtpClient.xmtp as Client)
-  );
-
-  console.log("attachmentFromRemote.filename: ", attachmentFromRemote.filename);
-  console.log("attachmentFromRemote.mineType: ", attachmentFromRemote.mimeType);
-  console.log("attachmentFromRemote.data: ", attachmentFromRemote.data);
-  console.log("decodedMsg.content.url ", decodedMsg.content.url);
-}
+// async function decodeAttachment(decodedMsg: DecodedMessage, xmtpClient: Client) {
+//   const attachmentFromRemote: Attachment = await RemoteAttachmentCodec.load(
+//     decodedMsg.content,
+//     xmtpClient.xmtp!
+//   );
+// }
 
 function App() {
   const msgReceiver = useMemo(() => {
@@ -47,7 +39,7 @@ function App() {
   }, []);
   const codecs = [new AttachmentCodec(), new RemoteAttachmentCodec()]
   const xmtpClient = useMemo(() => {
-    return new XmtpClient({
+    return new Client({
       runtimeConnector,
       appName: import.meta.env.VITE_APP_NAME,
       modelIds: {
@@ -162,7 +154,7 @@ function App() {
     console.log("[listenNewMsgInConversation]: start to listen...");
     const msgStream = await xmtpClient.getMessageStream(msgReceiver);
     for await (const message of msgStream) {
-      if (message.senderAddress === (xmtpClient.xmtp as Client).address) {
+      if (message.senderAddress === xmtpClient.xmtp!.address) {
         continue;
       }
       console.log("[listenNewMsgInConversation]: New message:", message);
@@ -171,15 +163,21 @@ function App() {
 
   const listenNewMsgInAllConversation = async () => {
     console.log("[listenNewMsgInAllConversation]: start to listen...");
+    if(!xmtpClient.xmtp) {
+      return;
+    }
     const stream = await xmtpClient.getMessageStream();
     for await (const message of stream) {
-      if (message.senderAddress === (xmtpClient.xmtp as Client).address) {
+      if (message.senderAddress === xmtpClient.xmtp!.address) {
         continue;
       }
       console.log("[listenNewMsgInAllConversation]: New message:", message);
       if(message.contentType.typeId === "remoteStaticAttachment") {
         console.log("hit remoteStaticAttachment");
-        await decodeAttachment(message, xmtpClient);
+        await RemoteAttachmentCodec.load(
+          message.content,
+          xmtpClient.xmtp!
+        );
       }
       const res = await createMsgStream(message);
       console.log(
@@ -229,13 +227,6 @@ function App() {
       data: data,
     };
 
-    const objUrl = URL.createObjectURL(
-      new Blob([Buffer.from(data)], {
-        type: attachment.mimeType,
-      }),
-    )
-    console.log("objUrl: ", objUrl);
-
     const encryptedEncoded = await RemoteAttachmentCodec.encodeEncrypted(
       attachment,
       new AttachmentCodec()
@@ -245,8 +236,6 @@ function App() {
 
     const cid = await web3Storage.storeFiles([upload]);
     const url = `https://${cid}.ipfs.w3s.link`;
-    console.log("cid: ", cid);
-    console.log("url: ", url);
 
     const remoteAttachment: RemoteAttachment = {
       url: url,
@@ -265,11 +254,15 @@ function App() {
     }
 
     const decodedMsg = await xmtpClient.sendAttachmentTo({
-      user: MsgRecipient02,
+      user: msgReceiver,
       content: remoteAttachment,
       options: options
     });
-    await decodeAttachment(decodedMsg, xmtpClient);
+
+    await RemoteAttachmentCodec.load(
+      decodedMsg.content,
+      xmtpClient.xmtp!
+    );
   }
   const handleUploadFile = async () => {
     if (!file) {

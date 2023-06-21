@@ -1,7 +1,12 @@
 import { RuntimeConnector, StreamContent } from "@dataverse/runtime-connector";
 import { RuntimeConnectorSigner, StreamHelper } from "@dataverse/utils-toolkit";
 import { ModelIds, XmtpEnv } from "./types";
-import {Client, ContentCodec, DecodedMessage, SendOptions} from "@xmtp/xmtp-js";
+import {
+  Client,
+  ContentCodec,
+  DecodedMessage,
+  SendOptions,
+} from "@xmtp/xmtp-js";
 import {
   ListMessagesOptions,
   ListMessagesPaginatedOptions,
@@ -15,14 +20,14 @@ export class XmtpClient {
   public modelIds: ModelIds;
   public env: XmtpEnv;
   public xmtp?: Client;
-  public codecs?: ContentCodec<Object>[]
+  public codecs?: ContentCodec<Object>[];
 
   constructor({
     runtimeConnector,
     appName,
     modelIds,
     env,
-    codecs
+    codecs,
   }: {
     runtimeConnector: RuntimeConnector;
     appName: string;
@@ -50,7 +55,15 @@ export class XmtpClient {
     return decodedMsg;
   }
 
-  public async sendAttachmentTo({ user, content, options}: { user: string; content: any, options? : SendOptions }) {
+  public async sendAttachmentTo({
+    user,
+    content,
+    options,
+  }: {
+    user: string;
+    content: any;
+    options?: SendOptions;
+  }) {
     if (!(await this.isUserOnNetwork(user, this.env))) {
       throw new Error(`${user} is not on network`);
     }
@@ -141,7 +154,7 @@ export class XmtpClient {
       this.xmtp = await Client.create(null, {
         env: this.env,
         privateKeyOverride: keys,
-        codecs: this.codecs
+        codecs: this.codecs,
       });
       return this.xmtp as Client;
     }
