@@ -56,44 +56,6 @@ const App = () => {
     console.log("connected");
   };
 
-  const persistVideoMeta = async () => {
-    const asset = {
-      "id": "20c4d9ad-bfab-4808-867f-5f03605ad153",
-      "hash": [
-        {
-          "hash": "59b8487da4236b3d42890fedab86ac64",
-          "algorithm": "md5"
-        },
-        {
-          "hash": "ce4bfdc8fda0c1a3393dbb6850de2bee1f44e9be6839a377499009dde493a1f8",
-          "algorithm": "sha256"
-        }
-      ],
-      "name": "SampleVideo_360x240_1mb.mp4",
-      "size": 1053651,
-      "source": {
-        "type": "directUpload"
-      },
-      "status": {
-        "phase": "ready",
-        "updatedAt": 1686889151084
-      },
-      "userId": "465c2ff6-de57-43e1-a2c8-2ef60413ea95",
-      "createdAt": 1686889112237,
-      "videoSpec": {
-        "format": "mp4",
-        "duration": 13.696
-      },
-      "playbackId": "20c4lmgadz8lrqr7",
-      "playbackUrl": "https://lp-playback.com/hls/20c4lmgadz8lrqr7/index.m3u8",
-      "downloadUrl": "https://lp-playback.com/hls/20c4lmgadz8lrqr7/video"
-    };
-
-    const { streamId } = await livepeerClient.persistAssetMeta(asset);
-    setStreamId(streamId);
-    console.log("AssetMeta persist.");
-  };
-
   const monetizeVideoMeta = async () => {
     if (!address || !streamId) {
       console.error("address or streamId undefined");
@@ -121,7 +83,7 @@ const App = () => {
     <>
       <LivepeerPlayer reactClient={livepeerClient.reactClient} />
       <LivepeerConfig client={livepeerClient.reactClient}>
-        <AssetsCreator livepeerClient={livepeerClient} />
+        <AssetsCreator livepeerClient={livepeerClient} setStreamId={setStreamId} />
         <button onClick={createCapability}>createCapability</button>
         <br />
         <button onClick={retrieveVideo}>retrieveVideo</button>
@@ -130,8 +92,8 @@ const App = () => {
         <br />
         <button onClick={deleteVideo}>deleteVideo</button>
         <br />
-        <button onClick={persistVideoMeta}>persistVideoMeta</button>
-        <br />
+        {/* <button onClick={persistVideoMeta}>persistVideoMeta</button>
+        <br /> */}
         <button onClick={getVideoMetaList}>getVideoMetaList</button>
         <br />
         <button onClick={monetizeVideoMeta}>monetizeVideoMeta</button>
