@@ -82,7 +82,7 @@ pnpm test:livepeer-client
 if successful, you can visit the demo at `http://localhost:5173/`.
 
 An example(livepeer demo):
-<img src="https://s2.loli.net/2023/06/15/Yuzl6kUf82cyitN.png" />
+<img src="https://s2.loli.net/2023/06/21/TlAC6GKMWOiHJp8.png" />
 
 ## Contributing
 
