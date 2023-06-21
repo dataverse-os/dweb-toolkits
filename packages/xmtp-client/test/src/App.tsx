@@ -1,13 +1,14 @@
 import { Buffer } from "buffer";
 import "./App.css";
-import XmtpTest from "./components/XmtpTest";
+import React from "react";
+import XmtpComponent from "./components/XmtpTest";
 
 window.Buffer = Buffer;
 
 function App() {
   return (
     <div className="App">
-        <XmtpTest/>
+      <XmtpComponent/>
     </div>
   );
 }

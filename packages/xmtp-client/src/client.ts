@@ -3,6 +3,10 @@ import {RuntimeConnectorSigner, StreamHelper} from "@dataverse/utils-toolkit";
 import {ModelIds, XmtpEnv} from "./types";
 import {Client, DecodedMessage} from "@xmtp/xmtp-js";
 import {ListMessagesOptions, ListMessagesPaginatedOptions} from "@xmtp/xmtp-js/dist/types/src/Client";
+import {
+  AttachmentCodec,
+  RemoteAttachmentCodec,
+} from "xmtp-content-type-remote-attachment";
 
 export class XmtpClient {
   public appName: string;
@@ -10,18 +14,14 @@ export class XmtpClient {
   public signer: RuntimeConnectorSigner
   public modelIds: ModelIds
   public env: XmtpEnv
+
   public xmtp: Client | undefined
 
-  constructor({
-                runtimeConnect,
-                appName,
-                modelIds,
-                env
-              }: {
+  constructor({runtimeConnect, appName, modelIds, env}: {
     runtimeConnect: RuntimeConnector,
     appName: string,
     modelIds: ModelIds,
-    env: XmtpEnv,
+    env: XmtpEnv
   }) {
     this.runtimeConnector = runtimeConnect;
     this.appName = appName;
@@ -30,7 +30,10 @@ export class XmtpClient {
     this.signer = new RuntimeConnectorSigner(this.runtimeConnector);
   }
 
-  async sendMessageTo({user, msg}: { user: string, msg: string }) {
+  async sendMessageTo({user, msg}: {
+    user: string,
+    msg: string
+  }) {
     const xmtp = await this._lazyInitClient();
     await this._assertUserOnNetwork(user);
     const conversation = await xmtp.conversations.newConversation(user);
@@ -44,7 +47,10 @@ export class XmtpClient {
     return xmtp.conversations.list();
   }
 
-  async getMessageWith({user, opts}: { user: string, opts: ListMessagesOptions }) {
+  async getMessageWith({user, opts}: {
+    user: string,
+    opts: ListMessagesOptions
+  }) {
     await this._assertUserOnNetwork(user);
     const xmtp = await this._lazyInitClient();
     const conversation = await xmtp.conversations.newConversation(user);
@@ -53,7 +59,10 @@ export class XmtpClient {
     return msgList;
   }
 
-  async getMessageWithPaginated({user, opts}: { user: string, opts?: ListMessagesPaginatedOptions }) {
+  async getMessageWithPaginated({user, opts}: {
+    user: string,
+    opts?: ListMessagesPaginatedOptions
+  }) {
     const xmtp = await this._lazyInitClient();
     await this._assertUserOnNetwork(user);
     const conversation = await xmtp.conversations.newConversation(user);
@@ -62,10 +71,7 @@ export class XmtpClient {
 
   async listMessages() {
     const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    const streams = await this.runtimeConnector.loadStreamsBy({
-      modelId: this.modelIds.message,
-      pkh: pkh,
-    });
+    const streams = await this.runtimeConnector.loadStreamsBy({modelId: this.modelIds.message, pkh: pkh});
     const messages = [];
     for (const key in streams) {
       if (Object.prototype.hasOwnProperty.call(streams, key)) {
@@ -135,9 +141,7 @@ export class XmtpClient {
   }
 
   private async _persistMessage(message: DecodedMessage) {
-    const encrypted = JSON.stringify({
-      content: true,
-    });
+    const encrypted = JSON.stringify({content: true});
 
     const streamContent = {
       sender_address: message.senderAddress,
@@ -148,22 +152,19 @@ export class XmtpClient {
       message_id: message.id,
       message_version: message.messageVersion,
       created_at: message.sent,
-      encrypted: encrypted,
+      encrypted: encrypted
     }
 
     const res = await this.runtimeConnector.createStream({
       modelId: this.modelIds.message,
-      streamContent: streamContent,
+      streamContent: streamContent
     });
     console.log("create stream return : ", res);
   }
 
   private async _persistMessages(msgList: DecodedMessage[]) {
     const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    const streams = await this.runtimeConnector.loadStreamsBy({
-      modelId: this.modelIds.message,
-      pkh: pkh,
-    });
+    const streams = await this.runtimeConnector.loadStreamsBy({modelId: this.modelIds.message, pkh: pkh});
 
     msgList.map(async (msg) => {
       const fileFilter = (streamContent: StreamContent) => {
@@ -182,9 +183,7 @@ export class XmtpClient {
 
   private async _persistKeys(keys: Uint8Array) {
     const keysStr = this.uint8ArrayToString(keys);
-    const encrypted = JSON.stringify({
-      keys: true,
-    });
+    const encrypted = JSON.stringify({keys: true});
 
     const streamContent = {
       keys: keysStr,
@@ -192,7 +191,7 @@ export class XmtpClient {
     }
     const res = await this.runtimeConnector.createStream({
       modelId: this.modelIds.keys_cache,
-      streamContent: streamContent,
+      streamContent: streamContent
     });
     console.log("create key cache : ", res);
   }
@@ -203,6 +202,7 @@ export class XmtpClient {
       this.xmtp = await Client.create(null, {
         env: this.env,
         privateKeyOverride: keys,
+        codecs: [new AttachmentCodec(), new RemoteAttachmentCodec()]
       })
       return this.xmtp as Client;
     }
@@ -212,10 +212,7 @@ export class XmtpClient {
   private async _checkCache(modelId: string) {
     const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
     console.log("pkh: ", pkh);
-    const stream = await this.runtimeConnector.loadStreamsBy({
-      modelId: modelId,
-      pkh: pkh,
-    });
+    const stream = await this.runtimeConnector.loadStreamsBy({modelId: modelId, pkh: pkh});
     if (Object.keys(stream).length == 0) {
       return {exist: false, value: null};
     } else {
@@ -239,3 +236,4 @@ export class XmtpClient {
     return uint8Array;
   }
 }
+

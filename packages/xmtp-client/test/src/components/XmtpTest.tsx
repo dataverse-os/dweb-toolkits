@@ -1,8 +1,22 @@
 import {useState} from 'react'
 import {XmtpClient, ModelIds, ModelType, DecodedMessage, ListMessagesOptions} from "@dataverse/xmtp-client-toolkit";
 import {Extension, RESOURCE, RuntimeConnector, WALLET} from "@dataverse/runtime-connector";
-import { MsgRecipient,} from "../xmtp-utils/constants";
+import {fileToUint8Array, MsgRecipient, MsgRecipient02, uint8ArrayToObjUrl,} from "../xmtp-utils/constants";
 import {Client} from "@xmtp/xmtp-js";
+import Upload, {web3Storage} from "../web3-storage/web3-storage";
+import {
+  Attachment,
+  AttachmentCodec, ContentTypeRemoteAttachment,
+  RemoteAttachment,
+  RemoteAttachmentCodec
+} from "xmtp-content-type-remote-attachment";
+import {Buffer} from "buffer";
+import {EncryptedEncodedContent} from "xmtp-content-type-remote-attachment/dist/types/RemoteAttachment";
+// import {
+//   AttachmentCodec,
+//   RemoteAttachmentCodec,
+// } from "xmtp-content-type-remote-attachment";
+// import {Buffer} from "buffer";
 
 const runtimeConnector = new RuntimeConnector(Extension);
 const app = import.meta.env.VITE_APP_NAME;
@@ -18,12 +32,17 @@ const xmtp = new XmtpClient({
   env: "production",
 })
 
-function XmtpTest() {
+function XmtpComponent() {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   const [wallet, setWallet] = useState("")
   const [address, setAddress] = useState("")
   const [pkh, setPkh] = useState("")
   const [isCurrentPkhValid, setIsCurrentPkhValid] = useState(false)
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [fileCId, setFileCId] = useState(false);
+  const [fileUrl, setFileUrl] = useState("");
 
   const connectWallet = async () => {
     try {
@@ -70,7 +89,7 @@ function XmtpTest() {
 
   const sendMessage = async () => {
     const msg = {
-      user: "0xb5AB443DfF53F0e397a9E0778A3343Cbaf4D001a",
+      user: MsgRecipient02,
       msg: "hello, lady"
     }
     console.log("msg: ", msg)
@@ -136,8 +155,12 @@ function XmtpTest() {
         continue;
       }
       console.log("msg: ", message);
+      if(message.contentType.typeId === "remoteStaticAttachment") {
+        console.log(`New message from ${message.senderAddress}: ${message.content.url}`);
+      } else {
+        console.log(`New message from ${message.senderAddress}: ${message.content}`);
+      }
       await createMsgStream(message);
-      console.log(`New message from ${message.senderAddress}: ${message.content}`);
     }
   }
 
@@ -174,6 +197,112 @@ function XmtpTest() {
     console.log("msgArray: ", msgArray);
   }
 
+  // const decodeMessageWithAttachment = async () => {
+  //   const stream = await xmtp.getMessageStreamOfAllConversation();
+  //   for await (const message of stream) {
+  //     if (message.senderAddress === (xmtp.xmtp as Client).address) {
+  //       // This message was sent from me
+  //       continue;
+  //     }
+  //     console.log("msg: ", message);
+  //     console.log("msg: ", message.content);
+  //   }
+  // }
+  const sentMessageWithAttachment = async () => {
+    const attFile = file as File;
+    const data = await fileToUint8Array(attFile)
+
+    const attachment: Attachment = {
+      filename: attFile.name,
+      mimeType: attFile.type,
+      data: data,
+    };
+
+    const objUrl = URL.createObjectURL(
+      new Blob([Buffer.from(data)], {
+        type: attachment.mimeType,
+      }),
+    )
+    console.log("objUrl: ", objUrl);
+
+    const encryptedEncoded = await RemoteAttachmentCodec.encodeEncrypted(
+      attachment,
+      new AttachmentCodec()
+    );
+
+    const upload = new Upload("", encryptedEncoded.payload);
+
+    const cid = await web3Storage.storeFiles([upload]);
+    const url = `https://${cid}.ipfs.w3s.link`;
+    console.log("cid: ", cid);
+    console.log("url: ", url);
+
+    const remoteAttachment: RemoteAttachment = {
+      url: url,
+      contentDigest: encryptedEncoded.digest,
+      salt: encryptedEncoded.salt,
+      nonce: encryptedEncoded.nonce,
+      secret: encryptedEncoded.secret,
+      scheme: "https://",
+      filename: attachment.filename,
+      contentLength: attachment.data.byteLength,
+    };
+
+    const conversation = await (xmtp.xmtp as Client).conversations.newConversation(MsgRecipient02);
+
+    const decodedMsg = await conversation.send(remoteAttachment, {
+      contentFallback: "[Attachment] Cannot display ${remoteAttachment.filename}. This app does not support attachments yet.",
+      contentType: ContentTypeRemoteAttachment
+    });
+
+    console.log("decodedMsg: ", decodedMsg);
+    console.log("process download and decode ", );
+    const attachmentFromRemote: Attachment = await RemoteAttachmentCodec.load(
+      decodedMsg.content,
+      (xmtp.xmtp as Client)
+    );
+
+    console.log("attachmentFromRemote.filename: ", attachmentFromRemote.filename);
+    console.log("attachmentFromRemote.mineType: ", attachmentFromRemote.mimeType);
+    console.log("attachmentFromRemote.data: ", attachmentFromRemote.data);
+    console.log("file data: ", data);
+
+    const objectURL = URL.createObjectURL(
+      new Blob([Buffer.from(attachment.data)], {
+        type: attachment.mimeType,
+      }),
+    );
+
+    // const objUrlFromRemote = uint8ArrayToObjUrl(attachmentFromRemote.data, attachmentFromRemote.mimeType);
+    // console.log("objUrlFromRemote: ", objUrlFromRemote);
+    console.log("objectURL: ", objectURL);
+    console.log("decodedMsg.content.url ", decodedMsg.content.url);
+    // await Client.sendMessageFromHook(remoteAttachment, {
+    //   contentFallback: "[Attachment] Cannot display ${remoteAttachment.filename}. This app does not support attachments yet."
+    //   contentType: ContentTypeRemoteAttachment,
+    // });
+
+  }
+  const handleUploadFile = async () => {
+    if (!file) {
+      throw new Error("Select a file to upload");
+    }
+    setUploading(true);
+    const cId = await web3Storage.storeFiles([file])
+    const url = `https://${cId}.ipfs.w3s.link`;
+    console.log("cId : ", cId);
+    console.log("url : ", url)
+    setUploading(false);
+    setFileUrl(url);
+  }
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      setFile(files[0]);
+    } else {
+      setFile(null);
+    }
+  };
 
   return (
     <>
@@ -207,9 +336,22 @@ function XmtpTest() {
         <hr/>
         <button onClick={listMessages}>listMessages</button>
         <hr/>
+        {/*<button onClick={decodeMessageWithAttachment}>decodeMessageWithAttachment</button>*/}
+        {/*<hr/>*/}
+        <div>
+          <input type="file" onChange={handleFileChange}/>
+          <button onClick={handleUploadFile} disabled={uploading}>
+            uploadFileToIpfs
+          </button>
+          <div className="blackText">{fileCId}</div>
+        </div>
+        <hr/>
+        <div>
+          <button onClick={sentMessageWithAttachment}>sentMessageWithAttachment</button>
+        </div>
       </div>
     </>
   )
 }
 
-export default XmtpTest
+export default XmtpComponent;
