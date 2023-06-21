@@ -7,6 +7,10 @@ import {
   ListMessagesPaginatedOptions,
 } from "@xmtp/xmtp-js/dist/types/src/Client";
 import { stringToUint8Array, uint8ArrayToString } from "./utils";
+import {
+  AttachmentCodec,
+  RemoteAttachmentCodec,
+} from "xmtp-content-type-remote-attachment";
 
 export class XmtpClient {
   public appName: string;
@@ -125,6 +129,7 @@ export class XmtpClient {
       this.xmtp = await Client.create(null, {
         env: this.env,
         privateKeyOverride: keys,
+        codecs: [new AttachmentCodec(), new RemoteAttachmentCodec()]
       });
       return this.xmtp as Client;
     }
