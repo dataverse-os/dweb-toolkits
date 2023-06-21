@@ -5,7 +5,8 @@
   "ignore": [
     "livepeer-demo",
     "push-demo",
-    "tableland-demo"
+    "tableland-demo",
+    "xmtp-demo"
   ],
   "command": {
     "publish": {

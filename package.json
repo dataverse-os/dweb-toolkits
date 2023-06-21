@@ -9,6 +9,7 @@
     "build:livepeer-client": "lerna run build --scope=@dataverse/livepeer-client-toolkit",
     "build:push-client": "lerna run build --scope=@dataverse/push-client-toolkit",
     "build:tableland-client": "lerna run build --scope=@dataverse/tableland-client-toolkit",
+    "build:xmtp-client": "lerna run build --scope=@dataverse/xmtp-client-toolkit",
     "test:livepeer-client": "lerna run test --scope=@dataverse/livepeer-client-toolkit",
     "test:push-client": "lerna run test --scope=@dataverse/push-client-toolkit",
     "test:tableland-client": "lerna run test --scope=@dataverse/tableland-client-toolkit",
