@@ -9,6 +9,13 @@ export type ProfileStruct = {
   followNFTURI: string;
 };
 
+export type EIP712Signature = {
+  v: number;
+  r: string; 
+  s: string;
+  deadline: string;
+}
+
 export type CreateProfileData = {
   to: string;
   handle: string;
@@ -26,6 +33,14 @@ export type PostData = {
   referenceModule: string;
   referenceModuleInitData: any[];
 };
+
+export type CollectWithSigData = {
+  collector: string;
+  profileId: BigNumberish;
+  pubId: BigNumberish;
+  data: any[];
+  sig: EIP712Signature;
+}
 
 export type EventPostCreated = {
   profileId: BigNumberish;
