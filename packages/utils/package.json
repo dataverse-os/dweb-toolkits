@@ -1,6 +1,6 @@
 {
   "name": "@dataverse/utils-toolkit",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "",
   "module": "dist/esm/index.js",
   "main": "dist/cjs/index.js",
@@ -25,5 +25,5 @@
     "ethers": "^5.7.2",
     "typescript": "^4.9.5"
   },
-  "gitHead": "485030d97deeff637e89dcb5137492f5e74046fa"
+  "gitHead": "b2cab51675741368381dae8743216e3604bf54e2"
 }
