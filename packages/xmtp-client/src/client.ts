@@ -1,16 +1,12 @@
 import { RuntimeConnector, StreamContent } from "@dataverse/runtime-connector";
 import { RuntimeConnectorSigner, StreamHelper } from "@dataverse/utils-toolkit";
 import { ModelIds, XmtpEnv } from "./types";
-import { Client, DecodedMessage, SendOptions } from "@xmtp/xmtp-js";
+import {Client, ContentCodec, DecodedMessage, SendOptions} from "@xmtp/xmtp-js";
 import {
   ListMessagesOptions,
   ListMessagesPaginatedOptions,
 } from "@xmtp/xmtp-js/dist/types/src/Client";
 import { stringToUint8Array, uint8ArrayToString } from "./utils";
-import {
-  AttachmentCodec,
-  RemoteAttachmentCodec,
-} from "xmtp-content-type-remote-attachment";
 
 export class XmtpClient {
   public appName: string;
@@ -19,22 +15,26 @@ export class XmtpClient {
   public modelIds: ModelIds;
   public env: XmtpEnv;
   public xmtp?: Client;
+  public codecs?: ContentCodec<Object>[]
 
   constructor({
     runtimeConnector,
     appName,
     modelIds,
     env,
+    codecs
   }: {
     runtimeConnector: RuntimeConnector;
     appName: string;
     modelIds: ModelIds;
     env: XmtpEnv;
+    codecs?: ContentCodec<Object>[];
   }) {
     this.runtimeConnector = runtimeConnector;
     this.appName = appName;
     this.modelIds = modelIds;
     this.env = env;
+    this.codecs = codecs;
     this.signer = new RuntimeConnectorSigner(this.runtimeConnector);
   }
 
@@ -141,7 +141,7 @@ export class XmtpClient {
       this.xmtp = await Client.create(null, {
         env: this.env,
         privateKeyOverride: keys,
-        codecs: [new AttachmentCodec(), new RemoteAttachmentCodec()]
+        codecs: this.codecs
       });
       return this.xmtp as Client;
     }

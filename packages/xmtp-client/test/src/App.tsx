@@ -45,6 +45,7 @@ function App() {
   const msgReceiver = useMemo(() => {
     return "0x30C7832F3912e45C46F762F0D727F77B181d240D";
   }, []);
+  const codecs = [new AttachmentCodec(), new RemoteAttachmentCodec()]
   const xmtpClient = useMemo(() => {
     return new XmtpClient({
       runtimeConnector,
@@ -54,6 +55,7 @@ function App() {
         [ModelType.KEYS_CACHE]: import.meta.env.VITE_KEY_CACHE_MODEL_ID,
       } as ModelIds,
       env: "production",
+      codecs: codecs,
     });
   }, []);
   const [address, setAddress] = useState("");
