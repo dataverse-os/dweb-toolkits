@@ -10,7 +10,7 @@ import Client, {
   ContentTypeRemoteAttachment,
   RemoteAttachment,
   RemoteAttachmentCodec,
-  fileToUint8Array
+  fileToUint8Array,
 } from "@dataverse/xmtp-client-toolkit";
 import {
   Extension,
@@ -18,7 +18,7 @@ import {
   RuntimeConnector,
   WALLET,
 } from "@dataverse/runtime-connector";
-import Upload, {web3Storage} from "./web3-storage/web3-storage";
+import Upload, { web3Storage } from "./web3-storage/web3-storage";
 
 const runtimeConnector = new RuntimeConnector(Extension);
 
@@ -26,7 +26,6 @@ function App() {
   const msgReceiver = useMemo(() => {
     return "0x30C7832F3912e45C46F762F0D727F77B181d240D";
   }, []);
-  const codecs = [new AttachmentCodec(), new RemoteAttachmentCodec()]
   const xmtpClient = useMemo(() => {
     return new Client({
       runtimeConnector,
@@ -36,7 +35,6 @@ function App() {
         [ModelType.KEYS_CACHE]: import.meta.env.VITE_KEY_CACHE_MODEL_ID,
       } as ModelIds,
       env: "production",
-      codecs: codecs,
     });
   }, []);
   const [address, setAddress] = useState("");
@@ -152,7 +150,7 @@ function App() {
 
   const listenNewMsgInAllConversation = async () => {
     console.log("[listenNewMsgInAllConversation]: start to listen...");
-    if(!xmtpClient.xmtp) {
+    if (!xmtpClient.xmtp) {
       return;
     }
     const stream = await xmtpClient.getMessageStream();
@@ -161,18 +159,14 @@ function App() {
         continue;
       }
       console.log("[listenNewMsgInAllConversation]: New message:", message);
-      if(message.contentType.typeId === "remoteStaticAttachment") {
+      if (message.contentType.typeId === "remoteStaticAttachment") {
         console.log("hit remoteStaticAttachment");
-        const attachmentFromRemote: Attachment = await xmtpClient.decodeAttachment(
-          message
-        );
+        const attachmentFromRemote: Attachment =
+          await xmtpClient.decodeAttachment(message);
         console.log("attachmentFromRemote: ", attachmentFromRemote);
       }
       const res = await createMsgStream(message);
-      console.log(
-        "[listenNewMsgInAllConversation]: stream created, res:",
-        res
-      );
+      console.log("[listenNewMsgInAllConversation]: stream created, res:", res);
     }
   };
 
@@ -208,7 +202,7 @@ function App() {
 
   const sentMessageWithAttachment = async () => {
     const attFile = file as File;
-    const data = await fileToUint8Array(attFile)
+    const data = await fileToUint8Array(attFile);
 
     const attachment: Attachment = {
       filename: attFile.name,
@@ -233,29 +227,29 @@ function App() {
     };
 
     const options = {
-      contentFallback: "[Attachment] Cannot display ${remoteAttachment.filename}. This app does not support attachments yet.",
-      contentType: ContentTypeRemoteAttachment
-    }
+      contentFallback:
+        "[Attachment] Cannot display ${remoteAttachment.filename}. This app does not support attachments yet.",
+      contentType: ContentTypeRemoteAttachment,
+    };
 
     await xmtpClient.sendAttachmentTo({
       user: msgReceiver,
       content: remoteAttachment,
-      options: options
+      options: options,
     });
-
-  }
+  };
   const handleUploadFile = async () => {
     if (!file) {
       throw new Error("Select a file to upload");
     }
     setUploading(true);
-    const cId = await web3Storage.storeFiles([file])
+    const cId = await web3Storage.storeFiles([file]);
     const url = `https://${cId}.ipfs.w3s.link`;
     console.log("cId : ", cId);
-    console.log("url : ", url)
+    console.log("url : ", url);
     setUploading(false);
     setFileUrl(url);
-  }
+  };
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
@@ -309,15 +303,17 @@ function App() {
       <button onClick={getPersistedMessages}>getPersistedMessages</button>
       <hr />
       <div>
-        <input type="file" onChange={handleFileChange}/>
+        <input type="file" onChange={handleFileChange} />
         <button onClick={handleUploadFile} disabled={uploading}>
           uploadFileToIpfs
         </button>
         <div className="blackText">{fileCId}</div>
       </div>
-      <hr/>
+      <hr />
       <div>
-        <button onClick={sentMessageWithAttachment}>sentMessageWithAttachment</button>
+        <button onClick={sentMessageWithAttachment}>
+          sentMessageWithAttachment
+        </button>
       </div>
     </div>
   );

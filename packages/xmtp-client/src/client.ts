@@ -12,7 +12,11 @@ import {
   ListMessagesPaginatedOptions,
 } from "@xmtp/xmtp-js/dist/types/src/Client";
 import { stringToUint8Array, uint8ArrayToString } from "./utils";
-import {Attachment, AttachmentCodec, RemoteAttachmentCodec} from "xmtp-content-type-remote-attachment";
+import {
+  Attachment,
+  AttachmentCodec,
+  RemoteAttachmentCodec,
+} from "xmtp-content-type-remote-attachment";
 
 export class XmtpClient {
   public appName: string;
@@ -21,27 +25,25 @@ export class XmtpClient {
   public modelIds: ModelIds;
   public env: XmtpEnv;
   public xmtp?: Client;
-  public codecs?: ContentCodec<Object>[];
+  public codecs: ContentCodec<Object>[];
 
   constructor({
     runtimeConnector,
     appName,
     modelIds,
     env,
-    codecs,
   }: {
     runtimeConnector: RuntimeConnector;
     appName: string;
     modelIds: ModelIds;
     env: XmtpEnv;
-    codecs?: ContentCodec<Object>[];
   }) {
     this.runtimeConnector = runtimeConnector;
     this.appName = appName;
     this.modelIds = modelIds;
     this.env = env;
-    this.codecs = codecs;
     this.signer = new RuntimeConnectorSigner(this.runtimeConnector);
+    this.codecs = [new AttachmentCodec(), new RemoteAttachmentCodec()];
   }
 
   public async sendMessageTo({ user, msg }: { user: string; msg: string }) {
@@ -76,19 +78,19 @@ export class XmtpClient {
     return decodedMsg;
   }
 
+  public async encodeAttachment(attachment: Attachment) {
+    return RemoteAttachmentCodec.encodeEncrypted(
+      attachment,
+      new AttachmentCodec()
+    );
+  }
+
   public async decodeAttachment(decodedMsg: DecodedMessage) {
     const attachmentFromRemote: Attachment = await RemoteAttachmentCodec.load(
       decodedMsg.content,
       this.xmtp!
     );
     return attachmentFromRemote;
-  }
-
-  public async encodeAttachment(attachment: Attachment) {
-    return RemoteAttachmentCodec.encodeEncrypted(
-      attachment,
-      new AttachmentCodec()
-    );
   }
 
   public async getAllConversations() {
