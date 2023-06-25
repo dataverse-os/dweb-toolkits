@@ -64,9 +64,6 @@ export class LensClient {
     return res;
   }
 
-  /**
-   * @notice only whitelisted profile creator
-   */
   public async createProfile({
     to,
     handle,
@@ -111,6 +108,17 @@ export class LensClient {
       creator: (targetEvent as any).topics[2],
       to: (targetEvent as any).topics[3],
     } as EventProfileCreated;
+  }
+
+  public async setDefaultProfile(profileId: BigNumberish) {
+    const res = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "setDefaultProfile",
+      params: [profileId],
+      mode: Mode.Write,
+    });
+    return res;
   }
 
   public async getProfiles(address: string) {
