@@ -225,6 +225,22 @@ const App = () => {
     setCreatePostRes(JSON.stringify(res));
   };
 
+  const createFreeCollectPostWithSig = async () => {
+    if (!account || !profileId) {
+      return;
+    }
+
+    const res = await lensClient.createFreeCollectPostWithSig({
+      profileId,
+      contentURI: "https://github.com/dataverse-os",
+      collectModuleInitParams: {
+        followerOnly: false,
+      },
+    });
+
+    setCreatePostRes(JSON.stringify(res));
+  };
+
   const collect = async () => {
     if (!profileId || !pubId) {
       return;
@@ -457,6 +473,9 @@ const App = () => {
         </button>
         <button onClick={createFeeCollectPostWithSig} className="block">
           createFeeCollectPostWithSig
+        </button>
+        <button onClick={createFreeCollectPostWithSig} className="block">
+          createFreeCollectPostWithSig
         </button>
       </div>
     </div>
