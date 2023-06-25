@@ -39,6 +39,7 @@ const App = () => {
 
   useEffect(() => {
     if (profiles.length > 0) {
+      console.log("profiles: ", profiles);
       setProfileId(JSON.parse(profiles)[0].id);
     }
   }, [profiles]);
@@ -240,6 +241,10 @@ const App = () => {
     setIsCollectedRes(JSON.stringify(res));
   };
 
+  const getSigNonce = async () => {
+    const nonce = await lensClient.getSigNonce();
+  }
+
   return (
     <div id="App">
       <div className="app-header">
@@ -429,6 +434,9 @@ const App = () => {
           <div className="title">Result</div>
           <div className="textarea">{isCollectedRes}</div>
         </div>
+        <button onClick={getSigNonce} className="block">
+          getSigNonce
+        </button>
       </div>
     </div>
   );

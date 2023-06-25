@@ -302,6 +302,88 @@ export class LensClient {
       mode: Mode.Write,
     });
 
+
+
+    const targetEvent = Object.values(res.events).find((event: any) => {
+      return event.topics[0] === EVENT_SIG_POST_CREATED;
+    });
+
+    return {
+      profileId: (targetEvent as any).topics[1],
+      pubId: (targetEvent as any).topics[2],
+    } as EventPostCreated;
+  }
+
+  public async createFeeCollectPostWithSig({
+                                      profileId,
+                                      contentURI,
+                                      collectModuleInitParams,
+                                      referenceModule,
+                                      referenceModuleInitData,
+                                    }: {
+    profileId: BigNumberish;
+    contentURI: string;
+    collectModuleInitParams: {
+      amount: BigNumberish;
+      currency: string;
+      recipient: string;
+      referralFee: BigNumberish;
+      followerOnly: boolean;
+    };
+    referenceModule?: string;
+    referenceModuleInitData?: any[];
+  }) {
+    const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
+      ["uint256", "address", "address", "uint16", "bool"],
+      [
+        collectModuleInitParams.amount,
+        collectModuleInitParams.currency,
+        collectModuleInitParams.recipient,
+        collectModuleInitParams.referralFee,
+        collectModuleInitParams.followerOnly,
+      ]
+    );
+
+    const postData: PostData = {
+      profileId,
+      contentURI,
+      collectModule: LENS_CONTRACTS_ADDRESS.FeeCollectModule,
+      collectModuleInitData,
+      referenceModule: referenceModule || ethers.constants.AddressZero,
+      referenceModuleInitData: referenceModuleInitData || [],
+    };
+
+    // const nonce = (
+    //   await lensHub.sigNonces(await signer.getAddress())
+    // ).toNumber();
+    // console.log("Signer addr: ", await signer.getAddress());
+    //
+    // const sig = await getSigCommon(
+    //   vars.profileId as BigNumber,
+    //   vars.dataURI,
+    //   vars.collectModule,
+    //   // @ts-ignore
+    //   collectModuleInitData,
+    //   ZERO_ADDRESS,
+    //   [],
+    //   nonce,
+    //   MAX_UINT256,
+    //   signer as Wallet,
+    //   lensHub.address,
+    //   await signer.getChainId()
+    // );
+
+
+    const res = await this.runtimeConnector.contractCall({
+      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      abi: LensHubJson.abi,
+      method: "post",
+      params: [postData],
+      mode: Mode.Write,
+    });
+
+
+
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
@@ -330,6 +412,22 @@ export class LensClient {
     console.log("collectModule:", collectModule);
 
     return collectModule as string;
+  }
+
+  public async getSigNonce() {
+    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const address = pkh.split(":")[4];
+
+    const nonce = await this.runtimeConnector.contractCall({
+      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      abi: LensHubJson.abi,
+      method: "sigNonces",
+      params: [address],
+      mode: Mode.Read,
+    });
+
+    console.log("user sig nonce: :", nonce);
+    return nonce;
   }
 
   public async collect({
@@ -415,6 +513,40 @@ export class LensClient {
     return BigNumber.from(balance).gt(0);
   }
 
+  // async postWithSig(signer: Signer, vars: PostInput): Promise<any> {
+  //   let output: Partial<CreateLensPostOutput> = {};
+  //   let pVars: Partial<PostWithSigDataStruct> = {};
+  //   pVars = await this._generatePostVars(signer, vars);
+  //   const lensHub = await getLensHub(this.config.lensHub, signer)
+  //   await lensHub.postWithSig(pVars).then(async (tx: any) => {
+  //     const r = await tx.wait();
+  //     output.txhash = r.transactionHash;
+  //     console.log("txHash: ", r.transactionHash);
+  //     r.events.forEach((e: any) => {
+  //       if (e.event === 'PostCreated') {
+  //         console.log(`event : PostCreated
+  //                           profileId                :   ${e.args.profileId}
+  //                           pubId                    :   ${e.args.pubId}
+  //                           contentURI               :   ${e.args.contentURI}
+  //                           collectModule            :   ${e.args.collectModule}
+  //                           collectModuleReturnData  :   ${e.args.collectModuleReturnData}
+  //                           referenceModule          :   ${e.args.referenceModule}
+  //                           referenceModuleReturnData:   ${e.args.referenceModuleReturnData}
+  //                           timestamp                :   ${e.args.timestamp}
+  //                   `);
+  //         output.profileId = e.args.profileId;
+  //         output.pubId = e.args.pubId;
+  //         output.contentURI = e.args.contentURI;
+  //         output.collectModule = e.args.collectModule;
+  //         output.collectModuleReturnData = e.args.collectModuleReturnData;
+  //         output.referenceModule = e.args.referenceModule;
+  //         output.referenceModuleReturnData = e.args.referenceModuleReturnData;
+  //         output.timestamp = e.args.timestamp;
+  //       }
+  //     })
+  //   });
+  //   return output;
+  // }
   private async _getCollectValidateData({
     profileId,
     pubId,
