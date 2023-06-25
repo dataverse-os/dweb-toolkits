@@ -1,4 +1,4 @@
-import { Mode, RuntimeConnector, WALLET } from "@dataverse/runtime-connector";
+import { RuntimeConnector } from "@dataverse/runtime-connector";
 import { BigNumber, BigNumberish, ethers, Wallet } from "ethers";
 import {
   EVENT_SIG_COLLECTED,
@@ -61,7 +61,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "isProfileCreatorWhitelisted",
       params: [profileCreator],
-      mode: Mode.Read,
     });
 
     return res;
@@ -99,7 +98,6 @@ export class LensClient {
       abi: ProfileCreationProxyJson.abi,
       method: "proxyCreateProfile",
       params: [createProfileData],
-      mode: Mode.Write,
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -119,7 +117,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "burn",
       params: [profileId],
-      mode: Mode.Write,
     });
 
     return res;
@@ -131,7 +128,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "setDefaultProfile",
       params: [profileId],
-      mode: Mode.Write,
     });
     return res;
   }
@@ -160,7 +156,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "getProfile",
       params: [profileId],
-      mode: Mode.Read,
     });
     return res as ProfileStruct;
   }
@@ -171,7 +166,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "getProfileIdByHandle",
       params: [handle],
-      mode: Mode.Read,
     });
     return profileId;
   }
@@ -182,7 +176,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "setFollowModule",
       params: [profileId, this.lensContractsAddress.RevertFollowModule, []],
-      mode: Mode.Write,
     });
     return res;
   }
@@ -216,7 +209,6 @@ export class LensClient {
         this.lensContractsAddress.FeeFollowModule,
         moduleInitData,
       ],
-      mode: Mode.Write,
     });
 
     return res;
@@ -256,7 +248,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "post",
       params: [postData],
-      mode: Mode.Write,
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -294,7 +285,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "post",
       params: [postData],
-      mode: Mode.Write,
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -351,7 +341,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "post",
       params: [postData],
-      mode: Mode.Write,
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -394,7 +383,6 @@ export class LensClient {
     };
 
     const nonce = await this.getSigNonce();
-    const { chain } = await this.runtimeConnector.connectWallet();
 
     postWithSigData.sig = await this._getPostWithSigPartsByWallet({
       profileId,
@@ -403,21 +391,27 @@ export class LensClient {
       collectModuleInitData,
       referenceModule: referenceModule || ethers.constants.AddressZero,
       referenceModuleInitData: referenceModuleInitData || [],
-      nonce,
+      nonce: BigNumber.from(nonce),
       deadline: MAX_UINT256,
       wallet: this.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: chain.chainId,
+      chainId: this.runtimeConnector.chain.chainId,
     });
 
     console.log("PostWithSigData: ", postWithSigData);
+
+    console.log("struct:", {
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "postWithSig",
+      params: [postWithSigData as PostWithSigData],
+    })
 
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "postWithSig",
       params: [postWithSigData as PostWithSigData],
-      mode: Mode.Write,
     });
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
@@ -448,9 +442,6 @@ export class LensClient {
       referenceModuleInitData: referenceModuleInitData || [],
     };
     const nonce = await this.getSigNonce();
-    const { chain } = await this.runtimeConnector.connectWallet(
-      WALLET.METAMASK
-    );
 
     postWithSigData.sig = await this._getPostWithSigPartsByWallet({
       profileId,
@@ -463,7 +454,7 @@ export class LensClient {
       deadline: MAX_UINT256,
       wallet: this.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: chain.chainId,
+      chainId: this.runtimeConnector.chain.chainId,
     });
 
     const res = await this.runtimeConnector.contractCall({
@@ -471,7 +462,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "postWithSig",
       params: [postWithSigData as PostWithSigData],
-      mode: Mode.Write,
     });
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
@@ -522,7 +512,6 @@ export class LensClient {
     };
 
     const nonce = await this.getSigNonce();
-    const { chain } = await this.runtimeConnector.connectWallet();
 
     postWithSigData.sig = await this._getPostWithSigPartsByWallet({
       profileId,
@@ -535,7 +524,7 @@ export class LensClient {
       deadline: MAX_UINT256,
       wallet: this.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: chain.chainId,
+      chainId: this.runtimeConnector.chain.chainId,
     });
 
     const res = await this.runtimeConnector.contractCall({
@@ -543,7 +532,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "postWithSig",
       params: [postWithSigData as PostWithSigData],
-      mode: Mode.Write,
     });
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
@@ -562,7 +550,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "sigNonces",
       params: [address],
-      mode: Mode.Read,
     });
 
     return nonce;
@@ -583,8 +570,6 @@ export class LensClient {
         pubId,
         collectModule,
       });
-    console.log("collectModuleValidateData:", collectModuleValidateData);
-    console.log("publicationData:", publicationData);
 
     if (publicationData) {
       await this._approveERC20({
@@ -599,7 +584,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "collect",
       params: [profileId, pubId, collectModuleValidateData],
-      mode: Mode.Write,
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -648,7 +632,6 @@ export class LensClient {
     };
 
     const nonce = await this.getSigNonce();
-    const { chain } = await this.runtimeConnector.connectWallet();
 
     collectWithSigData.sig = await this._getCollectWithSigPartsByWallet({
       profileId,
@@ -658,7 +641,7 @@ export class LensClient {
       deadline: MAX_UINT256,
       wallet: this.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: chain.chainId,
+      chainId: this.runtimeConnector.chain.chainId,
     });
 
     const res = await this.runtimeConnector.contractCall({
@@ -666,7 +649,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "collectWithSig",
       params: [collectWithSigData as CollectWithSigData],
-      mode: Mode.Write,
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -692,7 +674,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "getCollectNFT",
       params: [profileId, pubId],
-      mode: Mode.Read,
     });
 
     return collectNFT;
@@ -710,7 +691,6 @@ export class LensClient {
       abi: CollectNFTJson.abi,
       method: "balanceOf",
       params: [collector],
-      mode: Mode.Read,
     });
 
     return BigNumber.from(balance).gt(0);
@@ -728,7 +708,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "getCollectModule",
       params: [profileId, pubId],
-      mode: Mode.Read,
     });
 
     return collectModule as string;
@@ -740,7 +719,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "getFollowModule",
       params: [profileId],
-      mode: Mode.Read,
     });
 
     return followModule as string;
@@ -758,7 +736,6 @@ export class LensClient {
       abi: LensHubJson.abi,
       method: "getReferenceModule",
       params: [profileId, pubId],
-      mode: Mode.Read,
     });
 
     return referenceModule as string;
@@ -770,7 +747,6 @@ export class LensClient {
       abi: CollectNFTJson.abi,
       method: "isFollowModuleWhitelisted",
       params: [followModule],
-      mode: Mode.Read,
     });
 
     return isWhitelisted;
@@ -782,7 +758,6 @@ export class LensClient {
       abi: CollectNFTJson.abi,
       method: "isReferenceModuleWhitelisted",
       params: [referenceModule],
-      mode: Mode.Read,
     });
 
     return isWhitelisted;
@@ -794,7 +769,6 @@ export class LensClient {
       abi: CollectNFTJson.abi,
       method: "isCollectModuleWhitelisted",
       params: [collectModule],
-      mode: Mode.Read,
     });
 
     return isWhitelisted;
@@ -820,7 +794,6 @@ export class LensClient {
           abi: FeeCollectModuleJson.abi,
           method: "getPublicationData",
           params: [profileId, pubId],
-          mode: Mode.Read,
         });
 
         collectModuleValidateData = ethers.utils.defaultAbiCoder.encode(
@@ -838,7 +811,6 @@ export class LensClient {
           abi: LimitedFeeCollectModuleJson.abi,
           method: "getPublicationData",
           params: [profileId, pubId],
-          mode: Mode.Read,
         });
 
         collectModuleValidateData = ethers.utils.defaultAbiCoder.encode(
@@ -856,7 +828,6 @@ export class LensClient {
           abi: TimedFeeCollectModuleJson.abi,
           method: "getPublicationData",
           params: [profileId, pubId],
-          mode: Mode.Read,
         });
 
         collectModuleValidateData = ethers.utils.defaultAbiCoder.encode(
@@ -874,7 +845,6 @@ export class LensClient {
           abi: LimitedTimedFeeCollectModuleJson.abi,
           method: "getPublicationData",
           params: [profileId, pubId],
-          mode: Mode.Read,
         });
 
         collectModuleValidateData = ethers.utils.defaultAbiCoder.encode(
@@ -936,7 +906,6 @@ export class LensClient {
       ],
       method: "approve",
       params: [spender, amount],
-      mode: Mode.Write,
     });
   }
 
@@ -974,43 +943,6 @@ export class LensClient {
     }
   }
 
-  // private _buildPostWithSigParams = (
-  //   profileId: BigNumberish,
-  //   contentURI: string,
-  //   collectModule: string,
-  //   collectModuleInitData: Bytes | string,
-  //   referenceModule: string,
-  //   referenceModuleInitData: Bytes | string,
-  //   nonce: number,
-  //   deadline: string,
-  //   lensHubAddr: string,
-  //   chainId: number
-  // ) => ({
-  //   types: {
-  //     PostWithSig: [
-  //       { name: "profileId", type: "uint256" },
-  //       { name: "contentURI", type: "string" },
-  //       { name: "collectModule", type: "address" },
-  //       { name: "collectModuleInitData", type: "bytes" },
-  //       { name: "referenceModule", type: "address" },
-  //       { name: "referenceModuleInitData", type: "bytes" },
-  //       { name: "nonce", type: "uint256" },
-  //       { name: "deadline", type: "uint256" },
-  //     ],
-  //   },
-  //   domain: this._domain(lensHubAddr, chainId),
-  //   value: {
-  //     profileId: profileId,
-  //     contentURI: contentURI,
-  //     collectModule: collectModule,
-  //     collectModuleInitData: collectModuleInitData,
-  //     referenceModule: referenceModule,
-  //     referenceModuleInitData: referenceModuleInitData,
-  //     nonce: nonce,
-  //     deadline: deadline,
-  //   },
-  // });
-
   private _domain(
     lensHubAddr: string,
     chainId: number
@@ -1027,59 +959,6 @@ export class LensClient {
       verifyingContract: lensHubAddr,
     };
   }
-
-  // private async _getSigByWallet(
-  //   wallet: Wallet,
-  //   msgParams: {
-  //     domain: any;
-  //     types: any;
-  //     value: any;
-  //   }
-  // ): Promise<EIP712Signature> {
-  //   const sig = await wallet._signTypedData(
-  //     msgParams.domain,
-  //     msgParams.types,
-  //     msgParams.value
-  //   );
-  //   return ethers.utils.splitSignature(sig);
-  // }
-
-  // private async _getSigCommon(
-  //   profileId: BigNumber | number,
-  //   contentURI: string,
-  //   collectModuleAddr: string,
-  //   collectModuleInitData: string | any[],
-  //   referenceModule: string,
-  //   referenceModuleInitData: string | any[],
-  //   nonce: number,
-  //   deadline: string,
-  //   wallet: Wallet,
-  //   lensHubAddr: string,
-  //   chainId: number
-  // ) {
-  //   const { v, r, s } = await this._getPostWithSigPartsByWallet(
-  //     profileId,
-  //     contentURI,
-  //     collectModuleAddr,
-  //     collectModuleInitData,
-  //     referenceModule,
-  //     referenceModuleInitData,
-  //     nonce,
-  //     deadline,
-  //     wallet,
-  //     lensHubAddr,
-  //     chainId
-  //   );
-
-  //   const sig: EIP712Signature = {
-  //     v: v,
-  //     s: s,
-  //     r: r,
-  //     deadline: deadline,
-  //   };
-
-  //   return sig;
-  // }
 
   private async _getPostWithSigPartsByWallet({
     profileId,
@@ -1137,33 +1016,15 @@ export class LensClient {
       msgParams.types,
       msgParams.value
     );
-    const partialSig = ethers.utils.splitSignature(sig);
+    const { r, s, v } = ethers.utils.splitSignature(sig);
 
     return {
-      ...partialSig,
+      r,
+      s,
+      v,
       deadline,
     } as EIP712Signature;
   }
-
-  // private async _getPostSig(postWithSigData: Partial<PostWithSigData>) {
-  //   const nonce = await this.getSigNonce();
-  //   const { chain } = await this.runtimeConnector.connectWallet(
-  //     WALLET.METAMASK
-  //   );
-  //   return this._getPostWithSigPartsByWallet(
-  //     postWithSigData.profileId,
-  //     postWithSigData.contentURI as string,
-  //     postWithSigData.collectModule as string,
-  //     postWithSigData.collectModuleInitData as string | any[],
-  //     postWithSigData.referenceModule as string,
-  //     postWithSigData.referenceModuleInitData as string | any[],
-  //     nonce,
-  //     MAX_UINT256,
-  //     this.signer as Wallet,
-  //     this.lensContractsAddress.LensHubProxy,
-  //     chain.chainId
-  //   );
-  // }
 
   private async _getCollectWithSigPartsByWallet({
     profileId,
@@ -1203,16 +1064,18 @@ export class LensClient {
         deadline: deadline,
       },
     };
-    // return await this._getSigByWallet(wallet, msgParams);
+
     const sig = await wallet._signTypedData(
       msgParams.domain,
       msgParams.types,
       msgParams.value
     );
-    const partialSig = ethers.utils.splitSignature(sig);
+    const { r, s, v } = ethers.utils.splitSignature(sig);
 
     return {
-      ...partialSig,
+      r,
+      s,
+      v,
       deadline,
     } as EIP712Signature;
   }

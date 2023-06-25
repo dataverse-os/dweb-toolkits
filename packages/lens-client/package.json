@@ -18,7 +18,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@dataverse/utils-toolkit": "^1.0.15",
+    "@dataverse/utils-toolkit": "workspace:*",
     "graphql": "^16.6.0",
     "graphql-request": "^6.1.0",
     "react": "^18.2.0",

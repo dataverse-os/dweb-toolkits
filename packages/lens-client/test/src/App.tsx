@@ -15,6 +15,15 @@ const App = () => {
   }, []);
   const [account, setAccount] = useState<string>();
   const [did, setDid] = useState<string>();
+  const [collectModule, setCollectModule] = useState<string>();
+  const [collectModuleWhitelistStatus, setCollectModuleWhitelistStatus] =
+    useState<boolean>();
+  const [followModule, setFollowModule] = useState<string>();
+  const [followModuleWhitelistStatus, setFollowModuleWhitelistStatus] =
+    useState<boolean>();
+  const [referenceModule, setReferenceModule] = useState<string>();
+  const [referenceModuleWhitelistStatus, setReferenceModuleWhitelistStatus] =
+    useState<boolean>();
   const [profiles, setProfiles] = useState<string>("");
   const [profileId, setProfileId] = useState<string>();
   const [getProfileRes, setGetProfileRes] = useState<string>("");
@@ -54,6 +63,66 @@ const App = () => {
     });
     setDid(did);
     console.log("connected");
+  };
+
+  const getCollectModule = async () => {
+    if (!profileId || !pubId) {
+      return;
+    }
+    const res = await lensClient.getCollectModule({
+      profileId,
+      pubId,
+    });
+    console.log("[getCollectModule]res:", res);
+    setCollectModule(res);
+  };
+
+  const getFollowModule = async () => {
+    if (!profileId) {
+      return;
+    }
+    const res = await lensClient.getFollowModule(profileId);
+    console.log("[getFollowModule]res:", res);
+    setFollowModule(res);
+  };
+
+  const getReferenceModule = async () => {
+    if (!profileId || !pubId) {
+      return;
+    }
+    const res = await lensClient.getReferenceModule({
+      profileId,
+      pubId,
+    });
+    console.log("[getReferenceModule]res:", res);
+    setReferenceModule(res);
+  };
+
+  const isCollectModuleWhitelisted = async () => {
+    if (!collectModule) {
+      return;
+    }
+    const res = await lensClient.isCollectModuleWhitelisted(collectModule);
+    console.log("[isCollectModuleWhitelisted]res:", res);
+    setCollectModuleWhitelistStatus(res);
+  };
+
+  const isFollowModuleWhitelisted = async () => {
+    if (!followModule) {
+      return;
+    }
+    const res = await lensClient.isFollowModuleWhitelisted(followModule);
+    console.log("[isFollowModuleWhitelisted]res:", res);
+    setFollowModuleWhitelistStatus(res);
+  };
+
+  const isReferenceModuleWhitelisted = async () => {
+    if (!referenceModule) {
+      return;
+    }
+    const res = await lensClient.isReferenceModuleWhitelisted(referenceModule);
+    console.log("[isReferenceModuleWhitelisted]res:", res);
+    setReferenceModuleWhitelistStatus(res);
   };
 
   const createProfile = async () => {
@@ -262,6 +331,8 @@ const App = () => {
   };
 
   const getSigNonce = async () => {
+    console.log("[[address:", runtimeConnector.address);
+    console.log("runtimeConnector:", runtimeConnector);
     const nonce = await lensClient.getSigNonce();
     console.log("[getSigNonce]res:", nonce);
   };
@@ -281,6 +352,77 @@ const App = () => {
       </div>
 
       <div className="app-body">
+        <div className="test-item">
+          <div className="title">ProfileId</div>
+          <input
+            type="text"
+            value={profileId || ""}
+            onChange={(event) => setProfileId(event.target.value)}
+          />
+          <div className="title">PubId</div>
+          <input
+            type="text"
+            value={pubId || ""}
+            onChange={(event) => setPubId(event.target.value)}
+          />
+          {/* CollectModule */}
+          <button
+            disabled={profileId && pubId ? false : true}
+            onClick={getCollectModule}
+          >
+            getCollectModule
+          </button>
+          <button
+            disabled={collectModule ? false : true}
+            onClick={isCollectModuleWhitelisted}
+          >
+            isCollectModuleWhitelisted
+          </button>
+          <div className="title">{`Collect Module(isWhitelisted:${collectModuleWhitelistStatus})`}</div>
+          <input
+            type="text"
+            value={collectModule || ""}
+            onChange={(event) => setCollectModule(event.target.value)}
+          />
+          {/* FollowModule */}
+          <button
+            disabled={profileId ? false : true}
+            onClick={getFollowModule}
+          >
+            getFollowModule
+          </button>
+          <button
+            disabled={followModule ? false : true}
+            onClick={isFollowModuleWhitelisted}
+          >
+            isFollowModuleWhitelisted
+          </button>
+          <div className="title">{`Follow Module(isWhitelisted:${followModuleWhitelistStatus})`}</div>
+          <input
+            type="text"
+            value={followModule || ""}
+            onChange={(event) => setFollowModule(event.target.value)}
+          />
+          {/* ReferenceModule */}
+          <button
+            disabled={profileId && pubId ? false : true}
+            onClick={getReferenceModule}
+          >
+            getReferenceModule
+          </button>
+          <button
+            disabled={referenceModule ? false : true}
+            onClick={isReferenceModuleWhitelisted}
+          >
+            isReferenceModuleWhitelisted
+          </button>
+          <div className="title">{`Reference Module(isWhitelisted:${referenceModuleWhitelistStatus})`}</div>
+          <input
+            type="text"
+            value={referenceModule || ""}
+            onChange={(event) => setReferenceModule(event.target.value)}
+          />
+        </div>
         <div className="test-item">
           <button
             disabled={account ? false : true}
