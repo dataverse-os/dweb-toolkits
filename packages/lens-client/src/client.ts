@@ -361,26 +361,6 @@ export class LensClient {
     } as EventPostCreated;
   }
 
-  public async getCollectModule({
-    profileId,
-    pubId,
-  }: {
-    profileId: BigNumberish;
-    pubId: BigNumberish;
-  }) {
-    const collectModule = await this.runtimeConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "getCollectModule",
-      params: [profileId, pubId],
-      mode: Mode.Read,
-    });
-
-    console.log("collectModule:", collectModule);
-
-    return collectModule as string;
-  }
-
   public async collect({
     profileId,
     pubId,
@@ -460,6 +440,90 @@ export class LensClient {
     });
 
     return BigNumber.from(balance).gt(0);
+  }
+
+  public async getCollectModule({
+    profileId,
+    pubId,
+  }: {
+    profileId: BigNumberish;
+    pubId: BigNumberish;
+  }) {
+    const collectModule = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "getCollectModule",
+      params: [profileId, pubId],
+      mode: Mode.Read,
+    });
+
+    return collectModule as string;
+  }
+
+  public async getFollowModule(profileId: BigNumberish) {
+    const followModule = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "getFollowModule",
+      params: [profileId],
+      mode: Mode.Read,
+    });
+
+    return followModule as string;
+  }
+
+  public async getReferenceModule({
+    profileId,
+    pubId,
+  }: {
+    profileId: BigNumberish;
+    pubId: BigNumberish;
+  }) {
+    const referenceModule = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "getReferenceModule",
+      params: [profileId, pubId],
+      mode: Mode.Read,
+    });
+
+    return referenceModule as string;
+  }
+
+  public async isFollowModuleWhitelisted(followModule: string) {
+    const isWhitelisted = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: CollectNFTJson.abi,
+      method: "isFollowModuleWhitelisted",
+      params: [followModule],
+      mode: Mode.Read,
+    });
+
+    return isWhitelisted;
+  }
+
+  public async isReferenceModuleWhitelisted(referenceModule: string) {
+    const isWhitelisted = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: CollectNFTJson.abi,
+      method: "isReferenceModuleWhitelisted",
+      params: [referenceModule],
+      mode: Mode.Read,
+    });
+
+    return isWhitelisted;
+  }
+
+  public async isCollectModuleWhitelisted(collectModule: string) {
+    const isWhitelisted = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: CollectNFTJson.abi,
+      method: "isCollectModuleWhitelisted",
+      params: [collectModule],
+      mode: Mode.Read,
+    });
+
+    return isWhitelisted;
   }
 
   private async _getCollectValidateData({
