@@ -38,6 +38,7 @@ const App = () => {
 
   useEffect(() => {
     if (profiles.length > 0) {
+      console.log("profiles: ", profiles);
       setProfileId(JSON.parse(profiles)[0].id);
     }
   }, [profiles]);
@@ -186,6 +187,17 @@ const App = () => {
     setCreatePostRes(JSON.stringify(res));
   };
 
+  const createRevertCollectPostWithSig = async () => {
+    if (!profileId) {
+      return;
+    }
+    const res = await lensClient.createRevertCollectPostWithSig({
+      profileId,
+      contentURI: "https://github.com/dataverse-os",
+    });
+    setCreatePostRes(JSON.stringify(res));
+  };
+
   const createFeeCollectPost = async () => {
     if (!account || !profileId) {
       return;
@@ -204,11 +216,56 @@ const App = () => {
     setCreatePostRes(JSON.stringify(res));
   };
 
+  const createFeeCollectPostWithSig = async () => {
+    if (!account || !profileId) {
+      return;
+    }
+    const res = await lensClient.createFeeCollectPostWithSig({
+      profileId,
+      contentURI: "https://github.com/dataverse-os",
+      collectModuleInitParams: {
+        amount: 10e8,
+        currency: getCurrencyAddress(Currency.WMATIC),
+        recipient: account,
+        referralFee: 0,
+        followerOnly: false,
+      },
+    });
+    setCreatePostRes(JSON.stringify(res));
+  };
+
+  const createFreeCollectPostWithSig = async () => {
+    if (!account || !profileId) {
+      return;
+    }
+
+    const res = await lensClient.createFreeCollectPostWithSig({
+      profileId,
+      contentURI: "https://github.com/dataverse-os",
+      collectModuleInitParams: {
+        followerOnly: false,
+      },
+    });
+
+    setCreatePostRes(JSON.stringify(res));
+  };
+
   const collect = async () => {
     if (!profileId || !pubId) {
       return;
     }
     const res = await lensClient.collect({
+      profileId,
+      pubId,
+    });
+    setCollectRes(JSON.stringify(res));
+  };
+
+  const collectWithSig = async () => {
+    if (!profileId || !pubId) {
+      return;
+    }
+    const res = await lensClient.collectWithSig({
       profileId,
       pubId,
     });
@@ -237,6 +294,10 @@ const App = () => {
     console.log("[isCollected]res:", res);
     setIsCollectedRes(JSON.stringify(res));
   };
+
+  const getSigNonce = async () => {
+    const nonce = await lensClient.getSigNonce();
+  }
 
   return (
     <div id="App">
@@ -440,6 +501,21 @@ const App = () => {
           <div className="title">Result</div>
           <div className="textarea">{isCollectedRes}</div>
         </div>
+        <button onClick={getSigNonce} className="block">
+          getSigNonce
+        </button>
+        <button onClick={createFeeCollectPostWithSig} className="block">
+          createFeeCollectPostWithSig
+        </button>
+        <button onClick={createFreeCollectPostWithSig} className="block">
+          createFreeCollectPostWithSig
+        </button>
+        <button onClick={createRevertCollectPostWithSig} className="block">
+          createRevertCollectPostWithSig
+        </button>
+        <button onClick={collectWithSig} className="block">
+          collectWithSig
+        </button>
       </div>
     </div>
   );

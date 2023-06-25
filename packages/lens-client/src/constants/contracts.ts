@@ -58,3 +58,7 @@ export const SANDBOX_MUMBAI_CONTRACTS_ADDRESS = {
   MockProfileCreationProxy: "0x4fe8deB1cf6068060dE50aA584C3adf00fbDB87f",
   MockSandboxGovernance: "0x1677d9cc4861f1c85ac7009d5f06f49c928ca2ad",
 };
+
+export const LENS_HUB_NFT_NAME = "Lens Protocol Profiles";
+
+

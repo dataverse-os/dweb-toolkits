@@ -16,9 +16,9 @@ export type ProfileStruct = {
 };
 
 export type EIP712Signature = {
-  v: number;
   r: string;
   s: string;
+  v: number;
   deadline: string;
 };
 
@@ -40,6 +40,16 @@ export type PostData = {
   referenceModuleInitData: any[];
 };
 
+export type PostWithSigData = {
+  profileId: BigNumberish;
+  contentURI: string;
+  collectModule: string;
+  collectModuleInitData: any[];
+  referenceModule: string;
+  referenceModuleInitData: any[];
+  sig: EIP712Signature;
+};
+
 export type CollectWithSigData = {
   collector: string;
   profileId: BigNumberish;
@@ -52,7 +62,7 @@ export type EventProfileCreated = {
   profileId: BigNumberish;
   creator: string;
   to: string;
-}
+};
 
 export type EventPostCreated = {
   profileId: BigNumberish;
