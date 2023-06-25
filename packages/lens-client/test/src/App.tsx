@@ -189,6 +189,17 @@ const App = () => {
     setCreatePostRes(JSON.stringify(res));
   };
 
+  const createRevertCollectPostWithSig = async () => {
+    if (!profileId) {
+      return;
+    }
+    const res = await lensClient.createRevertCollectPostWithSig({
+      profileId,
+      contentURI: "https://github.com/dataverse-os",
+    });
+    setCreatePostRes(JSON.stringify(res));
+  };
+
   const createFeeCollectPost = async () => {
     if (!account || !profileId) {
       return;
@@ -246,6 +257,17 @@ const App = () => {
       return;
     }
     const res = await lensClient.collect({
+      profileId,
+      pubId,
+    });
+    setCollectRes(JSON.stringify(res));
+  };
+
+  const collectWithSig = async () => {
+    if (!profileId || !pubId) {
+      return;
+    }
+    const res = await lensClient.collectWithSig({
       profileId,
       pubId,
     });
@@ -476,6 +498,12 @@ const App = () => {
         </button>
         <button onClick={createFreeCollectPostWithSig} className="block">
           createFreeCollectPostWithSig
+        </button>
+        <button onClick={createRevertCollectPostWithSig} className="block">
+          createRevertCollectPostWithSig
+        </button>
+        <button onClick={collectWithSig} className="block">
+          collectWithSig
         </button>
       </div>
     </div>
