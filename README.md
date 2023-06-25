@@ -4,7 +4,7 @@ This git repo is a monorepo that contains several toolkits for developers to eas
 
 ## Overview
 
-<img src="https://s2.loli.net/2023/06/15/b2dtlR7r4NyOYfe.jpg" />
+<img src="https://s3.ap-east-1.amazonaws.com/assets.s3.bucket/toolkits-overview.jpg" />
 
 ## Purpose
 
@@ -82,7 +82,7 @@ pnpm test:livepeer-client
 if successful, you can visit the demo at `http://localhost:5173/`.
 
 An example(livepeer demo):
-<img src="https://s2.loli.net/2023/06/21/TlAC6GKMWOiHJp8.png" />
+<img src="https://s3.ap-east-1.amazonaws.com/assets.s3.bucket/livepeer-demo.png" />
 
 ## Contributing
 
