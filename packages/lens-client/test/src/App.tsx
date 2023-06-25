@@ -2,7 +2,7 @@ import "./App.scss";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { Currency, WALLET } from "@dataverse/runtime-connector";
 import { Context } from "./main";
-import Client from "@dataverse/lens-client-toolkit";
+import Client, { LensNetwork } from "@dataverse/lens-client-toolkit";
 import { getCurrencyAddress } from "./utils";
 import { BigNumber, Contract, ethers } from "ethers";
 
@@ -11,11 +11,11 @@ const App = () => {
   const lensClient = useMemo(() => {
     return new Client({
       runtimeConnector: runtimeConnector,
+      network: LensNetwork.MumbaiTestnet,
     });
   }, []);
   const [account, setAccount] = useState<string>();
   const [did, setDid] = useState<string>();
-  const [isProfileCreator, setIsProfileCreator] = useState<boolean>();
   const [profiles, setProfiles] = useState<string>("");
   const [profileId, setProfileId] = useState<string>();
   const [getProfileRes, setGetProfileRes] = useState<string>("");
@@ -33,7 +33,6 @@ const App = () => {
   useEffect(() => {
     if (account) {
       getProfiles();
-      initProfileCreatorWhitelisted();
     }
   }, [account]);
 
@@ -90,14 +89,6 @@ const App = () => {
     console.log("connected");
   };
 
-  const initProfileCreatorWhitelisted = async () => {
-    if (!account) {
-      return;
-    }
-    const res = await lensClient.isProfileCreatorWhitelisted(account);
-    setIsProfileCreator(res);
-  };
-
   const createProfile = async () => {
     if (!account || !handle) {
       return;
@@ -111,8 +102,7 @@ const App = () => {
       imageURI:
         "https://gateway.ipfscdn.io/ipfs/QmQPuXJ7TTg7RpNjHeAR4NrGtDVSAwoP2qD4VdZF2vAJiR",
     });
-    console.log("[createProfile]res:", res);
-    // setCreateLensProfileRes(profileId);
+    setCreateLensProfileRes(JSON.stringify(res));
   };
 
   const getProfiles = async () => {
@@ -285,13 +275,11 @@ const App = () => {
         </div>
         <div className="test-item">
           <button
-            disabled={handle && isProfileCreator ? false : true}
+            disabled={handle ? false : true}
             onClick={createProfile}
             className="block"
           >
-            {isProfileCreator === false
-              ? "createProfile(Creator not Whitelisted)"
-              : "createProfile"}
+            createProfile
           </button>
           <div className="title">Handle(Nick Name)</div>
           <input

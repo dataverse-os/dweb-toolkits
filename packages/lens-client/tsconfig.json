@@ -9,11 +9,14 @@
     "composite": true
   },
   "files": [
-    "./contracts/LensHub.sol/LensHub.json",
-    "./contracts/CollectNFT.sol/CollectNFT.json",
-    "./contracts/modules/collect/FeeCollectModule.sol/FeeCollectModule.json",
-    "./contracts/modules/collect/LimitedFeeCollectModule.sol/LimitedFeeCollectModule.json",
-    "./contracts/modules/collect/LimitedTimedFeeCollectModule.sol/LimitedTimedFeeCollectModule.json",
-    "./contracts/modules/collect/TimedFeeCollectModule.sol/TimedFeeCollectModule.json"
+    "./contracts/LensHub.json",
+    "./contracts/CollectNFT.json",
+    "./contracts/modules/collect/FeeCollectModule.json",
+    "./contracts/modules/collect/FreeCollectModule.json",
+    "./contracts/modules/collect/LimitedFeeCollectModule.json",
+    "./contracts/modules/collect/LimitedTimedFeeCollectModule.json",
+    "./contracts/modules/collect/TimedFeeCollectModule.json",
+    "./contracts/modules/collect/RevertCollectModule.json",
+    "./contracts/ProfileCreationProxy.json"
   ]
 }

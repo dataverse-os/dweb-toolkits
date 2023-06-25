@@ -1,5 +1,11 @@
 import { BigNumberish } from "ethers";
 
+export enum LensNetwork {
+  PloygonMainnet,
+  MumbaiTestnet,
+  SandboxMumbaiTestnet,
+}
+
 export type ProfileStruct = {
   pubCount: BigNumberish;
   followModule: string;
@@ -11,10 +17,10 @@ export type ProfileStruct = {
 
 export type EIP712Signature = {
   v: number;
-  r: string; 
+  r: string;
   s: string;
   deadline: string;
-}
+};
 
 export type CreateProfileData = {
   to: string;
@@ -40,6 +46,12 @@ export type CollectWithSigData = {
   pubId: BigNumberish;
   data: any[];
   sig: EIP712Signature;
+};
+
+export type EventProfileCreated = {
+  profileId: BigNumberish;
+  creator: string;
+  to: string;
 }
 
 export type EventPostCreated = {

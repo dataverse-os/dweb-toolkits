@@ -8,35 +8,53 @@ import { BigNumber, BigNumberish, ethers } from "ethers";
 import {
   EVENT_SIG_COLLECTED,
   EVENT_SIG_POST_CREATED,
-  LENS_CONTRACTS_ADDRESS,
+  EVENT_SIG_PROFILE_CREATED,
+  MUMBAI_CONTRACTS_ADDRESS,
+  POLYGON_CONTRACTS_ADDRESS,
+  SANDBOX_MUMBAI_CONTRACTS_ADDRESS,
 } from "./constants";
 import {
   CreateProfileData,
   EventCollected,
   EventPostCreated,
+  EventProfileCreated,
+  LensNetwork,
   PostData,
   ProfileStruct,
 } from "./types";
 import { request, gql } from "graphql-request";
-import LensHubJson from "../contracts/LensHub.sol/LensHub.json";
-import CollectNFTJson from "../contracts/CollectNFT.sol/CollectNFT.json";
-import FeeCollectModuleJson from "../contracts/modules/collect/FeeCollectModule.sol/FeeCollectModule.json";
-import LimitedFeeCollectModuleJson from "../contracts/modules/collect/LimitedFeeCollectModule.sol/LimitedFeeCollectModule.json";
-import LimitedTimedFeeCollectModuleJson from "../contracts/modules/collect/LimitedTimedFeeCollectModule.sol/LimitedTimedFeeCollectModule.json";
-import TimedFeeCollectModuleJson from "../contracts/modules/collect/TimedFeeCollectModule.sol/TimedFeeCollectModule.json";
+import LensHubJson from "../contracts/LensHub.json";
+import CollectNFTJson from "../contracts/CollectNFT.json";
+import FeeCollectModuleJson from "../contracts/modules/collect/FeeCollectModule.json";
+import LimitedFeeCollectModuleJson from "../contracts/modules/collect/LimitedFeeCollectModule.json";
+import LimitedTimedFeeCollectModuleJson from "../contracts/modules/collect/LimitedTimedFeeCollectModule.json";
+import TimedFeeCollectModuleJson from "../contracts/modules/collect/TimedFeeCollectModule.json";
+import ProfileCreationProxyJson from "../contracts/ProfileCreationProxy.json";
 
 // import { StreamHelper } from "@dataverse/utils-toolkit";
 
 export class LensClient {
+  public network: LensNetwork;
+  public lensContractsAddress!: any;
+  public lensApiLink!: string;
   public runtimeConnector: RuntimeConnector;
 
-  constructor({ runtimeConnector }: { runtimeConnector: RuntimeConnector }) {
+  constructor({
+    runtimeConnector,
+    network,
+  }: {
+    runtimeConnector: RuntimeConnector;
+    network: LensNetwork;
+  }) {
     this.runtimeConnector = runtimeConnector;
+    this.network = network;
+    this._initLensContractsAddress(network);
+    this._initLensApiLink(network);
   }
 
   public async isProfileCreatorWhitelisted(profileCreator: string) {
     const res = await this.runtimeConnector.contractCall({
-      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "isProfileCreatorWhitelisted",
       params: [profileCreator],
@@ -74,14 +92,25 @@ export class LensClient {
     };
 
     const res = await this.runtimeConnector.contractCall({
-      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
-      abi: LensHubJson.abi,
-      method: "createProfile",
+      contractAddress:
+        this.network === LensNetwork.PloygonMainnet
+          ? this.lensContractsAddress.ProfileCreationProxy
+          : this.lensContractsAddress.MockProfileCreationProxy,
+      abi: ProfileCreationProxyJson.abi,
+      method: "proxyCreateProfile",
       params: [createProfileData],
       mode: Mode.Write,
     });
 
-    return res;
+    const targetEvent = Object.values(res.events).find((event: any) => {
+      return event.topics[0] === EVENT_SIG_PROFILE_CREATED;
+    });
+
+    return {
+      profileId: (targetEvent as any).topics[1],
+      creator: (targetEvent as any).topics[2],
+      to: (targetEvent as any).topics[3],
+    } as EventProfileCreated;
   }
 
   public async getProfiles(address: string) {
@@ -94,7 +123,7 @@ export class LensClient {
         }
       }
     `;
-    const result = (await request("https://api-mumbai.lens.dev", document, {
+    const result = (await request(this.lensApiLink, document, {
       request: {
         ownedBy: address,
       },
@@ -104,7 +133,7 @@ export class LensClient {
 
   public async getProfile(profileId: BigNumberish) {
     const res = await this.runtimeConnector.contractCall({
-      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "getProfile",
       params: [profileId],
@@ -115,7 +144,7 @@ export class LensClient {
 
   public async getProfileIdByHandle(handle: string) {
     const profileId = await this.runtimeConnector.contractCall({
-      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "getProfileIdByHandle",
       params: [handle],
@@ -126,10 +155,10 @@ export class LensClient {
 
   public async setRevertFollowModule(profileId: BigNumberish) {
     const res = await this.runtimeConnector.contractCall({
-      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "setFollowModule",
-      params: [profileId, LENS_CONTRACTS_ADDRESS.RevertFollowModule, []],
+      params: [profileId, this.lensContractsAddress.RevertFollowModule, []],
       mode: Mode.Write,
     });
     return res;
@@ -156,12 +185,12 @@ export class LensClient {
     );
 
     const res = await this.runtimeConnector.contractCall({
-      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "setFollowModule",
       params: [
         profileId,
-        LENS_CONTRACTS_ADDRESS.FeeFollowModule,
+        this.lensContractsAddress.FeeFollowModule,
         moduleInitData,
       ],
       mode: Mode.Write,
@@ -193,14 +222,14 @@ export class LensClient {
     const postData: PostData = {
       profileId,
       contentURI,
-      collectModule: LENS_CONTRACTS_ADDRESS.FreeCollectModule,
+      collectModule: this.lensContractsAddress.FreeCollectModule,
       collectModuleInitData,
       referenceModule: referenceModule || ethers.constants.AddressZero,
       referenceModuleInitData: referenceModuleInitData || [],
     };
 
     const res = await this.runtimeConnector.contractCall({
-      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "post",
       params: [postData],
@@ -231,14 +260,14 @@ export class LensClient {
     const postData: PostData = {
       profileId,
       contentURI,
-      collectModule: LENS_CONTRACTS_ADDRESS.RevertCollectModule,
+      collectModule: this.lensContractsAddress.RevertCollectModule,
       collectModuleInitData: [],
       referenceModule: referenceModule || ethers.constants.AddressZero,
       referenceModuleInitData: referenceModuleInitData || [],
     };
 
     const res = await this.runtimeConnector.contractCall({
-      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "post",
       params: [postData],
@@ -288,14 +317,14 @@ export class LensClient {
     const postData: PostData = {
       profileId,
       contentURI,
-      collectModule: LENS_CONTRACTS_ADDRESS.FeeCollectModule,
+      collectModule: this.lensContractsAddress.FeeCollectModule,
       collectModuleInitData,
       referenceModule: referenceModule || ethers.constants.AddressZero,
       referenceModuleInitData: referenceModuleInitData || [],
     };
 
     const res = await this.runtimeConnector.contractCall({
-      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "post",
       params: [postData],
@@ -320,7 +349,7 @@ export class LensClient {
     pubId: BigNumberish;
   }) {
     const collectModule = await this.runtimeConnector.contractCall({
-      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "getCollectModule",
       params: [profileId, pubId],
@@ -351,17 +380,15 @@ export class LensClient {
     console.log("publicationData:", publicationData);
 
     if (publicationData) {
-     await this._approveERC20(
-      {
+      await this._approveERC20({
         contract: publicationData.currency,
         spender: collectModule,
-        amount: publicationData.amount
-      }
-     )
+        amount: publicationData.amount,
+      });
     }
 
     const res = await this.runtimeConnector.contractCall({
-      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "collect",
       params: [profileId, pubId, collectModuleValidateData],
@@ -387,7 +414,7 @@ export class LensClient {
     pubId: BigNumberish;
   }) {
     const collectNFT = await this.runtimeConnector.contractCall({
-      contractAddress: LENS_CONTRACTS_ADDRESS.lensHubProxy,
+      contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "getCollectNFT",
       params: [profileId, pubId],
@@ -427,7 +454,7 @@ export class LensClient {
     let collectModuleValidateData;
     let publicationData;
     switch (collectModule) {
-      case LENS_CONTRACTS_ADDRESS.FeeCollectModule: {
+      case this.lensContractsAddress.FeeCollectModule: {
         console.log("[FeeCollectModule]");
 
         publicationData = await this.runtimeConnector.contractCall({
@@ -445,7 +472,7 @@ export class LensClient {
         break;
       }
 
-      case LENS_CONTRACTS_ADDRESS.LimitedFeeCollectModule: {
+      case this.lensContractsAddress.LimitedFeeCollectModule: {
         console.log("[LimitedFeeCollectModule]");
 
         publicationData = await this.runtimeConnector.contractCall({
@@ -463,7 +490,7 @@ export class LensClient {
         break;
       }
 
-      case LENS_CONTRACTS_ADDRESS.TimedFeeCollectModule: {
+      case this.lensContractsAddress.TimedFeeCollectModule: {
         console.log("[TimedFeeCollectModule]");
 
         publicationData = await this.runtimeConnector.contractCall({
@@ -481,7 +508,7 @@ export class LensClient {
         break;
       }
 
-      case LENS_CONTRACTS_ADDRESS.LimitedTimedFeeCollectModule: {
+      case this.lensContractsAddress.LimitedTimedFeeCollectModule: {
         console.log("[LimitedTimedFeeCollectModule]");
 
         publicationData = await this.runtimeConnector.contractCall({
@@ -516,11 +543,11 @@ export class LensClient {
   private async _approveERC20({
     contract,
     spender,
-    amount
+    amount,
   }: {
     contract: string;
     spender: string;
-    amount: BigNumberish
+    amount: BigNumberish;
   }) {
     await this.runtimeConnector.contractCall({
       contractAddress: contract,
@@ -553,5 +580,39 @@ export class LensClient {
       params: [spender, amount],
       mode: Mode.Write,
     });
+  }
+
+  private _initLensContractsAddress(network: LensNetwork) {
+    switch (network) {
+      case LensNetwork.PloygonMainnet: {
+        this.lensContractsAddress = POLYGON_CONTRACTS_ADDRESS;
+        break;
+      }
+      case LensNetwork.MumbaiTestnet: {
+        this.lensContractsAddress = MUMBAI_CONTRACTS_ADDRESS;
+        break;
+      }
+      case LensNetwork.SandboxMumbaiTestnet: {
+        this.lensContractsAddress = SANDBOX_MUMBAI_CONTRACTS_ADDRESS;
+        break;
+      }
+    }
+  }
+
+  private _initLensApiLink(network: LensNetwork) {
+    switch (network) {
+      case LensNetwork.PloygonMainnet: {
+        this.lensApiLink = "https://api.lens.dev";
+        break;
+      }
+      case LensNetwork.MumbaiTestnet: {
+        this.lensApiLink = "https://api-mumbai.lens.dev";
+        break;
+      }
+      case LensNetwork.SandboxMumbaiTestnet: {
+        this.lensApiLink = "https://api-sandbox-mumbai.lens.dev";
+        break;
+      }
+    }
   }
 }
