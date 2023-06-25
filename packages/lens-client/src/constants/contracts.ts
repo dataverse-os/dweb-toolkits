@@ -16,3 +16,9 @@ export const LENS_CONTRACTS_ADDRESS = {
   ModuleGlobals: "0x1353aAdfE5FeD85382826757A95DE908bd21C4f9",
   MockProfileCreationProxy: "0x420f0257D43145bb002E69B14FF2Eb9630Fc4736",
 };
+
+export const MAX_UINT256 = "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+
+export const LENS_HUB_NFT_NAME = "Lens Protocol Profiles";
+
+export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"

@@ -34,6 +34,16 @@ export type PostData = {
   referenceModuleInitData: any[];
 };
 
+export type PostWithSigData = {
+  profileId: BigNumberish;
+  contentURI: string;
+  collectModule: string;
+  collectModuleInitData: any[];
+  referenceModule: string;
+  referenceModuleInitData: any[];
+  sig: Sig;
+}
+
 export type CollectWithSigData = {
   collector: string;
   profileId: BigNumberish;
@@ -51,4 +61,10 @@ export type EventCollected = {
   collector: string;
   profileId: BigNumberish;
   pubId: BigNumberish;
+};
+
+export type Sig = {
+  r: string; s: string;
+  v: number;
+  deadline: string
 };
