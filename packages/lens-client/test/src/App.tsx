@@ -105,6 +105,14 @@ const App = () => {
     setCreateLensProfileRes(JSON.stringify(res));
   };
 
+  const burnProfile = async () => {
+    if(!profileId) {
+      return;
+    }
+    const res = await lensClient.burnProfile(profileId);
+    console.log("[burnProfile]res:", res);
+  }
+
   const getProfiles = async () => {
     if (account) {
       const res = await lensClient.getProfiles(account);
@@ -289,6 +297,21 @@ const App = () => {
           />
           <div className="title">Result</div>
           <div className="textarea">{createLensProfileRes}</div>
+        </div>
+        <div className="test-item">
+          <button
+            disabled={profileId ? false : true}
+            onClick={burnProfile}
+            className="block"
+          >
+            burnProfile
+          </button>
+          <div className="title">ProfileId</div>
+          <input
+            type="text"
+            value={profileId || ""}
+            onChange={(event) => setProfileId(event.target.value)}
+          />
         </div>
         <div className="test-item">
           <button

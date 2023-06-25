@@ -110,6 +110,18 @@ export class LensClient {
     } as EventProfileCreated;
   }
 
+  public async burnProfile(profileId: BigNumberish) {
+    const res = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "burn",
+      params: [profileId],
+      mode: Mode.Write,
+    });
+
+    return res;
+  }
+
   public async setDefaultProfile(profileId: BigNumberish) {
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
