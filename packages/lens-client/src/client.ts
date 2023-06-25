@@ -1,4 +1,4 @@
-import {Mode, RuntimeConnector,} from "@dataverse/runtime-connector";
+import {Mode, RuntimeConnector, WALLET,} from "@dataverse/runtime-connector";
 import {BigNumber, BigNumberish, Bytes, ethers, Wallet} from "ethers";
 import {
   EVENT_SIG_COLLECTED,
@@ -10,12 +10,12 @@ import {
 import {
   CollectWithSigData,
   CreateProfileData,
+  EIP712Signature,
   EventCollected,
   EventPostCreated,
   PostData,
   PostWithSigData,
   ProfileStruct,
-  EIP712Signature,
 } from "./types";
 import {gql, request} from "graphql-request";
 import LensHubJson from "../contracts/LensHub.sol/LensHub.json";
@@ -348,7 +348,7 @@ export class LensClient {
       referenceModuleInitData: referenceModuleInitData || [],
     };
 
-    postWithSigData.sig = await this._getPostSig(postWithSigData, collectModuleInitData);
+    postWithSigData.sig = await this._getPostSig(postWithSigData);
     console.log("PostWithSigData: ", postWithSigData);
     return this._callPostWithSig(postWithSigData);
   }
@@ -373,7 +373,7 @@ export class LensClient {
       referenceModuleInitData: referenceModuleInitData || [],
     };
 
-    postWithSigData.sig = await this._getPostSig(postWithSigData, []);
+    postWithSigData.sig = await this._getPostSig(postWithSigData);
     return this._callPostWithSig(postWithSigData);
   }
 
@@ -415,7 +415,7 @@ export class LensClient {
       referenceModule: referenceModule || ethers.constants.AddressZero,
       referenceModuleInitData: referenceModuleInitData || [],
     };
-    postWithSigData.sig = await this._getPostSig(postWithSigData, collectModuleInitData);
+    postWithSigData.sig = await this._getPostSig(postWithSigData);
     return this._callPostWithSig(postWithSigData);
 }
 
@@ -841,7 +841,7 @@ export class LensClient {
       lensHubAddr,
       chainId
     })
-    const {v, r, s} = await this._getPostWithSigPartsByWallet(
+    const {v, r, s} = await this.getPostWithSigPartsByWallet(
       profileId,
       contentURI,
       collectModuleAddr,
@@ -865,7 +865,7 @@ export class LensClient {
     return sig;
   }
 
-  private async _getPostWithSigPartsByWallet(
+  public async getPostWithSigPartsByWallet(
     profileId: BigNumberish,
     contentURI: string,
     collectModule: string,
@@ -894,14 +894,14 @@ export class LensClient {
   }
 
 
-  private async _getPostSig(postWithSigData: Partial<PostWithSigData>, collectModuleInitData: string| any[]) {
+  private async _getPostSig(postWithSigData: Partial<PostWithSigData>) {
     const nonce = await this.getSigNonce();
-    const { chain } = await this.runtimeConnector.connectWallet();
+    const { chain } = await this.runtimeConnector.connectWallet(WALLET.METAMASK);
     return this._getSigCommon(
       postWithSigData.profileId,
       postWithSigData.contentURI as string,
       postWithSigData.collectModule as string,
-      collectModuleInitData,
+      postWithSigData.collectModuleInitData as string | any[],
       postWithSigData.referenceModule as string,
       postWithSigData.referenceModuleInitData as string | any[],
       nonce,
