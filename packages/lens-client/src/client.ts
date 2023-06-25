@@ -1,5 +1,5 @@
 import { Mode, RuntimeConnector, WALLET } from "@dataverse/runtime-connector";
-import { BigNumber, BigNumberish, Bytes, ethers, Wallet } from "ethers";
+import { BigNumber, BigNumberish, ethers, Wallet } from "ethers";
 import {
   EVENT_SIG_COLLECTED,
   EVENT_SIG_POST_CREATED,
@@ -393,9 +393,39 @@ export class LensClient {
       referenceModuleInitData: referenceModuleInitData || [],
     };
 
-    postWithSigData.sig = await this._getPostSig(postWithSigData);
+    const nonce = await this.getSigNonce();
+    const { chain } = await this.runtimeConnector.connectWallet();
+
+    postWithSigData.sig = await this._getPostWithSigPartsByWallet({
+      profileId,
+      contentURI,
+      collectModule: this.lensContractsAddress.FeeCollectModule,
+      collectModuleInitData,
+      referenceModule: referenceModule || ethers.constants.AddressZero,
+      referenceModuleInitData: referenceModuleInitData || [],
+      nonce,
+      deadline: MAX_UINT256,
+      wallet: this.signer as Wallet,
+      lensHubAddr: this.lensContractsAddress.LensHubProxy,
+      chainId: chain.chainId,
+    });
+
     console.log("PostWithSigData: ", postWithSigData);
-    return this._callPostWithSig(postWithSigData);
+
+    const res = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "postWithSig",
+      params: [postWithSigData as PostWithSigData],
+      mode: Mode.Write,
+    });
+    const targetEvent = Object.values(res.events).find((event: any) => {
+      return event.topics[0] === EVENT_SIG_POST_CREATED;
+    });
+    return {
+      profileId: (targetEvent as any).topics[1],
+      pubId: (targetEvent as any).topics[2],
+    } as EventPostCreated;
   }
 
   public async createRevertCollectPostWithSig({
@@ -417,9 +447,39 @@ export class LensClient {
       referenceModule: referenceModule || ethers.constants.AddressZero,
       referenceModuleInitData: referenceModuleInitData || [],
     };
+    const nonce = await this.getSigNonce();
+    const { chain } = await this.runtimeConnector.connectWallet(
+      WALLET.METAMASK
+    );
 
-    postWithSigData.sig = await this._getPostSig(postWithSigData);
-    return this._callPostWithSig(postWithSigData);
+    postWithSigData.sig = await this._getPostWithSigPartsByWallet({
+      profileId,
+      contentURI,
+      collectModule: this.lensContractsAddress.FeeCollectModule,
+      collectModuleInitData: [],
+      referenceModule: referenceModule || ethers.constants.AddressZero,
+      referenceModuleInitData: referenceModuleInitData || [],
+      nonce,
+      deadline: MAX_UINT256,
+      wallet: this.signer as Wallet,
+      lensHubAddr: this.lensContractsAddress.LensHubProxy,
+      chainId: chain.chainId,
+    });
+
+    const res = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "postWithSig",
+      params: [postWithSigData as PostWithSigData],
+      mode: Mode.Write,
+    });
+    const targetEvent = Object.values(res.events).find((event: any) => {
+      return event.topics[0] === EVENT_SIG_POST_CREATED;
+    });
+    return {
+      profileId: (targetEvent as any).topics[1],
+      pubId: (targetEvent as any).topics[2],
+    } as EventPostCreated;
   }
 
   public async createFeeCollectPostWithSig({
@@ -460,13 +520,42 @@ export class LensClient {
       referenceModule: referenceModule || ethers.constants.AddressZero,
       referenceModuleInitData: referenceModuleInitData || [],
     };
-    postWithSigData.sig = await this._getPostSig(postWithSigData);
-    return this._callPostWithSig(postWithSigData);
+
+    const nonce = await this.getSigNonce();
+    const { chain } = await this.runtimeConnector.connectWallet();
+
+    postWithSigData.sig = await this._getPostWithSigPartsByWallet({
+      profileId,
+      contentURI,
+      collectModule: this.lensContractsAddress.FeeCollectModule,
+      collectModuleInitData,
+      referenceModule: referenceModule || ethers.constants.AddressZero,
+      referenceModuleInitData: referenceModuleInitData || [],
+      nonce,
+      deadline: MAX_UINT256,
+      wallet: this.signer as Wallet,
+      lensHubAddr: this.lensContractsAddress.LensHubProxy,
+      chainId: chain.chainId,
+    });
+
+    const res = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "postWithSig",
+      params: [postWithSigData as PostWithSigData],
+      mode: Mode.Write,
+    });
+    const targetEvent = Object.values(res.events).find((event: any) => {
+      return event.topics[0] === EVENT_SIG_POST_CREATED;
+    });
+    return {
+      profileId: (targetEvent as any).topics[1],
+      pubId: (targetEvent as any).topics[2],
+    } as EventPostCreated;
   }
 
   public async getSigNonce() {
     const address = await this.signer.getAddress();
-    console.log("address: ", address);
 
     const nonce = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
@@ -476,7 +565,6 @@ export class LensClient {
       mode: Mode.Read,
     });
 
-    console.log("user sig nonce: :", nonce);
     return nonce;
   }
 
@@ -562,16 +650,16 @@ export class LensClient {
     const nonce = await this.getSigNonce();
     const { chain } = await this.runtimeConnector.connectWallet();
 
-    collectWithSigData.sig = await this.getCollectWithSigPartsByWallet(
+    collectWithSigData.sig = await this._getCollectWithSigPartsByWallet({
       profileId,
       pubId,
-      collectModuleValidateData,
+      data: collectModuleValidateData,
       nonce,
-      MAX_UINT256,
-      this.signer as Wallet,
-      this.lensContractsAddress.LensHubProxy,
-      chain.chainId
-    );
+      deadline: MAX_UINT256,
+      wallet: this.signer as Wallet,
+      lensHubAddr: this.lensContractsAddress.LensHubProxy,
+      chainId: chain.chainId,
+    });
 
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
@@ -886,42 +974,43 @@ export class LensClient {
     }
   }
 
-  private _buildPostWithSigParams = (
-    profileId: BigNumberish,
-    contentURI: string,
-    collectModule: string,
-    collectModuleInitData: Bytes | string,
-    referenceModule: string,
-    referenceModuleInitData: Bytes | string,
-    nonce: number,
-    deadline: string,
-    lensHubAddr: string,
-    chainId: number
-  ) => ({
-    types: {
-      PostWithSig: [
-        { name: "profileId", type: "uint256" },
-        { name: "contentURI", type: "string" },
-        { name: "collectModule", type: "address" },
-        { name: "collectModuleInitData", type: "bytes" },
-        { name: "referenceModule", type: "address" },
-        { name: "referenceModuleInitData", type: "bytes" },
-        { name: "nonce", type: "uint256" },
-        { name: "deadline", type: "uint256" },
-      ],
-    },
-    domain: this._domain(lensHubAddr, chainId),
-    value: {
-      profileId: profileId,
-      contentURI: contentURI,
-      collectModule: collectModule,
-      collectModuleInitData: collectModuleInitData,
-      referenceModule: referenceModule,
-      referenceModuleInitData: referenceModuleInitData,
-      nonce: nonce,
-      deadline: deadline,
-    },
-  });
+  // private _buildPostWithSigParams = (
+  //   profileId: BigNumberish,
+  //   contentURI: string,
+  //   collectModule: string,
+  //   collectModuleInitData: Bytes | string,
+  //   referenceModule: string,
+  //   referenceModuleInitData: Bytes | string,
+  //   nonce: number,
+  //   deadline: string,
+  //   lensHubAddr: string,
+  //   chainId: number
+  // ) => ({
+  //   types: {
+  //     PostWithSig: [
+  //       { name: "profileId", type: "uint256" },
+  //       { name: "contentURI", type: "string" },
+  //       { name: "collectModule", type: "address" },
+  //       { name: "collectModuleInitData", type: "bytes" },
+  //       { name: "referenceModule", type: "address" },
+  //       { name: "referenceModuleInitData", type: "bytes" },
+  //       { name: "nonce", type: "uint256" },
+  //       { name: "deadline", type: "uint256" },
+  //     ],
+  //   },
+  //   domain: this._domain(lensHubAddr, chainId),
+  //   value: {
+  //     profileId: profileId,
+  //     contentURI: contentURI,
+  //     collectModule: collectModule,
+  //     collectModuleInitData: collectModuleInitData,
+  //     referenceModule: referenceModule,
+  //     referenceModuleInitData: referenceModuleInitData,
+  //     nonce: nonce,
+  //     deadline: deadline,
+  //   },
+  // });
+
   private _domain(
     lensHubAddr: string,
     chainId: number
@@ -939,185 +1028,192 @@ export class LensClient {
     };
   }
 
-  private async _getSigByWallet(
-    wallet: Wallet,
-    msgParams: {
-      domain: any;
-      types: any;
-      value: any;
-    }
-  ): Promise<EIP712Signature> {
+  // private async _getSigByWallet(
+  //   wallet: Wallet,
+  //   msgParams: {
+  //     domain: any;
+  //     types: any;
+  //     value: any;
+  //   }
+  // ): Promise<EIP712Signature> {
+  //   const sig = await wallet._signTypedData(
+  //     msgParams.domain,
+  //     msgParams.types,
+  //     msgParams.value
+  //   );
+  //   return ethers.utils.splitSignature(sig);
+  // }
+
+  // private async _getSigCommon(
+  //   profileId: BigNumber | number,
+  //   contentURI: string,
+  //   collectModuleAddr: string,
+  //   collectModuleInitData: string | any[],
+  //   referenceModule: string,
+  //   referenceModuleInitData: string | any[],
+  //   nonce: number,
+  //   deadline: string,
+  //   wallet: Wallet,
+  //   lensHubAddr: string,
+  //   chainId: number
+  // ) {
+  //   const { v, r, s } = await this._getPostWithSigPartsByWallet(
+  //     profileId,
+  //     contentURI,
+  //     collectModuleAddr,
+  //     collectModuleInitData,
+  //     referenceModule,
+  //     referenceModuleInitData,
+  //     nonce,
+  //     deadline,
+  //     wallet,
+  //     lensHubAddr,
+  //     chainId
+  //   );
+
+  //   const sig: EIP712Signature = {
+  //     v: v,
+  //     s: s,
+  //     r: r,
+  //     deadline: deadline,
+  //   };
+
+  //   return sig;
+  // }
+
+  private async _getPostWithSigPartsByWallet({
+    profileId,
+    contentURI,
+    collectModule,
+    collectModuleInitData,
+    referenceModule,
+    referenceModuleInitData,
+    nonce,
+    deadline,
+    wallet,
+    lensHubAddr,
+    chainId,
+  }: {
+    profileId: BigNumberish;
+    contentURI: string;
+    collectModule: string;
+    collectModuleInitData: any[];
+    referenceModule: string;
+    referenceModuleInitData: any[];
+    nonce: number;
+    deadline: string;
+    wallet: Wallet;
+    lensHubAddr: string;
+    chainId: number;
+  }): Promise<EIP712Signature> {
+    const msgParams = {
+      types: {
+        PostWithSig: [
+          { name: "profileId", type: "uint256" },
+          { name: "contentURI", type: "string" },
+          { name: "collectModule", type: "address" },
+          { name: "collectModuleInitData", type: "bytes" },
+          { name: "referenceModule", type: "address" },
+          { name: "referenceModuleInitData", type: "bytes" },
+          { name: "nonce", type: "uint256" },
+          { name: "deadline", type: "uint256" },
+        ],
+      },
+      domain: this._domain(lensHubAddr, chainId),
+      value: {
+        profileId: profileId,
+        contentURI: contentURI,
+        collectModule: collectModule,
+        collectModuleInitData: collectModuleInitData,
+        referenceModule: referenceModule,
+        referenceModuleInitData: referenceModuleInitData,
+        nonce: nonce,
+        deadline: deadline,
+      },
+    };
+
     const sig = await wallet._signTypedData(
       msgParams.domain,
       msgParams.types,
       msgParams.value
     );
-    return ethers.utils.splitSignature(sig);
-  }
+    const partialSig = ethers.utils.splitSignature(sig);
 
-  private async _getSigCommon(
-    profileId: BigNumber | number,
-    contentURI: string,
-    collectModuleAddr: string,
-    collectModuleInitData: string | any[],
-    referenceModule: string,
-    referenceModuleInitData: string | any[],
-    nonce: number,
-    deadline: string,
-    wallet: Wallet,
-    lensHubAddr: string,
-    chainId: number
-  ) {
-    console.log("sigCommon: ", {
-      profileId,
-      contentURI,
-      collectModuleAddr,
-      collectModuleInitData,
-      referenceModule,
-      referenceModuleInitData,
-      nonce,
-      deadline,
-      wallet,
-      lensHubAddr,
-      chainId,
-    });
-    const { v, r, s } = await this.getPostWithSigPartsByWallet(
-      profileId,
-      contentURI,
-      collectModuleAddr,
-      collectModuleInitData,
-      referenceModule,
-      referenceModuleInitData,
-      nonce,
-      deadline,
-      wallet,
-      lensHubAddr,
-      chainId
-    );
-
-    const sig: EIP712Signature = {
-      v: v,
-      s: s,
-      r: r,
-      deadline: deadline,
-    };
-
-    return sig;
-  }
-
-  public async getPostWithSigPartsByWallet(
-    profileId: BigNumberish,
-    contentURI: string,
-    collectModule: string,
-    collectModuleInitData: Bytes | string,
-    referenceModule: string,
-    referenceModuleInitData: Bytes | string,
-    nonce: number,
-    deadline: string,
-    wallet: Wallet,
-    lensHubAddr: string,
-    chainId: number
-  ): Promise<{ v: number; r: string; s: string }> {
-    const msgParams = this._buildPostWithSigParams(
-      profileId,
-      contentURI,
-      collectModule,
-      collectModuleInitData,
-      referenceModule,
-      referenceModuleInitData,
-      nonce,
-      deadline,
-      lensHubAddr,
-      chainId
-    );
-    return await this._getSigByWallet(wallet, msgParams);
-  }
-
-  private async _getPostSig(postWithSigData: Partial<PostWithSigData>) {
-    const nonce = await this.getSigNonce();
-    const { chain } = await this.runtimeConnector.connectWallet(
-      WALLET.METAMASK
-    );
-    return this._getSigCommon(
-      postWithSigData.profileId,
-      postWithSigData.contentURI as string,
-      postWithSigData.collectModule as string,
-      postWithSigData.collectModuleInitData as string | any[],
-      postWithSigData.referenceModule as string,
-      postWithSigData.referenceModuleInitData as string | any[],
-      nonce,
-      MAX_UINT256,
-      this.signer as Wallet,
-      this.lensContractsAddress.LensHubProxy,
-      chain.chainId
-    );
-  }
-
-  private async _callPostWithSig(postWithSigData: Partial<PostWithSigData>) {
-    const res = await this.runtimeConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "postWithSig",
-      params: [postWithSigData as PostWithSigData],
-      mode: Mode.Write,
-    });
-    const targetEvent = Object.values(res.events).find((event: any) => {
-      return event.topics[0] === EVENT_SIG_POST_CREATED;
-    });
     return {
-      profileId: (targetEvent as any).topics[1],
-      pubId: (targetEvent as any).topics[2],
-    } as EventPostCreated;
-  }
-
-  public async getCollectWithSigPartsByWallet(
-    profileId: BigNumberish,
-    pubId: BigNumberish,
-    data: Bytes | string,
-    nonce: number,
-    deadline: string,
-    wallet: Wallet,
-    lensHubAddr: string,
-    chainId: number
-    // ): Promise<{ v: number; r: string; s: string }> {
-  ): Promise<EIP712Signature> {
-    const msgParams = this.buildCollectWithSigParams(
-      profileId,
-      pubId,
-      data,
-      nonce,
+      ...partialSig,
       deadline,
-      lensHubAddr,
-      chainId
-    );
-    return await this._getSigByWallet(wallet, msgParams);
+    } as EIP712Signature;
   }
 
-  buildCollectWithSigParams = (
-    profileId: BigNumberish | number,
-    pubId: BigNumberish | number,
-    data: Bytes | string,
-    nonce: number,
-    deadline: string | number,
-    lensHubAddr: string,
-    chainId: number
-  ) => ({
-    types: {
-      CollectWithSig: [
-        { name: "profileId", type: "uint256" },
-        { name: "pubId", type: "uint256" },
-        { name: "data", type: "bytes" },
-        { name: "nonce", type: "uint256" },
-        { name: "deadline", type: "uint256" },
-      ],
-    },
-    domain: this._domain(lensHubAddr, chainId),
-    value: {
-      profileId: profileId,
-      pubId: pubId,
-      data: data,
-      nonce: nonce,
-      deadline: deadline,
-    },
-  });
+  // private async _getPostSig(postWithSigData: Partial<PostWithSigData>) {
+  //   const nonce = await this.getSigNonce();
+  //   const { chain } = await this.runtimeConnector.connectWallet(
+  //     WALLET.METAMASK
+  //   );
+  //   return this._getPostWithSigPartsByWallet(
+  //     postWithSigData.profileId,
+  //     postWithSigData.contentURI as string,
+  //     postWithSigData.collectModule as string,
+  //     postWithSigData.collectModuleInitData as string | any[],
+  //     postWithSigData.referenceModule as string,
+  //     postWithSigData.referenceModuleInitData as string | any[],
+  //     nonce,
+  //     MAX_UINT256,
+  //     this.signer as Wallet,
+  //     this.lensContractsAddress.LensHubProxy,
+  //     chain.chainId
+  //   );
+  // }
+
+  private async _getCollectWithSigPartsByWallet({
+    profileId,
+    pubId,
+    data,
+    nonce,
+    deadline,
+    wallet,
+    lensHubAddr,
+    chainId,
+  }: {
+    profileId: BigNumberish;
+    pubId: BigNumberish;
+    data: any[];
+    nonce: number;
+    deadline: string;
+    wallet: Wallet;
+    lensHubAddr: string;
+    chainId: number;
+  }): Promise<EIP712Signature> {
+    const msgParams = {
+      types: {
+        CollectWithSig: [
+          { name: "profileId", type: "uint256" },
+          { name: "pubId", type: "uint256" },
+          { name: "data", type: "bytes" },
+          { name: "nonce", type: "uint256" },
+          { name: "deadline", type: "uint256" },
+        ],
+      },
+      domain: this._domain(lensHubAddr, chainId),
+      value: {
+        profileId: profileId,
+        pubId: pubId,
+        data: data,
+        nonce: nonce,
+        deadline: deadline,
+      },
+    };
+    // return await this._getSigByWallet(wallet, msgParams);
+    const sig = await wallet._signTypedData(
+      msgParams.domain,
+      msgParams.types,
+      msgParams.value
+    );
+    const partialSig = ethers.utils.splitSignature(sig);
+
+    return {
+      ...partialSig,
+      deadline,
+    } as EIP712Signature;
+  }
 }

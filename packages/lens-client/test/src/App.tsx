@@ -4,7 +4,6 @@ import { Currency, WALLET } from "@dataverse/runtime-connector";
 import { Context } from "./main";
 import Client, { LensNetwork } from "@dataverse/lens-client-toolkit";
 import { getCurrencyAddress } from "./utils";
-import { BigNumber, Contract, ethers } from "ethers";
 
 const App = () => {
   const { runtimeConnector } = useContext(Context);
@@ -43,39 +42,6 @@ const App = () => {
     }
   }, [profiles]);
 
-  // const testWithEthers = async () => {
-  //   const provider = new ethers.providers.Web3Provider(
-  //     (window as any).ethereum
-  //   );
-
-  //   // MetaMask requires requesting permission to connect users accounts
-  //   await provider.send("eth_requestAccounts", []);
-
-  //   // The MetaMask plugin also allows signing transactions to
-  //   // send ether and pay to change state within the blockchain.
-  //   // For this, you need the account signer...
-  //   const signer = provider.getSigner();
-
-  //   const lensHub = new Contract(
-  //     "0x60Ae865ee4C725cd04353b5AAb364553f56ceF82",
-  //     JsonFile.abi,
-  //     signer
-  //   );
-
-  //   const tx = await lensHub.createProfile({
-  //     to: "0xD0167B1cc6CAb1e4e7C6f38d09EA35171d00b68e",
-  //     handle: "canvas2",
-  //     imageURI:
-  //       "https://gateway.ipfscdn.io/ipfs/QmQPuXJ7TTg7RpNjHeAR4NrGtDVSAwoP2qD4VdZF2vAJiR",
-  //     followModule: "0x0000000000000000000000000000000000000000",
-  //     followModuleInitData: [],
-  //     followNFTURI: "https://github.com/dataverse-os",
-  //   });
-  //   console.log("tx:", tx);
-  //   const res = await tx.wait();
-  //   console.log("res:", res);
-  // };
-
   const connectIdentity = async () => {
     const { address, wallet } = await lensClient.runtimeConnector.connectWallet(
       WALLET.METAMASK
@@ -107,12 +73,12 @@ const App = () => {
   };
 
   const burnProfile = async () => {
-    if(!profileId) {
+    if (!profileId) {
       return;
     }
     const res = await lensClient.burnProfile(profileId);
     console.log("[burnProfile]res:", res);
-  }
+  };
 
   const getProfiles = async () => {
     if (account) {
@@ -176,6 +142,22 @@ const App = () => {
     setCreatePostRes(JSON.stringify(res));
   };
 
+  const createFreeCollectPostWithSig = async () => {
+    if (!account || !profileId) {
+      return;
+    }
+
+    const res = await lensClient.createFreeCollectPostWithSig({
+      profileId,
+      contentURI: "https://github.com/dataverse-os",
+      collectModuleInitParams: {
+        followerOnly: false,
+      },
+    });
+
+    setCreatePostRes(JSON.stringify(res));
+  };
+
   const createRevertCollectPost = async () => {
     if (!profileId) {
       return;
@@ -234,22 +216,6 @@ const App = () => {
     setCreatePostRes(JSON.stringify(res));
   };
 
-  const createFreeCollectPostWithSig = async () => {
-    if (!account || !profileId) {
-      return;
-    }
-
-    const res = await lensClient.createFreeCollectPostWithSig({
-      profileId,
-      contentURI: "https://github.com/dataverse-os",
-      collectModuleInitParams: {
-        followerOnly: false,
-      },
-    });
-
-    setCreatePostRes(JSON.stringify(res));
-  };
-
   const collect = async () => {
     if (!profileId || !pubId) {
       return;
@@ -297,7 +263,8 @@ const App = () => {
 
   const getSigNonce = async () => {
     const nonce = await lensClient.getSigNonce();
-  }
+    console.log("[getSigNonce]res:", nonce);
+  };
 
   return (
     <div id="App">
@@ -412,18 +379,52 @@ const App = () => {
             value={profileId || ""}
             onChange={(event) => setProfileId(event.target.value)}
           />
-          {/* <div className="title">Result</div>
-          <div className="textarea">{getProfileIdByHandleRes}</div> */}
         </div>
         <div className="test-item">
-          <button onClick={createFreeCollectPost} className="block">
+          <button onClick={getSigNonce} className="block">
+            getSigNonce
+          </button>
+          <button
+            disabled={account ? false : true}
+            onClick={createFreeCollectPost}
+            className="block"
+          >
             createFreeCollectPost
           </button>
-          <button onClick={createRevertCollectPost} className="block">
+          <button
+            disabled={account ? false : true}
+            onClick={createFreeCollectPostWithSig}
+            className="block"
+          >
+            createFreeCollectPostWithSig
+          </button>
+          <button
+            disabled={account ? false : true}
+            onClick={createRevertCollectPost}
+            className="block"
+          >
             createRevertCollectPost
           </button>
-          <button onClick={createFeeCollectPost} className="block">
+          <button
+            disabled={account ? false : true}
+            onClick={createRevertCollectPostWithSig}
+            className="block"
+          >
+            createRevertCollectPostWithSig
+          </button>
+          <button
+            disabled={account ? false : true}
+            onClick={createFeeCollectPost}
+            className="block"
+          >
             createFeeCollectPost
+          </button>
+          <button
+            disabled={account ? false : true}
+            onClick={createFeeCollectPostWithSig}
+            className="block"
+          >
+            createFeeCollectPostWithSig
           </button>
           <div className="title">ProfileId</div>
           <input
@@ -441,6 +442,13 @@ const App = () => {
             className="block"
           >
             collect
+          </button>
+          <button
+            disabled={profileId && pubId ? false : true}
+            onClick={collectWithSig}
+            className="block"
+          >
+            collectWithSig
           </button>
           <div className="title">ProfileId</div>
           <input
@@ -501,21 +509,6 @@ const App = () => {
           <div className="title">Result</div>
           <div className="textarea">{isCollectedRes}</div>
         </div>
-        <button onClick={getSigNonce} className="block">
-          getSigNonce
-        </button>
-        <button onClick={createFeeCollectPostWithSig} className="block">
-          createFeeCollectPostWithSig
-        </button>
-        <button onClick={createFreeCollectPostWithSig} className="block">
-          createFreeCollectPostWithSig
-        </button>
-        <button onClick={createRevertCollectPostWithSig} className="block">
-          createRevertCollectPostWithSig
-        </button>
-        <button onClick={collectWithSig} className="block">
-          collectWithSig
-        </button>
       </div>
     </div>
   );
