@@ -7,6 +7,7 @@ import Client, {
   LensNetwork,
   MirrorData,
   ModelType,
+  PostData,
 } from "@dataverse/lens-client-toolkit";
 import { getCurrencyAddress } from "./utils";
 import { ethers } from "ethers";
@@ -212,6 +213,50 @@ const App = () => {
     const res = await lensClient.setRevertFollowModule(profileId);
     console.log("[setRevertFollowModule]res:", res);
   };
+
+  const post = async () => {
+    if(!profileId) {
+      return;
+    }
+    const collectModule = lensClient.lensContractsAddress.FreeCollectModule;
+    const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
+      ["bool"],
+      [false]
+    ) as any;
+    const postData: PostData = {
+      profileId,
+      contentURI: "https://dataverse-os.com/",
+      collectModule,
+      collectModuleInitData,
+      referenceModule: ethers.constants.AddressZero,
+      referenceModuleInitData: []
+    };
+    const res = await lensClient.post(postData);
+    console.log("[post]res:", res);
+    setCreatePostRes(JSON.stringify(res));
+  }
+
+  const postWithSig = async () => {
+    if(!profileId) {
+      return;
+    }
+    const collectModule = lensClient.lensContractsAddress.FreeCollectModule;
+    const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
+      ["bool"],
+      [false]
+    ) as any;
+    const postData: PostData = {
+      profileId,
+      contentURI: "https://dataverse-os.com/",
+      collectModule,
+      collectModuleInitData,
+      referenceModule: ethers.constants.AddressZero,
+      referenceModuleInitData: []
+    };
+    const res = await lensClient.postWithSig(postData);
+    console.log("[postWithSig]res:", res);
+    setCreatePostRes(JSON.stringify(res));
+  }
 
   const createFreeCollectPost = async () => {
     if (!profileId) {
@@ -663,6 +708,20 @@ const App = () => {
         <div className="test-item">
           <button onClick={getSigNonce} className="block">
             getSigNonce
+          </button>
+          <button
+            disabled={account ? false : true}
+            onClick={post}
+            className="block"
+          >
+            post
+          </button>
+          <button
+            disabled={account ? false : true}
+            onClick={postWithSig}
+            className="block"
+          >
+            postWithSig
           </button>
           <button
             disabled={account ? false : true}
