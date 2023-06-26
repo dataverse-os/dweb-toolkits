@@ -381,21 +381,12 @@ export class LensClient {
       [collectModuleInitParams.followerOnly]
     );
 
-    const postWithSigData: Partial<PostWithSigData> = {
+    const nonce = await this.getSigNonce();
+
+    const sig = await this._getPostWithSigPartsByWallet({
       profileId,
       contentURI,
       collectModule: this.lensContractsAddress.FreeCollectModule,
-      collectModuleInitData,
-      referenceModule: referenceModule || ethers.constants.AddressZero,
-      referenceModuleInitData: referenceModuleInitData || [],
-    };
-
-    const nonce = await this.getSigNonce();
-
-    postWithSigData.sig = await this._getPostWithSigPartsByWallet({
-      profileId,
-      contentURI,
-      collectModule: this.lensContractsAddress.FeeCollectModule,
       collectModuleInitData,
       referenceModule: referenceModule || ethers.constants.AddressZero,
       referenceModuleInitData: referenceModuleInitData || [],
@@ -406,20 +397,21 @@ export class LensClient {
       chainId: this.runtimeConnector.chain.chainId,
     });
 
-    console.log("PostWithSigData: ", postWithSigData);
-
-    console.log("struct:", {
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "postWithSig",
-      params: [postWithSigData as PostWithSigData],
-    });
+    const postWithSigData: PostWithSigData = {
+      profileId,
+      contentURI,
+      collectModule: this.lensContractsAddress.FreeCollectModule,
+      collectModuleInitData,
+      referenceModule: referenceModule || ethers.constants.AddressZero,
+      referenceModuleInitData: referenceModuleInitData || [],
+      sig,
+    };
 
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "postWithSig",
-      params: [postWithSigData as PostWithSigData],
+      params: [postWithSigData],
     });
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
@@ -441,20 +433,12 @@ export class LensClient {
     referenceModule?: string;
     referenceModuleInitData?: any[];
   }) {
-    const postWithSigData: Partial<PostWithSigData> = {
+    const nonce = await this.getSigNonce();
+
+    const sig = await this._getPostWithSigPartsByWallet({
       profileId,
       contentURI,
       collectModule: this.lensContractsAddress.RevertCollectModule,
-      collectModuleInitData: [],
-      referenceModule: referenceModule || ethers.constants.AddressZero,
-      referenceModuleInitData: referenceModuleInitData || [],
-    };
-    const nonce = await this.getSigNonce();
-
-    postWithSigData.sig = await this._getPostWithSigPartsByWallet({
-      profileId,
-      contentURI,
-      collectModule: this.lensContractsAddress.FeeCollectModule,
       collectModuleInitData: [],
       referenceModule: referenceModule || ethers.constants.AddressZero,
       referenceModuleInitData: referenceModuleInitData || [],
@@ -465,11 +449,21 @@ export class LensClient {
       chainId: this.runtimeConnector.chain.chainId,
     });
 
+    const postWithSigData: PostWithSigData = {
+      profileId,
+      contentURI,
+      collectModule: this.lensContractsAddress.RevertCollectModule,
+      collectModuleInitData: [],
+      referenceModule: referenceModule || ethers.constants.AddressZero,
+      referenceModuleInitData: referenceModuleInitData || [],
+      sig,
+    };
+
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "postWithSig",
-      params: [postWithSigData as PostWithSigData],
+      params: [postWithSigData],
     });
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
@@ -510,18 +504,9 @@ export class LensClient {
       ]
     );
 
-    const postWithSigData: Partial<PostWithSigData> = {
-      profileId,
-      contentURI,
-      collectModule: this.lensContractsAddress.FeeCollectModule,
-      collectModuleInitData,
-      referenceModule: referenceModule || ethers.constants.AddressZero,
-      referenceModuleInitData: referenceModuleInitData || [],
-    };
-
     const nonce = await this.getSigNonce();
 
-    postWithSigData.sig = await this._getPostWithSigPartsByWallet({
+    const sig = await this._getPostWithSigPartsByWallet({
       profileId,
       contentURI,
       collectModule: this.lensContractsAddress.FeeCollectModule,
@@ -535,11 +520,21 @@ export class LensClient {
       chainId: this.runtimeConnector.chain.chainId,
     });
 
+    const postWithSigData: PostWithSigData = {
+      profileId,
+      contentURI,
+      collectModule: this.lensContractsAddress.FeeCollectModule,
+      collectModuleInitData,
+      referenceModule: referenceModule || ethers.constants.AddressZero,
+      referenceModuleInitData: referenceModuleInitData || [],
+      sig,
+    };
+
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "postWithSig",
-      params: [postWithSigData as PostWithSigData],
+      params: [postWithSigData],
     });
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
