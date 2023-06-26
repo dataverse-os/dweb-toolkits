@@ -58,6 +58,50 @@ export type CollectWithSigData = {
   sig: EIP712Signature;
 };
 
+export type CommentData = {
+  profileId: BigNumberish;
+  contentURI: string;
+  profileIdPointed: BigNumberish;
+  pubIdPointed: BigNumberish;
+  referenceModuleData: any[];
+  collectModule: string;
+  collectModuleInitData: any[];
+  referenceModule: string;
+  referenceModuleInitData: any[];
+};
+
+export type CommentWithSigData = {
+  profileId: BigNumberish;
+  contentURI: string;
+  profileIdPointed: BigNumberish;
+  pubIdPointed: BigNumberish;
+  referenceModuleData: any[];
+  collectModule: string;
+  collectModuleInitData: any[];
+  referenceModule: string;
+  referenceModuleInitData: any[];
+  sig: EIP712Signature;
+};
+
+export type MirrorData = {
+  profileId: BigNumberish;
+  profileIdPointed: BigNumberish;
+  pubIdPointed: BigNumberish;
+  referenceModuleData: any[];
+  referenceModule: string;
+  referenceModuleInitData: any[];
+};
+
+export type MirrorWithSigData = {
+  profileId: BigNumberish;
+  profileIdPointed: BigNumberish;
+  pubIdPointed: BigNumberish;
+  referenceModuleData: any[];
+  referenceModule: string;
+  referenceModuleInitData: any[];
+  sig: EIP712Signature;
+};
+
 export type EventProfileCreated = {
   profileId: BigNumberish;
   creator: string;
@@ -71,6 +115,16 @@ export type EventPostCreated = {
 
 export type EventCollected = {
   collector: string;
+  profileId: BigNumberish;
+  pubId: BigNumberish;
+};
+
+export type EventCommentCreated = {
+  profileId: BigNumberish;
+  pubId: BigNumberish;
+};
+
+export type EventMirrorCreated = {
   profileId: BigNumberish;
   pubId: BigNumberish;
 };
