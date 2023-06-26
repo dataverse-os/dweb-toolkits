@@ -744,7 +744,7 @@ export class LensClient {
   public async isFollowModuleWhitelisted(followModule: string) {
     const isWhitelisted = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: CollectNFTJson.abi,
+      abi: LensHubJson.abi,
       method: "isFollowModuleWhitelisted",
       params: [followModule],
     });
@@ -755,7 +755,7 @@ export class LensClient {
   public async isReferenceModuleWhitelisted(referenceModule: string) {
     const isWhitelisted = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: CollectNFTJson.abi,
+      abi: LensHubJson.abi,
       method: "isReferenceModuleWhitelisted",
       params: [referenceModule],
     });
@@ -766,7 +766,7 @@ export class LensClient {
   public async isCollectModuleWhitelisted(collectModule: string) {
     const isWhitelisted = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: CollectNFTJson.abi,
+      abi: LensHubJson.abi,
       method: "isCollectModuleWhitelisted",
       params: [collectModule],
     });
