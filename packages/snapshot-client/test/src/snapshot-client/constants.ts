@@ -5,6 +5,11 @@ export const SNAP_SHOT_HUB = {
   "dev": 'https://testnet.snapshot.org'
 };
 
+export const GRAPHQL_API = {
+  "prod": 'https://hub.snapshot.org/graphql',
+  "dev": 'https://testnet.snapshot.org/graphql'
+}
+
 export const ONE_DAY = 24 * 60 * 60;
 
 export const now = Number((new Date().getTime() / 1000).toFixed(0));
@@ -23,8 +28,10 @@ export const test_proposal = {
   app: 'my-app' // provide the name of your project which is using this snapshot.js integration
 } as Proposal;
 
+export const test_ens = "toolkits.eth"
+
 export const test_space = {
-  space: "toolkits.eth"
+  space: test_ens
 }
 
 export const test_vote =

@@ -3,8 +3,16 @@ import {useContext, useState} from "react";
 import {WALLET} from "@dataverse/runtime-connector";
 import {Context} from "./main";
 import {SnapshotClient} from "./snapshot-client/client";
-import {SNAP_SHOT_HUB, test_proposal, test_space, test_vote} from "./snapshot-client/constants";
+import {SNAP_SHOT_HUB, test_ens, test_proposal, test_space, test_vote} from "./snapshot-client/constants";
 import {Strategy} from "@snapshot-labs/snapshot.js/dist/voting/types";
+import {
+  getActions,
+  getProposalById,
+  getProposals,
+  getSpaceDetail,
+  getVoteDetail
+} from "./graphql-client/graphql";
+import {GetActionParams, GetProposalsParams, OrderDirection, State} from "./graphql-client/types";
 
 const App = () => {
   const {runtimeConnector} = useContext(Context);
@@ -117,6 +125,42 @@ const App = () => {
   //   });
   //
   // }
+
+  const queryActions = async () => {
+    const params = {
+      space: test_ens,
+      first: 20,
+      skip: 10,
+      orderDirection: OrderDirection.asc
+    } as GetActionParams
+    await getActions(params);
+  }
+
+  const queryVoteDetail = async () => {
+    const voteId = ""
+    await getVoteDetail(voteId);
+  }
+
+  const queryProposals = async () => {
+    const variables = {
+      space: test_ens,
+      first: 20,
+      skip: 1,
+      state: State.active,
+      orderDirection: OrderDirection.asc
+    } as GetProposalsParams;
+    await getProposals(variables);
+  }
+
+  const queryProposalById = async () => {
+    const proposalId = "0x5d790744b950c5d60e025b3076e1a37022f6a5a2ffcf56ba38e2d85192997ede"
+    await getProposalById(proposalId);
+  }
+
+  const querySpaceDetail = async () => {
+    await getSpaceDetail(test_ens);
+  }
+
   return (
     <>
       <button onClick={createCapability}>createCapability</button>
@@ -135,8 +179,17 @@ const App = () => {
       <br/>
       {/*<button onClick={validate}>validate</button>*/}
       {/*<br/>*/}
-
-
+      <hr/>
+      <button onClick={queryActions}>queryActions</button>
+      <br/>
+      <button onClick={queryVoteDetail}>queryVoteDetail</button>
+      <br/>
+      <button onClick={queryProposals}>queryProposals</button>
+      <br/>
+      <button onClick={queryProposalById}>queryProposalById</button>
+      <br/>
+      <button onClick={querySpaceDetail}>querySpaceDetail</button>
+      <br/>
     </>
   );
 };
