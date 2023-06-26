@@ -15,5 +15,7 @@ const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
-      <App />
+  <Context.Provider value={{ runtimeConnector }}>
+    <App />
+  </Context.Provider>
 );
