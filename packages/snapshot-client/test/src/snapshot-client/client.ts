@@ -1,9 +1,8 @@
 import {RuntimeConnector} from "@dataverse/runtime-connector";
 import snapshot from "@snapshot-labs/snapshot.js";
 import Client from "@snapshot-labs/snapshot.js/dist/sign";
-import {Proposal, Vote} from "@snapshot-labs/snapshot.js/src/sign/types";
 import {Wallet} from "ethers";
-import {Follow, Message} from "./types";
+import {Proposal, Vote, Follow, Message, Options, Strategy} from "./types";
 
 export class SnapshotClient {
   // public appName: string;
@@ -42,6 +41,73 @@ export class SnapshotClient {
     console.log("cast vote receipt: ", receipt);
     return receipt;
   }
+
+  async getScores(
+    {space, strategies, network, voters, scoreApiUrl, blockNumber}:
+      {
+        space: string,
+        strategies: Strategy[],
+        network: string,
+        voters: string[],
+        scoreApiUrl?: string,
+        blockNumber: number
+      }) {
+
+    const scores = await snapshot.utils.getScores(
+      space,
+      strategies,
+      network,
+      voters,
+      blockNumber
+    )
+
+    console.log('Scores', scores);
+    return scores;
+  }
+
+  async getVp({address, network, strategies, snapshotNumber, space, delegation, options}: {
+    address: string,
+    network: string,
+    strategies: Strategy[],
+    snapshotNumber: number | 'latest',
+    space: string,
+    delegation: boolean,
+    options?: Options
+  }) {
+
+    const vp = await snapshot.utils.getVp(address, network, strategies, snapshotNumber, space, delegation)
+
+    console.log('Voting Power', vp);
+    return vp
+  }
+
+  async validate(
+    {
+      validation,
+      author,
+      space,
+      network,
+      snapshotNumber,
+      params,
+      options
+    }: {
+      validation: string,
+      author: string,
+      space: string,
+      network: string,
+      snapshotNumber: number | 'latest',
+      params: any,
+      options: any
+    }) {
+
+
+    const result = await snapshot.utils.validate(
+      validation, author, space, network, snapshotNumber, params, options
+    )
+
+    console.log('Validation Result', result);
+  }
+
 
   buildMessage = (msg: Message) => {
     const web3 = this.runtimeConnector.signer as unknown as Wallet;

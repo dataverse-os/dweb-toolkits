@@ -6,6 +6,8 @@ export type ProposalType =
   | 'weighted'
   | 'basic';
 
+export type Message = Proposal | Follow | Vote
+
 export interface Proposal {
   from?: string;
   space: string;
@@ -41,4 +43,12 @@ export interface Vote {
   metadata?: string;
 }
 
-export type Message = Proposal | Follow | Vote
+export interface Options {
+  url?: string;
+}
+
+export interface Strategy {
+  name: string;
+  network: string;
+  params: Record<string, unknown>;
+}
