@@ -2,8 +2,13 @@ import "./App.scss";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { Currency, WALLET } from "@dataverse/runtime-connector";
 import { Context } from "./main";
-import Client, { LensNetwork } from "@dataverse/lens-client-toolkit";
+import Client, {
+  CommentData,
+  LensNetwork,
+  MirrorData,
+} from "@dataverse/lens-client-toolkit";
 import { getCurrencyAddress } from "./utils";
+import { ethers } from "ethers";
 
 const App = () => {
   const { runtimeConnector } = useContext(Context);
@@ -37,6 +42,10 @@ const App = () => {
   const [pubId, setPubId] = useState<string>();
   const [collectRes, setCollectRes] = useState<string>();
   const [isCollectedRes, setIsCollectedRes] = useState<string>();
+  const [commentRes, setCommentRes] = useState<string>("");
+  const [mirrorRes, setMirrorRes] = useState<string>("");
+  const [profileIdPointed, setProfileIdPointed] = useState<string>("0x80e4");
+  const [pubIdPointed, setPubIdPointed] = useState<string>("0x10");
 
   useEffect(() => {
     if (account) {
@@ -208,6 +217,7 @@ const App = () => {
         followerOnly: false,
       },
     });
+    console.log("[createFreeCollectPost]res:", res);
     setCreatePostRes(JSON.stringify(res));
   };
 
@@ -223,7 +233,7 @@ const App = () => {
         followerOnly: false,
       },
     });
-
+    console.log("[createFreeCollectPostWithSig]res:", res);
     setCreatePostRes(JSON.stringify(res));
   };
 
@@ -235,6 +245,7 @@ const App = () => {
       profileId,
       contentURI: "https://github.com/dataverse-os",
     });
+    console.log("[createRevertCollectPost]res:", res);
     setCreatePostRes(JSON.stringify(res));
   };
 
@@ -246,6 +257,7 @@ const App = () => {
       profileId,
       contentURI: "https://github.com/dataverse-os",
     });
+    console.log("[createRevertCollectPostWithSig]res:", res);
     setCreatePostRes(JSON.stringify(res));
   };
 
@@ -264,6 +276,7 @@ const App = () => {
         followerOnly: false,
       },
     });
+    console.log("[createFeeCollectPost]res:", res);
     setCreatePostRes(JSON.stringify(res));
   };
 
@@ -282,6 +295,7 @@ const App = () => {
         followerOnly: false,
       },
     });
+    console.log("[createFeeCollectPostWithSig]res:", res);
     setCreatePostRes(JSON.stringify(res));
   };
 
@@ -293,6 +307,7 @@ const App = () => {
       profileId,
       pubId,
     });
+    console.log("[collect]res:", res);
     setCollectRes(JSON.stringify(res));
   };
 
@@ -304,7 +319,118 @@ const App = () => {
       profileId,
       pubId,
     });
+    console.log("[collectWithSig]res:", res);
     setCollectRes(JSON.stringify(res));
+  };
+
+  const comment = async () => {
+    if (!profileId || !profileIdPointed || !pubIdPointed) {
+      return;
+    }
+    const referenceModule = await lensClient.getReferenceModule({
+      profileId: profileIdPointed,
+      pubId: pubIdPointed,
+    });
+    // followerOnly: false
+    const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
+      ["bool"],
+      [false]
+    ) as any;
+    const collectModule = await lensClient.getCollectModule({
+      profileId: profileIdPointed,
+      pubId: pubIdPointed,
+    })
+    
+    const commentData: CommentData = {
+      profileId,
+      contentURI: "https://github.com/dataverse-os",
+      profileIdPointed,
+      pubIdPointed,
+      referenceModuleData: [],
+      collectModule,
+      collectModuleInitData,
+      referenceModule,
+      referenceModuleInitData: [],
+    };
+    const res = await lensClient.comment(commentData);
+    console.log("[comment]res:", res);
+    setCommentRes(JSON.stringify(res));
+  };
+
+  const commentWithSig = async () => {
+    if (!profileId || !profileIdPointed || !pubIdPointed) {
+      return;
+    }
+    const referenceModule = await lensClient.getReferenceModule({
+      profileId: profileIdPointed,
+      pubId: pubIdPointed,
+    });
+    // followerOnly: false
+    const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
+      ["bool"],
+      [false]
+    ) as any;
+    const collectModule = await lensClient.getCollectModule({
+      profileId: profileIdPointed,
+      pubId: pubIdPointed,
+    })
+    
+    const commentData: CommentData = {
+      profileId,
+      contentURI: "https://github.com/dataverse-os",
+      profileIdPointed,
+      pubIdPointed,
+      referenceModuleData: [],
+      collectModule,
+      collectModuleInitData,
+      referenceModule,
+      referenceModuleInitData: [],
+    };
+    const res = await lensClient.commentWithSig(commentData);
+    console.log("[commentWithSig]res:", res);
+    setCommentRes(JSON.stringify(res));
+  };
+
+  const mirror = async () => {
+    if (!profileId || !profileIdPointed || !pubIdPointed) {
+      return;
+    }
+    const referenceModule = await lensClient.getReferenceModule({
+      profileId: profileIdPointed,
+      pubId: pubIdPointed,
+    });
+    const mirrorData: MirrorData = {
+      profileId,
+      profileIdPointed,
+      pubIdPointed,
+      referenceModuleData: [],
+      referenceModule,
+      referenceModuleInitData: [],
+    };
+    const res = await lensClient.mirror(mirrorData);
+    console.log("[mirror]res:", res);
+    setMirrorRes(JSON.stringify(res));
+  };
+
+  const mirrorWithSig = async () => {
+    if (!profileId || !profileIdPointed || !pubIdPointed) {
+      return;
+    }
+    const referenceModule = await lensClient.getReferenceModule({
+      profileId: profileIdPointed,
+      pubId: pubIdPointed,
+    });
+    const mirrorData: MirrorData = {
+      profileId,
+      profileIdPointed,
+      pubIdPointed,
+      referenceModuleData: [],
+      referenceModule,
+      referenceModuleInitData: [],
+    };
+    const res = await lensClient.mirrorWithSig(mirrorData);
+    console.log("[mirrorWithSig]res:", res);
+    setMirrorRes(JSON.stringify(res));
   };
 
   const getCollectNFT = async () => {
@@ -331,8 +457,6 @@ const App = () => {
   };
 
   const getSigNonce = async () => {
-    console.log("[[address:", runtimeConnector.address);
-    console.log("runtimeConnector:", runtimeConnector);
     const nonce = await lensClient.getSigNonce();
     console.log("[getSigNonce]res:", nonce);
   };
@@ -352,77 +476,6 @@ const App = () => {
       </div>
 
       <div className="app-body">
-        <div className="test-item">
-          <div className="title">ProfileId</div>
-          <input
-            type="text"
-            value={profileId || ""}
-            onChange={(event) => setProfileId(event.target.value)}
-          />
-          <div className="title">PubId</div>
-          <input
-            type="text"
-            value={pubId || ""}
-            onChange={(event) => setPubId(event.target.value)}
-          />
-          {/* CollectModule */}
-          <button
-            disabled={profileId && pubId ? false : true}
-            onClick={getCollectModule}
-          >
-            getCollectModule
-          </button>
-          <button
-            disabled={collectModule ? false : true}
-            onClick={isCollectModuleWhitelisted}
-          >
-            isCollectModuleWhitelisted
-          </button>
-          <div className="title">{`Collect Module(isWhitelisted:${collectModuleWhitelistStatus})`}</div>
-          <input
-            type="text"
-            value={collectModule || ""}
-            onChange={(event) => setCollectModule(event.target.value)}
-          />
-          {/* FollowModule */}
-          <button
-            disabled={profileId ? false : true}
-            onClick={getFollowModule}
-          >
-            getFollowModule
-          </button>
-          <button
-            disabled={followModule ? false : true}
-            onClick={isFollowModuleWhitelisted}
-          >
-            isFollowModuleWhitelisted
-          </button>
-          <div className="title">{`Follow Module(isWhitelisted:${followModuleWhitelistStatus})`}</div>
-          <input
-            type="text"
-            value={followModule || ""}
-            onChange={(event) => setFollowModule(event.target.value)}
-          />
-          {/* ReferenceModule */}
-          <button
-            disabled={profileId && pubId ? false : true}
-            onClick={getReferenceModule}
-          >
-            getReferenceModule
-          </button>
-          <button
-            disabled={referenceModule ? false : true}
-            onClick={isReferenceModuleWhitelisted}
-          >
-            isReferenceModuleWhitelisted
-          </button>
-          <div className="title">{`Reference Module(isWhitelisted:${referenceModuleWhitelistStatus})`}</div>
-          <input
-            type="text"
-            value={referenceModule || ""}
-            onChange={(event) => setReferenceModule(event.target.value)}
-          />
-        </div>
         <div className="test-item">
           <button
             disabled={account ? false : true}
@@ -499,6 +552,74 @@ const App = () => {
           />
           <div className="title">Result</div>
           <div className="textarea">{getProfileIdByHandleRes}</div>
+        </div>
+        <div className="test-item">
+          <div className="title">ProfileId</div>
+          <input
+            type="text"
+            value={profileId || ""}
+            onChange={(event) => setProfileId(event.target.value)}
+          />
+          <div className="title">PubId</div>
+          <input
+            type="text"
+            value={pubId || ""}
+            onChange={(event) => setPubId(event.target.value)}
+          />
+          {/* CollectModule */}
+          <button
+            disabled={profileId && pubId ? false : true}
+            onClick={getCollectModule}
+          >
+            getCollectModule
+          </button>
+          <button
+            disabled={collectModule ? false : true}
+            onClick={isCollectModuleWhitelisted}
+          >
+            isCollectModuleWhitelisted
+          </button>
+          <div className="title">{`Collect Module(isWhitelisted:${collectModuleWhitelistStatus})`}</div>
+          <input
+            type="text"
+            value={collectModule || ""}
+            onChange={(event) => setCollectModule(event.target.value)}
+          />
+          {/* FollowModule */}
+          <button disabled={profileId ? false : true} onClick={getFollowModule}>
+            getFollowModule
+          </button>
+          <button
+            disabled={followModule ? false : true}
+            onClick={isFollowModuleWhitelisted}
+          >
+            isFollowModuleWhitelisted
+          </button>
+          <div className="title">{`Follow Module(isWhitelisted:${followModuleWhitelistStatus})`}</div>
+          <input
+            type="text"
+            value={followModule || ""}
+            onChange={(event) => setFollowModule(event.target.value)}
+          />
+          {/* ReferenceModule */}
+          <button
+            disabled={profileId && pubId ? false : true}
+            onClick={getReferenceModule}
+          >
+            getReferenceModule
+          </button>
+          <button
+            disabled={referenceModule ? false : true}
+            onClick={isReferenceModuleWhitelisted}
+          >
+            isReferenceModuleWhitelisted
+          </button>
+          <div className="title">{`Reference Module(isWhitelisted:${referenceModuleWhitelistStatus})`}</div>
+          <input
+            type="text"
+            value={referenceModule || ""}
+            onChange={(event) => setReferenceModule(event.target.value)}
+          />
         </div>
         <div className="test-item">
           <button
@@ -650,6 +771,76 @@ const App = () => {
           />
           <div className="title">Result</div>
           <div className="textarea">{isCollectedRes}</div>
+        </div>
+
+        <div className="test-item">
+          <button
+            disabled={
+              profileId && profileIdPointed && pubIdPointed ? false : true
+            }
+            onClick={comment}
+            className="block"
+          >
+            comment
+          </button>
+          <button
+            disabled={
+              profileId && profileIdPointed && pubIdPointed ? false : true
+            }
+            onClick={commentWithSig}
+            className="block"
+          >
+            commentWithSig
+          </button>
+          <div className="title">ProfileIdPointed</div>
+          <input
+            type="text"
+            value={profileIdPointed || ""}
+            onChange={(event) => setProfileIdPointed(event.target.value)}
+          />
+          <div className="title">PubIdPointed</div>
+          <input
+            type="text"
+            value={pubIdPointed || ""}
+            onChange={(event) => setPubIdPointed(event.target.value)}
+          />
+          <div className="title">Result</div>
+          <div className="textarea">{commentRes}</div>
+        </div>
+
+        <div className="test-item">
+          <button
+            disabled={
+              profileId && profileIdPointed && pubIdPointed ? false : true
+            }
+            onClick={mirror}
+            className="block"
+          >
+            mirror
+          </button>
+          <button
+            disabled={
+              profileId && profileIdPointed && pubIdPointed ? false : true
+            }
+            onClick={mirrorWithSig}
+            className="block"
+          >
+            mirrorWithSig
+          </button>
+          <div className="title">ProfileIdPointed</div>
+          <input
+            type="text"
+            value={profileIdPointed || ""}
+            onChange={(event) => setProfileIdPointed(event.target.value)}
+          />
+          <div className="title">PubIdPointed</div>
+          <input
+            type="text"
+            value={pubIdPointed || ""}
+            onChange={(event) => setPubIdPointed(event.target.value)}
+          />
+          <div className="title">Result</div>
+          <div className="textarea">{mirrorRes}</div>
         </div>
       </div>
     </div>

@@ -399,7 +399,7 @@ export class LensClient {
       collectModuleInitData,
       referenceModule: referenceModule || ethers.constants.AddressZero,
       referenceModuleInitData: referenceModuleInitData || [],
-      nonce: BigNumber.from(nonce),
+      nonce,
       deadline: MAX_UINT256,
       wallet: this.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
@@ -1125,14 +1125,14 @@ export class LensClient {
       },
       domain: this._domain(lensHubAddr, chainId),
       value: {
-        profileId: profileId,
-        contentURI: contentURI,
-        collectModule: collectModule,
-        collectModuleInitData: collectModuleInitData,
-        referenceModule: referenceModule,
-        referenceModuleInitData: referenceModuleInitData,
-        nonce: nonce,
-        deadline: deadline,
+        profileId,
+        contentURI,
+        collectModule,
+        collectModuleInitData,
+        referenceModule,
+        referenceModuleInitData,
+        nonce,
+        deadline,
       },
     };
 
@@ -1182,11 +1182,11 @@ export class LensClient {
       },
       domain: this._domain(lensHubAddr, chainId),
       value: {
-        profileId: profileId,
-        pubId: pubId,
-        data: data,
-        nonce: nonce,
-        deadline: deadline,
+        profileId,
+        pubId,
+        data,
+        nonce,
+        deadline,
       },
     };
 
@@ -1254,8 +1254,8 @@ export class LensClient {
       },
       domain: this._domain(lensHubAddr, chainId),
       value: {
-        profileId: profileId,
-        contentURI: contentURI,
+        profileId,
+        contentURI,
         profileIdPointed,
         pubIdPointed,
         referenceModuleData,
@@ -1310,7 +1310,7 @@ export class LensClient {
   }): Promise<EIP712Signature> {
     const msgParams = {
       types: {
-        CommentWithSig: [
+        MirrorWithSig: [
           { name: "profileId", type: "uint256" },
           { name: "profileIdPointed", type: "uint256" },
           { name: "pubIdPointed", type: "uint256" },
