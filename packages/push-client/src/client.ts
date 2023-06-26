@@ -163,7 +163,7 @@ export class PushNotificationClient extends PushClientBase {
       env: this.env,
     });
   }
-7
+
   async getSubscriptionsByUser(userAddress: string) {
     return PushAPI.user.getSubscriptions({
       user: getICAPAddress(userAddress), // user address in CAIP
