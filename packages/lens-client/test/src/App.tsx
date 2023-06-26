@@ -6,14 +6,21 @@ import Client, {
   CommentData,
   LensNetwork,
   MirrorData,
+  ModelType,
 } from "@dataverse/lens-client-toolkit";
 import { getCurrencyAddress } from "./utils";
 import { ethers } from "ethers";
+
+const modelIds = {
+  [ModelType.Post]: import.meta.env.VITE_POST_MODEL_ID,
+  [ModelType.Collection]: import.meta.env.VITE_COLLECTION_MODEL_ID,
+};
 
 const App = () => {
   const { runtimeConnector } = useContext(Context);
   const lensClient = useMemo(() => {
     return new Client({
+      modelIds: modelIds,
       runtimeConnector: runtimeConnector,
       network: LensNetwork.MumbaiTestnet,
     });
@@ -461,6 +468,16 @@ const App = () => {
     console.log("[getSigNonce]res:", nonce);
   };
 
+  const getPersistedPosts = async () => {
+    const res = await lensClient.getPersistedPosts();
+    console.log("[getPersistedPosts]res:", res);
+  }
+
+  const getPersistedCollections = async () => {
+    const res = await lensClient.getPersistedCollections();
+    console.log("[getPersistedCollections]res:", res);
+  }
+
   return (
     <div id="App">
       <div className="app-header">
@@ -841,6 +858,23 @@ const App = () => {
           />
           <div className="title">Result</div>
           <div className="textarea">{mirrorRes}</div>
+        </div>
+
+        <div className="test-item">
+          <button
+            disabled={did ? false : true}
+            onClick={getPersistedPosts}
+            className="block"
+          >
+            getPersistedPosts
+          </button>
+          <button
+            disabled={did ? false : true}
+            onClick={getPersistedCollections}
+            className="block"
+          >
+            getPersistedCollections
+          </button>
         </div>
       </div>
     </div>

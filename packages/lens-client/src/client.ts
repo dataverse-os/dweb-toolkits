@@ -26,6 +26,8 @@ import {
   LensNetwork,
   MirrorData,
   MirrorWithSigData,
+  ModelIds,
+  ModelType,
   PostData,
   PostWithSigData,
   ProfileStruct,
@@ -43,6 +45,7 @@ import { RuntimeConnectorSigner } from "@dataverse/utils-toolkit";
 // import { StreamHelper } from "@dataverse/utils-toolkit";
 
 export class LensClient {
+  public modelIds: ModelIds;
   public network: LensNetwork;
   public lensContractsAddress!: any;
   public lensApiLink!: string;
@@ -50,12 +53,15 @@ export class LensClient {
   public signer: RuntimeConnectorSigner;
 
   constructor({
+    modelIds,
     runtimeConnector,
     network,
   }: {
+    modelIds: ModelIds;
     runtimeConnector: RuntimeConnector;
     network: LensNetwork;
   }) {
+    this.modelIds = modelIds;
     this.runtimeConnector = runtimeConnector;
     this.signer = new RuntimeConnectorSigner(runtimeConnector);
     this.network = network;
@@ -262,6 +268,19 @@ export class LensClient {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
 
+    try {
+      await this._persistPost({
+        postType: "post",
+        profileId: (targetEvent as any).topics[1],
+        pubId: (targetEvent as any).topics[2],
+        contentURI,
+        collectModule: this.lensContractsAddress.FreeCollectModule,
+        referenceModule: referenceModule || ethers.constants.AddressZero,
+      });
+    } catch (e) {
+      console.warn(e);
+    }
+
     return {
       profileId: (targetEvent as any).topics[1],
       pubId: (targetEvent as any).topics[2],
@@ -298,6 +317,19 @@ export class LensClient {
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
+
+    try {
+      await this._persistPost({
+        postType: "post",
+        profileId: (targetEvent as any).topics[1],
+        pubId: (targetEvent as any).topics[2],
+        contentURI,
+        collectModule: this.lensContractsAddress.RevertCollectModule,
+        referenceModule: referenceModule || ethers.constants.AddressZero,
+      });
+    } catch (e) {
+      console.warn(e);
+    }
 
     return {
       profileId: (targetEvent as any).topics[1],
@@ -354,6 +386,19 @@ export class LensClient {
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
+
+    try {
+      await this._persistPost({
+        postType: "post",
+        profileId: (targetEvent as any).topics[1],
+        pubId: (targetEvent as any).topics[2],
+        contentURI,
+        collectModule: this.lensContractsAddress.FeeCollectModule,
+        referenceModule: referenceModule || ethers.constants.AddressZero,
+      });
+    } catch (e) {
+      console.warn(e);
+    }
 
     return {
       profileId: (targetEvent as any).topics[1],
@@ -413,9 +458,24 @@ export class LensClient {
       method: "postWithSig",
       params: [postWithSigData],
     });
+
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
+
+    try {
+      await this._persistPost({
+        postType: "post",
+        profileId: (targetEvent as any).topics[1],
+        pubId: (targetEvent as any).topics[2],
+        contentURI,
+        collectModule: this.lensContractsAddress.FreeCollectModule,
+        referenceModule: referenceModule || ethers.constants.AddressZero,
+      });
+    } catch (e) {
+      console.warn(e);
+    }
+
     return {
       profileId: (targetEvent as any).topics[1],
       pubId: (targetEvent as any).topics[2],
@@ -465,9 +525,24 @@ export class LensClient {
       method: "postWithSig",
       params: [postWithSigData],
     });
+
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
+
+    try {
+      await this._persistPost({
+        postType: "post",
+        profileId: (targetEvent as any).topics[1],
+        pubId: (targetEvent as any).topics[2],
+        contentURI,
+        collectModule: this.lensContractsAddress.RevertCollectModule,
+        referenceModule: referenceModule || ethers.constants.AddressZero,
+      });
+    } catch (e) {
+      console.warn(e);
+    }
+
     return {
       profileId: (targetEvent as any).topics[1],
       pubId: (targetEvent as any).topics[2],
@@ -536,9 +611,24 @@ export class LensClient {
       method: "postWithSig",
       params: [postWithSigData],
     });
+
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
+
+    try {
+      await this._persistPost({
+        postType: "post",
+        profileId: (targetEvent as any).topics[1],
+        pubId: (targetEvent as any).topics[2],
+        contentURI,
+        collectModule: this.lensContractsAddress.FeeCollectModule,
+        referenceModule: referenceModule || ethers.constants.AddressZero,
+      });
+    } catch (e) {
+      console.warn(e);
+    }
+
     return {
       profileId: (targetEvent as any).topics[1],
       pubId: (targetEvent as any).topics[2],
@@ -593,6 +683,15 @@ export class LensClient {
       return event.topics[0] === EVENT_SIG_COLLECTED;
     });
 
+    try {
+      await this._persistCollection({
+        profileId,
+        pubId,
+      });
+    } catch (e) {
+      console.warn(e);
+    }
+
     return {
       collector: (targetEvent as any).topics[1],
       profileId: (targetEvent as any).topics[2],
@@ -615,8 +714,6 @@ export class LensClient {
         pubId,
         collectModule,
       });
-    console.log("collectModuleValidateData:", collectModuleValidateData);
-    console.log("publicationData:", publicationData);
 
     if (publicationData) {
       await this._approveERC20({
@@ -658,6 +755,15 @@ export class LensClient {
       return event.topics[0] === EVENT_SIG_COLLECTED;
     });
 
+    try {
+      await this._persistCollection({
+        profileId,
+        pubId,
+      });
+    } catch (e) {
+      console.warn(e);
+    }
+
     return {
       collector: (targetEvent as any).topics[1],
       profileId: (targetEvent as any).topics[2],
@@ -676,6 +782,21 @@ export class LensClient {
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_COMMENT_CREATED;
     });
+
+    try {
+      await this._persistPost({
+        postType: "comment",
+        profileId: (targetEvent as any).topics[1],
+        pubId: (targetEvent as any).topics[2],
+        profileIdPointed: commentData.profileIdPointed,
+        pubIdPointed: commentData.pubIdPointed,
+        contentURI: commentData.contentURI,
+        collectModule: commentData.collectModule,
+        referenceModule: commentData.referenceModule,
+      });
+    } catch (e) {
+      console.warn(e);
+    }
 
     return {
       profileId: (targetEvent as any).topics[1],
@@ -719,6 +840,21 @@ export class LensClient {
       return event.topics[0] === EVENT_SIG_COMMENT_CREATED;
     });
 
+    try {
+      await this._persistPost({
+        postType: "comment",
+        profileId: (targetEvent as any).topics[1],
+        pubId: (targetEvent as any).topics[2],
+        profileIdPointed: commentData.profileIdPointed,
+        pubIdPointed: commentData.pubIdPointed,
+        contentURI: commentData.contentURI,
+        collectModule: commentData.collectModule,
+        referenceModule: commentData.referenceModule,
+      });
+    } catch (e) {
+      console.warn(e);
+    }
+
     return {
       profileId: (targetEvent as any).topics[1],
       pubId: (targetEvent as any).topics[2],
@@ -736,6 +872,19 @@ export class LensClient {
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_MIRROR_CREATED;
     });
+
+    try {
+      await this._persistPost({
+        postType: "mirror",
+        profileId: (targetEvent as any).topics[1],
+        pubId: (targetEvent as any).topics[2],
+        profileIdPointed: mirrorData.profileIdPointed,
+        pubIdPointed: mirrorData.pubIdPointed,
+        referenceModule: mirrorData.referenceModule,
+      });
+    } catch (e) {
+      console.warn(e);
+    }
 
     return {
       profileId: (targetEvent as any).topics[1],
@@ -775,6 +924,19 @@ export class LensClient {
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_MIRROR_CREATED;
     });
+
+    try {
+      await this._persistPost({
+        postType: "mirror",
+        profileId: (targetEvent as any).topics[1],
+        pubId: (targetEvent as any).topics[2],
+        profileIdPointed: mirrorData.profileIdPointed,
+        pubIdPointed: mirrorData.pubIdPointed,
+        referenceModule: mirrorData.referenceModule,
+      });
+    } catch (e) {
+      console.warn(e);
+    }
 
     return {
       profileId: (targetEvent as any).topics[1],
@@ -892,6 +1054,24 @@ export class LensClient {
     });
 
     return isWhitelisted;
+  }
+
+  public async getPersistedPosts() {
+    const pkh = await this.runtimeConnector.getCurrentPkh();
+    const streams = await this.runtimeConnector.loadStreamsBy({
+      modelId: this.modelIds[ModelType.Post],
+      pkh
+    });
+    return streams;
+  }
+
+  public async getPersistedCollections() {
+    const pkh = await this.runtimeConnector.getCurrentPkh();
+    const streams = await this.runtimeConnector.loadStreamsBy({
+      modelId: this.modelIds[ModelType.Collection],
+      pkh
+    });
+    return streams;
   }
 
   private async _getCollectValidateData({
@@ -1342,5 +1522,62 @@ export class LensClient {
       v,
       deadline,
     } as EIP712Signature;
+  }
+
+  private async _persistPost({
+    postType,
+    profileId,
+    pubId,
+    profileIdPointed,
+    pubIdPointed,
+    contentURI,
+    collectModule,
+    referenceModule,
+  }: {
+    postType: "post" | "comment" | "mirror";
+    profileId: BigNumberish;
+    pubId: BigNumberish;
+    profileIdPointed?: BigNumberish;
+    pubIdPointed?: BigNumberish;
+    contentURI?: string;
+    collectModule?: string;
+    referenceModule: string;
+  }) {
+    await this.runtimeConnector.createStream({
+      modelId: this.modelIds[ModelType.Post],
+      streamContent: {
+        post_type: postType,
+        profile_id: profileId,
+        pub_id: pubId,
+        profile_id_pointed: profileIdPointed,
+        pub_id_pointed: pubIdPointed,
+        content_uri: contentURI,
+        collect_module: collectModule,
+        reference_module: referenceModule,
+        created_at: Date.now(),
+      },
+    });
+  }
+
+  private async _persistCollection({
+    profileId,
+    pubId,
+  }: {
+    profileId: string;
+    pubId: string;
+  }) {
+    const collectNFT = await this.getCollectNFT({
+      profileId,
+      pubId,
+    });
+    await this.runtimeConnector.createStream({
+      modelId: this.modelIds[ModelType.Collection],
+      streamContent: {
+        profile_id: profileId,
+        pub_id: pubId,
+        collect_nft: collectNFT,
+        collected_at: Date.now(),
+      },
+    });
   }
 }
