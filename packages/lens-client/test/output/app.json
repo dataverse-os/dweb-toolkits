@@ -1,0 +1,44 @@
+{
+  "createDapp": {
+    "id": "28658e7c-2b5e-4c9e-85d2-9d3c6f958871",
+    "streamIDs": [
+      {
+        "name": "lens_toolkit_test03_contentFolders",
+        "stream_id": "kjzl6hvfrbw6c9di4eh20awwsam4ob8dp2trmfmdl9yi6zt3jsw00kiafi24btx",
+        "isPublicDomain": false,
+        "encryptable": null
+      },
+      {
+        "name": "lens_toolkit_test03_lenscollection",
+        "stream_id": "kjzl6hvfrbw6c5s6lv5iuxl0xt8abfr6wramuwmpb9azqaqthgjxw9d4l0s31zt",
+        "isPublicDomain": false,
+        "encryptable": []
+      },
+      {
+        "name": "lens_toolkit_test03_lenspost",
+        "stream_id": "kjzl6hvfrbw6c9kfg3nvphlu1sd61gds3d4t3tcahfb29ryurp9eg14huhpzndo",
+        "isPublicDomain": false,
+        "encryptable": []
+      },
+      {
+        "name": "lens_toolkit_test03_indexFiles",
+        "stream_id": "kjzl6hvfrbw6c5ids82s8u5yn0xbc5qww2psbdda8ov5xuh5qs4k4zrfdw6xp4b",
+        "isPublicDomain": false,
+        "encryptable": null
+      },
+      {
+        "name": "lens_toolkit_test03_indexFolders",
+        "stream_id": "kjzl6hvfrbw6ca2tndq5xt3qcc1n7t8lpp4gq279h2t262u5h3hpyhm8sf7rcef",
+        "isPublicDomain": false,
+        "encryptable": null
+      }
+    ],
+    "website": "",
+    "name": "lens_toolkit_test03",
+    "slug": "lens_toolkit_test03",
+    "logo": "http://no-logo.com",
+    "description": "",
+    "defaultFolderName": "Untitled",
+    "ceramic": "https://local1.dataverseceramicdaemon.com"
+  }
+}
