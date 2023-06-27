@@ -11,6 +11,7 @@ import {
   MAX_UINT256,
   EVENT_SIG_COMMENT_CREATED,
   EVENT_SIG_MIRROR_CREATED,
+  EVENT_SIG_FOLLOWED,
 } from "./constants";
 import {
   CollectWithSigData,
@@ -20,9 +21,11 @@ import {
   EIP712Signature,
   EventCollected,
   EventCommentCreated,
+  EventFollowed,
   EventMirrorCreated,
   EventPostCreated,
   EventProfileCreated,
+  FollowWithSigData,
   LensNetwork,
   MirrorData,
   MirrorWithSigData,
@@ -35,11 +38,13 @@ import {
 import { request, gql } from "graphql-request";
 import LensHubJson from "../contracts/LensHub.json";
 import CollectNFTJson from "../contracts/CollectNFT.json";
+import FollowNFTJson from "../contracts/FollowNFT.json";
 import FeeCollectModuleJson from "../contracts/modules/collect/FeeCollectModule.json";
 import LimitedFeeCollectModuleJson from "../contracts/modules/collect/LimitedFeeCollectModule.json";
 import LimitedTimedFeeCollectModuleJson from "../contracts/modules/collect/LimitedTimedFeeCollectModule.json";
 import TimedFeeCollectModuleJson from "../contracts/modules/collect/TimedFeeCollectModule.json";
 import ProfileCreationProxyJson from "../contracts/ProfileCreationProxy.json";
+import FeeFollowModuleJson from "../contracts/modules/follow/FeeFollowModule.json";
 import { RuntimeConnectorSigner } from "@dataverse/utils-toolkit";
 
 // import { StreamHelper } from "@dataverse/utils-toolkit";
@@ -184,6 +189,24 @@ export class LensClient {
     return profileId;
   }
 
+  public async setFollowModule({
+    profileId,
+    followModule,
+    followModuleInitData,
+  }: {
+    profileId: BigNumberish;
+    followModule: string;
+    followModuleInitData: any[];
+  }) {
+    const res = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "setFollowModule",
+      params: [profileId, followModule, followModuleInitData],
+    });
+    return res;
+  }
+
   public async setRevertFollowModule(profileId: BigNumberish) {
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
@@ -228,6 +251,125 @@ export class LensClient {
     return res;
   }
 
+  public async follow(profileIds: string[]) {
+    const datas = await Promise.all(
+      profileIds.map(async (profileId) => {
+        const followModule = await this.getFollowModule(profileId);
+        const { followModuleValidateData, profileData } =
+          await this._getFollowValidateData({
+            profileId,
+            followModule,
+          });
+        if (profileData) {
+          await this._approveERC20({
+            contract: profileData.currency,
+            owner: this.runtimeConnector.address,
+            spender: followModule,
+            amount: profileData.amount,
+          });
+        }
+        return followModuleValidateData;
+      })
+    );
+    const res = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "follow",
+      params: [profileIds, datas],
+    });
+
+    const targetEvent = Object.values(res.events).find((event: any) => {
+      return event.topics[0] === EVENT_SIG_FOLLOWED;
+    });
+
+    return {
+      follower: (targetEvent as any).topics[1],
+    } as EventFollowed;
+  }
+
+  public async followWithSig(profileIds: string[]) {
+    const datas = await Promise.all(
+      profileIds.map(async (profileId) => {
+        const followModule = await this.getFollowModule(profileId);
+        const { followModuleValidateData, profileData } =
+          await this._getFollowValidateData({
+            profileId,
+            followModule,
+          });
+        if (profileData) {
+          await this._approveERC20({
+            contract: profileData.currency,
+            owner: this.runtimeConnector.address,
+            spender: followModule,
+            amount: profileData.amount,
+          });
+        }
+        return followModuleValidateData;
+      })
+    );
+
+    const nonce = await this.getSigNonce();
+    const sig = await this._getFollowWithSigPartsByWallet({
+      profileIds,
+      datas,
+      nonce,
+      deadline: MAX_UINT256,
+      wallet: this.signer as Wallet,
+      lensHubAddr: this.lensContractsAddress.LensHubProxy,
+      chainId: this.runtimeConnector.chain.chainId,
+    });
+
+    const followWithSigData: FollowWithSigData = {
+      follower: this.runtimeConnector.address,
+      profileIds,
+      datas,
+      sig,
+    };
+
+    const res = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "followWithSig",
+      params: [followWithSigData],
+    });
+
+    const targetEvent = Object.values(res.events).find((event: any) => {
+      return event.topics[0] === EVENT_SIG_FOLLOWED;
+    });
+
+    return {
+      follower: (targetEvent as any).topics[1],
+    } as EventFollowed;
+  }
+
+  public async getFollowNFT(profileId: BigNumberish) {
+    const followNFT = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "getFollowNFT",
+      params: [profileId],
+    });
+
+    return followNFT;
+  }
+
+  public async isFollowed({
+    followNFT,
+    follower,
+  }: {
+    followNFT: string;
+    follower: string;
+  }) {
+    const balance = await this.runtimeConnector.contractCall({
+      contractAddress: followNFT,
+      abi: FollowNFTJson.abi,
+      method: "balanceOf",
+      params: [follower],
+    });
+
+    return BigNumber.from(balance).gt(0);
+  }
+
   public async post(postData: PostData) {
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
@@ -241,8 +383,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI: postData.contentURI,
@@ -293,8 +435,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI: postData.contentURI,
@@ -352,8 +494,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI,
@@ -402,8 +544,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI,
@@ -471,8 +613,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI,
@@ -547,8 +689,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI,
@@ -614,8 +756,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI,
@@ -700,8 +842,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI,
@@ -750,6 +892,7 @@ export class LensClient {
     if (publicationData) {
       await this._approveERC20({
         contract: publicationData.currency,
+        owner: this.runtimeConnector.address,
         spender: collectModule,
         amount: publicationData.amount,
       });
@@ -801,6 +944,7 @@ export class LensClient {
     if (publicationData) {
       await this._approveERC20({
         contract: publicationData.currency,
+        owner: this.runtimeConnector.address,
         spender: collectModule,
         amount: publicationData.amount,
       });
@@ -867,8 +1011,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "comment",
+      await this._persistPublication({
+        pubType: "comment",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         profileIdPointed: commentData.profileIdPointed,
@@ -924,8 +1068,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "comment",
+      await this._persistPublication({
+        pubType: "comment",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         profileIdPointed: commentData.profileIdPointed,
@@ -957,8 +1101,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "mirror",
+      await this._persistPublication({
+        pubType: "mirror",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         profileIdPointed: mirrorData.profileIdPointed,
@@ -1009,8 +1153,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "mirror",
+      await this._persistPublication({
+        pubType: "mirror",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         profileIdPointed: mirrorData.profileIdPointed,
@@ -1139,10 +1283,10 @@ export class LensClient {
     return isWhitelisted;
   }
 
-  public async getPersistedPosts() {
+  public async getPersistedPublications() {
     const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
-      modelId: this.modelIds[ModelType.Post],
+      modelId: this.modelIds[ModelType.Publication],
       pkh,
     });
     return streams;
@@ -1155,6 +1299,52 @@ export class LensClient {
       pkh,
     });
     return streams;
+  }
+
+  private async _getFollowValidateData({
+    followModule,
+    profileId,
+  }: {
+    followModule: string;
+    profileId: BigNumberish;
+  }) {
+    let followModuleValidateData;
+    let profileData;
+    switch (followModule) {
+      case this.lensContractsAddress.ProfileFollowModule: {
+        console.log("[ProfileFollowModule]");
+        followModuleValidateData = [];
+        break;
+      }
+      case this.lensContractsAddress.RevertFollowModule: {
+        console.log("[RevertFollowModule]");
+        followModuleValidateData = [];
+        break;
+      }
+      case this.lensContractsAddress.FeeFollowModule: {
+        console.log("[FeeFollowModule]");
+        profileData = await this.runtimeConnector.contractCall({
+          contractAddress: followModule,
+          abi: FeeFollowModuleJson.abi,
+          method: "getProfileData",
+          params: [profileId],
+        });
+        followModuleValidateData = ethers.utils.defaultAbiCoder.encode(
+          ["address", "uint256"],
+          [profileData.currency, profileData.amount]
+        );
+        break;
+      }
+      default: {
+        console.log("[Default]");
+        followModuleValidateData = [];
+        break;
+      }
+    }
+    return {
+      followModuleValidateData,
+      profileData,
+    };
   }
 
   private async _getCollectValidateData({
@@ -1253,43 +1443,77 @@ export class LensClient {
 
   private async _approveERC20({
     contract,
+    owner,
     spender,
     amount,
   }: {
     contract: string;
+    owner: string;
     spender: string;
     amount: BigNumberish;
   }) {
-    await this.runtimeConnector.contractCall({
+    const allowance = await this.runtimeConnector.contractCall({
       contractAddress: contract,
       abi: [
         {
-          constant: false,
+          constant: true,
           inputs: [
+            {
+              name: "_owner",
+              type: "address",
+            },
             {
               name: "_spender",
               type: "address",
             },
-            {
-              name: "_value",
-              type: "uint256",
-            },
           ],
-          name: "approve",
+          name: "allowance",
           outputs: [
             {
               name: "",
-              type: "bool",
+              type: "uint256",
             },
           ],
           payable: false,
-          stateMutability: "nonpayable",
+          stateMutability: "view",
           type: "function",
         },
       ],
-      method: "approve",
-      params: [spender, amount],
+      method: "allowance",
+      params: [owner, spender],
     });
+    if (BigNumber.from(allowance).lt(amount)) {
+      await this.runtimeConnector.contractCall({
+        contractAddress: contract,
+        abi: [
+          {
+            constant: false,
+            inputs: [
+              {
+                name: "_spender",
+                type: "address",
+              },
+              {
+                name: "_value",
+                type: "uint256",
+              },
+            ],
+            name: "approve",
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+              },
+            ],
+            payable: false,
+            stateMutability: "nonpayable",
+            type: "function",
+          },
+        ],
+        method: "approve",
+        params: [spender, amount],
+      });
+    }
   }
 
   private _initLensContractsAddress(network: LensNetwork) {
@@ -1341,6 +1565,56 @@ export class LensClient {
       chainId: chainId,
       verifyingContract: lensHubAddr,
     };
+  }
+
+  private async _getFollowWithSigPartsByWallet({
+    profileIds,
+    datas,
+    nonce,
+    deadline,
+    wallet,
+    lensHubAddr,
+    chainId,
+  }: {
+    profileIds: Array<string>;
+    datas: Array<any[]>;
+    nonce: number;
+    deadline: string;
+    wallet: Wallet;
+    lensHubAddr: string;
+    chainId: number;
+  }): Promise<EIP712Signature> {
+    const msgParams = {
+      types: {
+        FollowWithSig: [
+          { name: "profileIds", type: "uint256[]" },
+          { name: "datas", type: "bytes[]" },
+          { name: "nonce", type: "uint256" },
+          { name: "deadline", type: "uint256" },
+        ],
+      },
+      domain: this._domain(lensHubAddr, chainId),
+      value: {
+        profileIds,
+        datas,
+        nonce,
+        deadline,
+      },
+    };
+
+    const sig = await wallet._signTypedData(
+      msgParams.domain,
+      msgParams.types,
+      msgParams.value
+    );
+    const { r, s, v } = ethers.utils.splitSignature(sig);
+
+    return {
+      r,
+      s,
+      v,
+      deadline,
+    } as EIP712Signature;
   }
 
   private async _getPostWithSigPartsByWallet({
@@ -1606,8 +1880,8 @@ export class LensClient {
     } as EIP712Signature;
   }
 
-  private async _persistPost({
-    postType,
+  private async _persistPublication({
+    pubType,
     profileId,
     pubId,
     profileIdPointed,
@@ -1616,7 +1890,7 @@ export class LensClient {
     collectModule,
     referenceModule,
   }: {
-    postType: "post" | "comment" | "mirror";
+    pubType: "post" | "comment" | "mirror";
     profileId: BigNumberish;
     pubId: BigNumberish;
     profileIdPointed?: BigNumberish;
@@ -1626,9 +1900,9 @@ export class LensClient {
     referenceModule: string;
   }) {
     await this.runtimeConnector.createStream({
-      modelId: this.modelIds[ModelType.Post],
+      modelId: this.modelIds[ModelType.Publication],
       streamContent: {
-        post_type: postType,
+        post_type: pubType,
         profile_id: profileId,
         pub_id: pubId,
         profile_id_pointed: profileIdPointed,

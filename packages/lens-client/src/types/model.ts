@@ -1,5 +1,5 @@
 export enum ModelType {
-  Post,
+  Publication,
   Collection,
 }
 

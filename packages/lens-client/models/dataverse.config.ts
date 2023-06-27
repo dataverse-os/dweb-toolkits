@@ -8,7 +8,7 @@ export const config = {
     models: [
       {
         isPublicDomain: false, // default
-        schemaName: "lenspost.graphql",
+        schemaName: "lenspublication.graphql",
         encryptable: [], // strings within the schema and within the array represent fields that may be encrypted, while fields within the schema but not within the array represent fields that will definitely not be encrypted
       },
       {
