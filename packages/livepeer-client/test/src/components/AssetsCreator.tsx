@@ -1,45 +1,21 @@
 import React, { useState } from "react";
-import { useCreateAsset, useUpdateAsset } from "@livepeer/react";
 import Client from "@dataverse/livepeer-client-toolkit";
 
 interface IProps {
   livepeerClient: Client;
+  setStreamId: Function;
 }
-export const AssetsCreator = ({ livepeerClient }: IProps) => {
+export const AssetsCreator = ({ livepeerClient, setStreamId }: IProps) => {
   const [loading, setLoading] = useState(false);
-  const [asset, setAsset] = useState<any>(null);
   const [fileInput, setFileInput] = useState<any>(null);
-  const { mutateAsync: createAssetAsync } = useCreateAsset(
-    fileInput
-      ? {
-          sources: [{ name: fileInput.name, file: fileInput }],
-        }
-      : null
-  );
 
-  const { mutateAsync: updateAssetAsync } = useUpdateAsset(
-    asset
-      ? {
-          assetId: asset.id,
-          storage: { ipfs: true },
-        }
-      : null
-  );
-
-  const handleFileUpload = async () => {
-    // stream name input check empty
+  const uploadVideo = async () => {
     if (!fileInput) throw new Error("Please select a file");
     try {
       setLoading(true);
-      const asset = await createAssetAsync();
-      console.log("created asset:", asset);
-      if(!asset) {
-        throw new Error('Asset undefined');
-      }
-      const res = await livepeerClient.persistAssetMeta(asset[0]);
-      console.log("livepeerClient persistAssetMeta res: ", res);
-      setAsset(asset[0]);
-      console.log("File uploaded successfully");
+      const res = await livepeerClient.uploadVideo(fileInput);
+      console.log("File uploaded successfully, res:", res);
+      setStreamId(res.stream.streamId);
       setLoading(false);
     } catch (err) {
       setLoading(false);
@@ -47,28 +23,9 @@ export const AssetsCreator = ({ livepeerClient }: IProps) => {
     }
   };
 
-  const uploadFileToIpfs = async () => {
-    // stream name input check empty
-    if (!asset) throw new Error("Please create asset first");
-    try {
-      setLoading(true);
-      const asset = await updateAssetAsync();
-      console.log("updated asset:", asset);
-      if(!asset) {
-        throw new Error('Asset undefined');
-      }
-      const res = await livepeerClient.updateAssetMeta(asset);
-      console.log("livepeerClient updateAssetMeta res: ", res);
-      setAsset(asset);
-      console.log("Asset saved to Ipfs successfully");
-      setLoading(false);
-    } catch (err) {
-      setLoading(false);
-      console.error("Error while saving asset to Ipfs:", err);
-    }
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = event.target.files;
     if (files && files.length > 0) {
       setFileInput(files[0]);
@@ -76,14 +33,12 @@ export const AssetsCreator = ({ livepeerClient }: IProps) => {
       setFileInput(null);
     }
   };
+
   return (
     <div>
       <input type="file" onChange={handleFileChange} />
-      <button onClick={handleFileUpload} disabled={loading}>
+      <button onClick={uploadVideo} disabled={loading}>
         UploadToLivepeer
-      </button>
-      <button onClick={uploadFileToIpfs} disabled={loading}>
-        UploadFileToIpfs
       </button>
     </div>
   );

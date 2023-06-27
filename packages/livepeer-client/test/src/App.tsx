@@ -3,7 +3,7 @@ import { AssetsCreator, LivepeerPlayer } from "./components";
 import { LivepeerClient } from "@dataverse/livepeer-client-toolkit";
 import { useContext, useMemo, useState } from "react";
 import { LivepeerConfig } from "@livepeer/react";
-import { Currency, WALLET } from "@dataverse/runtime-connector";
+import { Currency, WALLET, StreamContent } from "@dataverse/runtime-connector";
 import { Context } from "./main";
 
 const App = () => {
@@ -25,21 +25,22 @@ const App = () => {
   }, []);
   const [address, setAddress] = useState<string>();
   const [streamId, setStreamId] = useState<string>();
+  const [streamContent, setStreamContent] = useState<StreamContent| null>( null);
 
-  const retrieveAssetById = async () => {
-    const res = await livepeerClient.retrieveAssetById(
+  const retrieveVideo = async () => {
+    const res = await livepeerClient.retrieveVideo(
       "be869964-4ec4-4652-bb5b-22a09112d717"
     );
-    console.log("retrieveAssetById res:", res);
+    console.log("retrieveAsset res:", res);
   };
 
-  const retrieveAssets = async () => {
-    const res = await livepeerClient.retrieveAssets();
+  const retrieveVideos = async () => {
+    const res = await livepeerClient.retrieveVideos();
     console.log("retrieveAssets res:", res);
   };
 
-  const deleteAssetById = async () => {
-    await livepeerClient.deleteAssetById(
+  const deleteVideo = async () => {
+    await livepeerClient.deleteVideo(
       "5561fd95-cc5b-47a9-bb79-d6d460f79883"
     );
   };
@@ -56,88 +57,12 @@ const App = () => {
     console.log("connected");
   };
 
-  const persistAssetMeta = async () => {
-    const asset = {
-      "id": "20c4d9ad-bfab-4808-867f-5f03605ad153",
-      "hash": [
-        {
-          "hash": "59b8487da4236b3d42890fedab86ac64",
-          "algorithm": "md5"
-        },
-        {
-          "hash": "ce4bfdc8fda0c1a3393dbb6850de2bee1f44e9be6839a377499009dde493a1f8",
-          "algorithm": "sha256"
-        }
-      ],
-      "name": "SampleVideo_360x240_1mb.mp4",
-      "size": 1053651,
-      "source": {
-        "type": "directUpload"
-      },
-      "status": {
-        "phase": "ready",
-        "updatedAt": 1686889151084
-      },
-      "userId": "465c2ff6-de57-43e1-a2c8-2ef60413ea95",
-      "createdAt": 1686889112237,
-      "videoSpec": {
-        "format": "mp4",
-        "duration": 13.696
-      },
-      "playbackId": "20c4lmgadz8lrqr7",
-      "playbackUrl": "https://lp-playback.com/hls/20c4lmgadz8lrqr7/index.m3u8",
-      "downloadUrl": "https://lp-playback.com/hls/20c4lmgadz8lrqr7/video"
-    };
-
-    const { streamId } = await livepeerClient.persistAssetMeta(asset);
-    setStreamId(streamId);
-    console.log("AssetMeta persist.");
-  };
-
-  const updateAssetMetaStream = async () => {
-    const asset = {
-      "id": "20c4d9ad-bfab-4808-867f-5f03605ad153",
-      "hash": [
-        {
-          "hash": "59b8487da4236b3d42890fedab86ac64",
-          "algorithm": "md5"
-        },
-        {
-          "hash": "ce4bfdc8fda0c1a3393dbb6850de2bee1f44e9be6839a377499009dde493a1f8",
-          "algorithm": "sha256"
-        }
-      ],
-      "name": "SampleVideo_360x240_1mb_nice_v3.mp4",
-      "size": 1053651,
-      "source": {
-        "type": "directUpload"
-      },
-      "status": {
-        "phase": "ready",
-        "updatedAt": 1686889151084
-      },
-      "userId": "465c2ff6-de57-43e1-a2c8-2ef60413ea95",
-      "createdAt": 1686889112237,
-      "videoSpec": {
-        "format": "mp4",
-        "duration": 13.696
-      },
-      "playbackId": "20c4lmgadz8lrqr7",
-      "playbackUrl": "https://lp-playback.com/hls/20c4lmgadz8lrqr7/index.m3u8",
-      "downloadUrl": "https://lp-playback.com/hls/20c4lmgadz8lrqr7/video"
-    };
-    await livepeerClient.updateAssetMeta(asset);
-    console.log("AssetMeta updated.");
-    // await livePeerClient.updateAssetMetaOrigin(asset);
-    console.log("AssetMeta updated.");
-  };
-
-  const monetizeAssetMeta = async () => {
+  const monetizeVideoMeta = async () => {
     if (!address || !streamId) {
       console.error("address or streamId undefined");
       return;
     }
-    await livepeerClient.monetizeAssetMeta({
+    await livepeerClient.monetizeVideoMeta({
       address,
       streamId,
       lensNickName: "jackieth",
@@ -150,31 +75,37 @@ const App = () => {
     console.log("AssetMeta monetized.")
   };
 
-  const getAssetMetaList = async () => {
-    const assets = await livepeerClient.getAssetMetaList();
+  const getVideoMetaList = async () => {
+    const assets = await livepeerClient.getVideoMetaList();
+    setStreamContent(assets[0].streamContent)
     console.log("AssetMetaList:", assets);
   };
+
+  const unlockVideo = async () => {
+    const content = await livepeerClient.runtimeConnector.unlock({indexFileId: streamContent?.file.indexFileId });
+    console.log("unlock content: ", content);
+  }
 
   return (
     <>
       <LivepeerPlayer reactClient={livepeerClient.reactClient} />
       <LivepeerConfig client={livepeerClient.reactClient}>
-        <AssetsCreator livepeerClient={livepeerClient} />
+        <AssetsCreator livepeerClient={livepeerClient} setStreamId={setStreamId} />
         <button onClick={createCapability}>createCapability</button>
         <br />
-        <button onClick={retrieveAssetById}>retrieveAssetById</button>
+        <button onClick={retrieveVideo}>retrieveVideo</button>
         <br />
-        <button onClick={retrieveAssets}>retrieveAssets</button>
+        <button onClick={retrieveVideos}>retrieveVideos</button>
         <br />
-        <button onClick={deleteAssetById}>deleteAssetById</button>
+        <button onClick={deleteVideo}>deleteVideo</button>
         <br />
-        <button onClick={persistAssetMeta}>persistAssetMeta</button>
+        {/* <button onClick={persistVideoMeta}>persistVideoMeta</button>
+        <br /> */}
+        <button onClick={getVideoMetaList}>getVideoMetaList</button>
         <br />
-        <button onClick={updateAssetMetaStream}>updateAssetMetaStream</button>
+        <button onClick={monetizeVideoMeta}>monetizeVideoMeta</button>
         <br />
-        <button onClick={getAssetMetaList}>getAssetMetaList</button>
-        <br />
-        <button onClick={monetizeAssetMeta}>monetizeAssetMeta</button>
+        <button onClick={unlockVideo}>unlockVideo</button>
         <br />
       </LivepeerConfig>
     </>

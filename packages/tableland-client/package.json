@@ -1,6 +1,6 @@
 {
   "name": "@dataverse/tableland-client-toolkit",
-  "version": "1.0.15",
+  "version": "1.0.18",
   "description": "",
   "module": "dist/esm/index.js",
   "main": "dist/cjs/index.js",
@@ -19,10 +19,10 @@
   "license": "ISC",
   "dependencies": {
     "@dataverse/runtime-connector": "^1.0.57",
-    "@dataverse/utils-toolkit": "^1.0.15",
+    "@dataverse/utils-toolkit": "^1.0.18",
     "@tableland/sdk": "^4.3.0",
     "ethers": "^5.7.2",
     "typescript": "^4.9.5"
   },
-  "gitHead": "485030d97deeff637e89dcb5137492f5e74046fa"
+  "gitHead": "ab790f2b49dc1533fa8f7701e4f85586575df066"
 }

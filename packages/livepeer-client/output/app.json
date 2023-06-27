@@ -1,0 +1,39 @@
+{
+    "createDapp": {
+      "id": "bec0eedf-6b6b-48af-91f0-af5bf7424980",
+      "streamIDs": [
+        {
+          "name": "livepeer_test016_livepeerasset",
+          "stream_id": "kjzl6hvfrbw6cb84tye864t48vu2zx0l9mmj49lixn9k0pgygeacekgzi2mq6wt",
+          "isPublicDomain": false,
+          "encryptable": ["storage", "playback_id"]
+        },
+        {
+          "name": "livepeer_test016_indexFolders",
+          "stream_id": "kjzl6hvfrbw6c5ch5z8tkmrl0usm2v5n8hdtd4qxvd3yscaww4yr04r3caoum56",
+          "isPublicDomain": false,
+          "encryptable": null
+        },
+        {
+          "name": "livepeer_test016_indexFiles",
+          "stream_id": "kjzl6hvfrbw6c8q08583hryxiago60owoct14n18c6bglnljfkag591dixkqyox",
+          "isPublicDomain": false,
+          "encryptable": null
+        },
+        {
+          "name": "livepeer_test016_contentFolders",
+          "stream_id": "kjzl6hvfrbw6c8pa9ejp7rngti6oqi0milh1x2ia2qh2swt2vmnljq6hbg1bytu",
+          "isPublicDomain": false,
+          "encryptable": null
+        }
+      ],
+      "website": "",
+      "name": "livepeer_test016",
+      "slug": "livepeer_test016",
+      "logo": "http://no-logo.com",
+      "description": "",
+      "defaultFolderName": "Untitled",
+      "ceramic": "https://local1.dataverseceramicdaemon.com"
+    }
+  }
+  

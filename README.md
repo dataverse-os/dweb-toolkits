@@ -4,7 +4,7 @@ This git repo is a monorepo that contains several toolkits for developers to eas
 
 ## Overview
 
-<img src="https://s2.loli.net/2023/06/15/b2dtlR7r4NyOYfe.jpg" />
+<img src="https://s3.ap-east-1.amazonaws.com/assets.s3.bucket/toolkits-overview.jpg" />
 
 ## Purpose
 
@@ -18,16 +18,16 @@ This git repo is a monorepo that contains several toolkits for developers to eas
 
 The project list is as follows:
 
-| Projects  | Categories         | Website                   | Status   |
-| --------- | ------------------ | ------------------------- | -------- |
-| Tableland | Database           | https://tableland.xyz/    | Complete |
-| Livepeer  | Media              | https://livepeer.org/     | Complete |
-| Push      | Social             | https://staging.push.org/ | Complete |
-| Lens      | Social             | https://www.lens.xyz/     | Todo     |
-| Snapshot  | Voting Platform    | https://snapshot.org/     | Todo     |
-| Dework    | Project Management | https://dework.xyz/       | Todo     |
-| XMTP      | Social             | https://xmtp.org/         | Todo     |
-| ...       | ...                | ...                       | ...      |
+| Projects  | Categories | Website                   | Status   |
+| --------- | ---------- | ------------------------- | -------- |
+| Tableland | Database   | https://tableland.xyz/    | Complete |
+| Livepeer  | Video      | https://livepeer.org/     | Complete |
+| Push      | Message    | https://staging.push.org/ | Complete |
+| XMTP      | Message    | https://xmtp.org/         | Complete |
+| Lens      | Social     | https://www.lens.xyz/     | Todo     |
+| Snapshot  | Dao        | https://snapshot.org/     | Todo     |
+| Dework    | Dao        | https://dework.xyz/       | Todo     |
+| ...       | ...        | ...                       | ...      |
 
 More projects will be integrated into the toolkit in the future, making it easier for developers to use.
 
@@ -82,7 +82,7 @@ pnpm test:livepeer-client
 if successful, you can visit the demo at `http://localhost:5173/`.
 
 An example(livepeer demo):
-<img src="https://s2.loli.net/2023/06/21/TlAC6GKMWOiHJp8.png" />
+<img src="https://s3.ap-east-1.amazonaws.com/assets.s3.bucket/livepeer-demo.png" />
 
 ## Contributing
 

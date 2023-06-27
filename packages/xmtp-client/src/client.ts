@@ -1,12 +1,22 @@
 import { RuntimeConnector, StreamContent } from "@dataverse/runtime-connector";
 import { RuntimeConnectorSigner, StreamHelper } from "@dataverse/utils-toolkit";
 import { ModelIds, XmtpEnv } from "./types";
-import {Client, ContentCodec, DecodedMessage, SendOptions} from "@xmtp/xmtp-js";
+import {
+  Client,
+  ContentCodec,
+  DecodedMessage,
+  SendOptions,
+} from "@xmtp/xmtp-js";
 import {
   ListMessagesOptions,
   ListMessagesPaginatedOptions,
 } from "@xmtp/xmtp-js/dist/types/src/Client";
 import { stringToUint8Array, uint8ArrayToString } from "./utils";
+import {
+  Attachment,
+  AttachmentCodec,
+  RemoteAttachmentCodec,
+} from "xmtp-content-type-remote-attachment";
 
 export class XmtpClient {
   public appName: string;
@@ -15,27 +25,25 @@ export class XmtpClient {
   public modelIds: ModelIds;
   public env: XmtpEnv;
   public xmtp?: Client;
-  public codecs?: ContentCodec<Object>[]
+  public codecs: ContentCodec<Object>[];
 
   constructor({
     runtimeConnector,
     appName,
     modelIds,
     env,
-    codecs
   }: {
     runtimeConnector: RuntimeConnector;
     appName: string;
     modelIds: ModelIds;
     env: XmtpEnv;
-    codecs?: ContentCodec<Object>[];
   }) {
     this.runtimeConnector = runtimeConnector;
     this.appName = appName;
     this.modelIds = modelIds;
     this.env = env;
-    this.codecs = codecs;
     this.signer = new RuntimeConnectorSigner(this.runtimeConnector);
+    this.codecs = [new AttachmentCodec(), new RemoteAttachmentCodec()];
   }
 
   public async sendMessageTo({ user, msg }: { user: string; msg: string }) {
@@ -50,7 +58,15 @@ export class XmtpClient {
     return decodedMsg;
   }
 
-  public async sendAttachmentTo({ user, content, options}: { user: string; content: any, options? : SendOptions }) {
+  public async sendAttachmentTo({
+    user,
+    content,
+    options,
+  }: {
+    user: string;
+    content: any;
+    options?: SendOptions;
+  }) {
     if (!(await this.isUserOnNetwork(user, this.env))) {
       throw new Error(`${user} is not on network`);
     }
@@ -60,6 +76,21 @@ export class XmtpClient {
     const decodedMsg = await conversation.send(content, options);
     await this._persistMessage(decodedMsg);
     return decodedMsg;
+  }
+
+  public async encodeAttachment(attachment: Attachment) {
+    return RemoteAttachmentCodec.encodeEncrypted(
+      attachment,
+      new AttachmentCodec()
+    );
+  }
+
+  public async decodeAttachment(decodedMsg: DecodedMessage) {
+    const attachmentFromRemote: Attachment = await RemoteAttachmentCodec.load(
+      decodedMsg.content,
+      this.xmtp!
+    );
+    return attachmentFromRemote;
   }
 
   public async getAllConversations() {
@@ -106,7 +137,7 @@ export class XmtpClient {
     const messages = [];
     for (const key in streams) {
       if (Object.prototype.hasOwnProperty.call(streams, key)) {
-        messages.push(streams[key].streamContent.content);
+        messages.push(streams[key].streamContent);
       }
     }
     return messages;
@@ -141,7 +172,7 @@ export class XmtpClient {
       this.xmtp = await Client.create(null, {
         env: this.env,
         privateKeyOverride: keys,
-        codecs: this.codecs
+        codecs: this.codecs,
       });
       return this.xmtp as Client;
     }
