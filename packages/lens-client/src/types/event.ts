@@ -6,6 +6,10 @@ export type EventProfileCreated = {
   to: string;
 };
 
+export type EventFollowed = {
+  follower: string;
+}
+
 export type EventPostCreated = {
   profileId: BigNumberish;
   pubId: BigNumberish;

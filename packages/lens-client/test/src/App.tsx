@@ -13,7 +13,7 @@ import { getCurrencyAddress } from "./utils";
 import { ethers } from "ethers";
 
 const modelIds = {
-  [ModelType.Post]: import.meta.env.VITE_POST_MODEL_ID,
+  [ModelType.Publication]: import.meta.env.VITE_POST_MODEL_ID,
   [ModelType.Collection]: import.meta.env.VITE_COLLECTION_MODEL_ID,
 };
 
@@ -44,6 +44,10 @@ const App = () => {
   const [createLensProfileRes, setCreateLensProfileRes] = useState<string>("");
   const [getProfileIdByHandleRes, setGetProfileIdByHandleRes] =
     useState<string>();
+  const [followRes, setFollowRes] = useState<string>("");
+  const [followNFT, setFollowNFT] = useState<string>();
+  const [follower, setFollower] = useState<string>();
+  const [isFollowedRes, setIsFollowedRes] = useState<string>();
   const [collectNFT, setCollectNFT] = useState<string>();
   const [collector, setCollector] = useState<string>();
   const [createPostRes, setCreatePostRes] = useState<string>("");
@@ -192,11 +196,38 @@ const App = () => {
     setGetProfileIdByHandleRes(JSON.stringify(res));
   };
 
+  const setRawFollowModule = async () => {
+    if (!profileId) {
+      return;
+    }
+    const followModule = lensClient.lensContractsAddress.FeeFollowModule;
+    const moduleInitParams = {
+      amount: 10e10,
+      currency: getCurrencyAddress(Currency.WMATIC),
+      recipient: account,
+    };
+    const followModuleInitData = ethers.utils.defaultAbiCoder.encode(
+      ["uint256", "address", "address"],
+      [
+        moduleInitParams.amount,
+        moduleInitParams.currency,
+        moduleInitParams.recipient,
+      ]
+    ) as any;
+    const res = await lensClient.setFollowModule({
+      profileId,
+      followModule,
+      followModuleInitData,
+    });
+
+    console.log("[setFollowModule]res:", res);
+  };
+
   const setFeeFollowModule = async () => {
     if (!profileId || !account) {
       return;
     }
-    await lensClient.setFeeFollowModule({
+    const res = await lensClient.setFeeFollowModule({
       profileId,
       moduleInitParams: {
         amount: 10e10,
@@ -204,6 +235,7 @@ const App = () => {
         recipient: account,
       },
     });
+    console.log("[setFeeFollowModule]res:", res);
   };
 
   const setRevertFollowModule = async () => {
@@ -214,8 +246,49 @@ const App = () => {
     console.log("[setRevertFollowModule]res:", res);
   };
 
+  const follow = async () => {
+    if (!profileId || !account) {
+      return;
+    }
+    // free: ["0x86f7", "0x8738", "0x873a"]
+    // fee: ["0x869e", "0x80e4"]
+    const profileIds = ["0x86f7", "0x8738", "0x873a"];
+    const res = await lensClient.follow(profileIds);
+    console.log("[follow]res:", res);
+    setFollowRes(JSON.stringify(res));
+  };
+
+  const followWithSig = async () => {
+    if (!profileId || !account) {
+      return;
+    }
+    const profileIds = ["0x869e"];
+    const res = await lensClient.followWithSig(profileIds);
+    console.log("[follow]res:", res);
+    setFollowRes(JSON.stringify(res));
+  };
+
+  const getFollowNFT = async () => {
+    if (!profileId || !account) {
+      return;
+    }
+    const res = await lensClient.getFollowNFT(profileId);
+    setFollowNFT(res);
+  };
+
+  const isFollowed = async () => {
+    if (!followNFT || !follower) {
+      return;
+    }
+    const res = await lensClient.isFollowed({
+      followNFT,
+      follower,
+    });
+    setIsFollowedRes(JSON.stringify(res));
+  };
+
   const post = async () => {
-    if(!profileId) {
+    if (!profileId) {
       return;
     }
     const collectModule = lensClient.lensContractsAddress.FreeCollectModule;
@@ -229,15 +302,15 @@ const App = () => {
       collectModule,
       collectModuleInitData,
       referenceModule: ethers.constants.AddressZero,
-      referenceModuleInitData: []
+      referenceModuleInitData: [],
     };
     const res = await lensClient.post(postData);
     console.log("[post]res:", res);
     setCreatePostRes(JSON.stringify(res));
-  }
+  };
 
   const postWithSig = async () => {
-    if(!profileId) {
+    if (!profileId) {
       return;
     }
     const collectModule = lensClient.lensContractsAddress.FreeCollectModule;
@@ -251,12 +324,12 @@ const App = () => {
       collectModule,
       collectModuleInitData,
       referenceModule: ethers.constants.AddressZero,
-      referenceModuleInitData: []
+      referenceModuleInitData: [],
     };
     const res = await lensClient.postWithSig(postData);
     console.log("[postWithSig]res:", res);
     setCreatePostRes(JSON.stringify(res));
-  }
+  };
 
   const createFreeCollectPost = async () => {
     if (!profileId) {
@@ -391,8 +464,8 @@ const App = () => {
     const collectModule = await lensClient.getCollectModule({
       profileId: profileIdPointed,
       pubId: pubIdPointed,
-    })
-    
+    });
+
     const commentData: CommentData = {
       profileId,
       contentURI: "https://github.com/dataverse-os",
@@ -425,8 +498,8 @@ const App = () => {
     const collectModule = await lensClient.getCollectModule({
       profileId: profileIdPointed,
       pubId: pubIdPointed,
-    })
-    
+    });
+
     const commentData: CommentData = {
       profileId,
       contentURI: "https://github.com/dataverse-os",
@@ -513,15 +586,15 @@ const App = () => {
     console.log("[getSigNonce]res:", nonce);
   };
 
-  const getPersistedPosts = async () => {
-    const res = await lensClient.getPersistedPosts();
-    console.log("[getPersistedPosts]res:", res);
-  }
+  const getPersistedPublications = async () => {
+    const res = await lensClient.getPersistedPublications();
+    console.log("[getPersistedPublications]res:", res);
+  };
 
   const getPersistedCollections = async () => {
     const res = await lensClient.getPersistedCollections();
     console.log("[getPersistedCollections]res:", res);
-  }
+  };
 
   return (
     <div id="App">
@@ -686,6 +759,13 @@ const App = () => {
         <div className="test-item">
           <button
             disabled={profileId && account ? false : true}
+            onClick={setRawFollowModule}
+            className="block"
+          >
+            setFollowModule
+          </button>
+          <button
+            disabled={profileId && account ? false : true}
             onClick={setFeeFollowModule}
             className="block"
           >
@@ -704,6 +784,67 @@ const App = () => {
             value={profileId || ""}
             onChange={(event) => setProfileId(event.target.value)}
           />
+        </div>
+        <div className="test-item">
+          <button
+            disabled={
+              profileId && profileIdPointed && pubIdPointed ? false : true
+            }
+            onClick={follow}
+            className="block"
+          >
+            follow
+          </button>
+          <button
+            disabled={
+              profileId && profileIdPointed && pubIdPointed ? false : true
+            }
+            onClick={followWithSig}
+            className="block"
+          >
+            followWithSig
+          </button>
+          <div className="title">Result</div>
+          <div className="textarea">{followRes}</div>
+        </div>
+        <div className="test-item">
+          <button
+            disabled={profileId ? false : true}
+            onClick={getFollowNFT}
+            className="block"
+          >
+            getFollowNFT
+          </button>
+          <div className="title">ProfileId</div>
+          <input
+            type="text"
+            value={profileId || ""}
+            onChange={(event) => setProfileId(event.target.value)}
+          />
+          <div className="title">Result (FollowNFT address)</div>
+          <div className="textarea">{followNFT}</div>
+        </div>
+        <div className="test-item">
+          <button
+            disabled={followNFT && follower ? false : true}
+            onClick={isFollowed}
+            className="block"
+          >
+            isFollowed
+          </button>
+          <div className="title">FollowNFT</div>
+          <input
+            value={followNFT || ""}
+            type="text"
+            onChange={(event) => setFollowNFT(event.target.value)}
+          />
+          <div className="title">Follower</div>
+          <input
+            type="text"
+            onChange={(event) => setFollower(event.target.value)}
+          />
+          <div className="title">Result</div>
+          <div className="textarea">{isFollowedRes}</div>
         </div>
         <div className="test-item">
           <button onClick={getSigNonce} className="block">
@@ -838,6 +979,7 @@ const App = () => {
           <div className="title">CollectNFT</div>
           <input
             type="text"
+            value={collectNFT || ""}
             onChange={(event) => setCollectNFT(event.target.value)}
           />
           <div className="title">Collector</div>
@@ -922,10 +1064,10 @@ const App = () => {
         <div className="test-item">
           <button
             disabled={did ? false : true}
-            onClick={getPersistedPosts}
+            onClick={getPersistedPublications}
             className="block"
           >
-            getPersistedPosts
+            getPersistedPublications
           </button>
           <button
             disabled={did ? false : true}
