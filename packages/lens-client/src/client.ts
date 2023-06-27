@@ -35,6 +35,7 @@ import {
   PostWithSigData,
   ProfileStruct,
 } from "./types";
+import { RuntimeConnectorSigner, Checker } from "@dataverse/utils-toolkit";
 import { request, gql } from "graphql-request";
 import LensHubJson from "../contracts/LensHub.json";
 import CollectNFTJson from "../contracts/CollectNFT.json";
@@ -45,7 +46,6 @@ import LimitedTimedFeeCollectModuleJson from "../contracts/modules/collect/Limit
 import TimedFeeCollectModuleJson from "../contracts/modules/collect/TimedFeeCollectModule.json";
 import ProfileCreationProxyJson from "../contracts/ProfileCreationProxy.json";
 import FeeFollowModuleJson from "../contracts/modules/follow/FeeFollowModule.json";
-import { RuntimeConnectorSigner } from "@dataverse/utils-toolkit";
 
 export class LensClient {
   public modelIds: ModelIds;
@@ -54,6 +54,7 @@ export class LensClient {
   public lensApiLink!: string;
   public runtimeConnector: RuntimeConnector;
   public signer: RuntimeConnectorSigner;
+  public checker: Checker;
 
   constructor({
     modelIds,
@@ -66,13 +67,16 @@ export class LensClient {
   }) {
     this.modelIds = modelIds;
     this.runtimeConnector = runtimeConnector;
-    this.signer = new RuntimeConnectorSigner(runtimeConnector);
     this.network = network;
+    this.signer = new RuntimeConnectorSigner(runtimeConnector);
+    this.checker = new Checker(runtimeConnector);
     this._initLensContractsAddress(network);
     this._initLensApiLink(network);
   }
 
   public async isProfileCreatorWhitelisted(profileCreator: string) {
+    this.checker.checkWallet();
+
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -98,6 +102,8 @@ export class LensClient {
     followModuleInitData?: any[];
     followNFTURI?: string;
   }) {
+    this.checker.checkWallet();
+
     const createProfileData: CreateProfileData = {
       to,
       handle,
@@ -129,6 +135,8 @@ export class LensClient {
   }
 
   public async burnProfile(profileId: BigNumberish) {
+    this.checker.checkWallet();
+
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -140,6 +148,8 @@ export class LensClient {
   }
 
   public async setDefaultProfile(profileId: BigNumberish) {
+    this.checker.checkWallet();
+
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -168,6 +178,8 @@ export class LensClient {
   }
 
   public async getProfile(profileId: BigNumberish) {
+    this.checker.checkWallet();
+
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -178,6 +190,8 @@ export class LensClient {
   }
 
   public async getProfileIdByHandle(handle: string) {
+    this.checker.checkWallet();
+
     const profileId = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -196,6 +210,8 @@ export class LensClient {
     followModule: string;
     followModuleInitData: any[];
   }) {
+    this.checker.checkWallet();
+
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -206,6 +222,8 @@ export class LensClient {
   }
 
   public async setRevertFollowModule(profileId: BigNumberish) {
+    this.checker.checkWallet();
+
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -226,6 +244,8 @@ export class LensClient {
       recipient: string;
     };
   }) {
+    this.checker.checkWallet();
+
     const moduleInitData = ethers.utils.defaultAbiCoder.encode(
       ["uint256", "address", "address"],
       [
@@ -250,6 +270,8 @@ export class LensClient {
   }
 
   public async follow(profileIds: string[]) {
+    this.checker.checkWallet();
+
     const datas = await Promise.all(
       profileIds.map(async (profileId) => {
         const followModule = await this.getFollowModule(profileId);
@@ -261,7 +283,7 @@ export class LensClient {
         if (profileData) {
           await this._approveERC20({
             contract: profileData.currency,
-            owner: this.runtimeConnector.address,
+            owner: this.runtimeConnector.address!,
             spender: followModule,
             amount: profileData.amount,
           });
@@ -286,6 +308,8 @@ export class LensClient {
   }
 
   public async followWithSig(profileIds: string[]) {
+    this.checker.checkWallet();
+
     const datas = await Promise.all(
       profileIds.map(async (profileId) => {
         const followModule = await this.getFollowModule(profileId);
@@ -297,7 +321,7 @@ export class LensClient {
         if (profileData) {
           await this._approveERC20({
             contract: profileData.currency,
-            owner: this.runtimeConnector.address,
+            owner: this.runtimeConnector.address!,
             spender: followModule,
             amount: profileData.amount,
           });
@@ -314,11 +338,11 @@ export class LensClient {
       deadline: MAX_UINT256,
       wallet: this.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.runtimeConnector.chain.chainId,
+      chainId: this.runtimeConnector.chain!.chainId,
     });
 
     const followWithSigData: FollowWithSigData = {
-      follower: this.runtimeConnector.address,
+      follower: this.runtimeConnector.address!,
       profileIds,
       datas,
       sig,
@@ -341,6 +365,8 @@ export class LensClient {
   }
 
   public async getFollowNFT(profileId: BigNumberish) {
+    this.checker.checkWallet();
+
     const followNFT = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -358,6 +384,8 @@ export class LensClient {
     followNFT: string;
     follower: string;
   }) {
+    this.checker.checkWallet();
+
     const balance = await this.runtimeConnector.contractCall({
       contractAddress: followNFT,
       abi: FollowNFTJson.abi,
@@ -369,6 +397,8 @@ export class LensClient {
   }
 
   public async post(postData: PostData) {
+    await this.checker.checkCapability();
+
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -400,6 +430,8 @@ export class LensClient {
   }
 
   public async postWithSig(postData: PostData) {
+    await this.checker.checkCapability();
+
     const nonce = await this.getSigNonce();
 
     const sig = await this._getPostWithSigPartsByWallet({
@@ -466,6 +498,8 @@ export class LensClient {
     referenceModule?: string;
     referenceModuleInitData?: any[];
   }) {
+    await this.checker.checkCapability();
+
     const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
       ["bool"],
       [collectModuleInitParams.followerOnly]
@@ -521,6 +555,8 @@ export class LensClient {
     referenceModule?: string;
     referenceModuleInitData?: any[];
   }) {
+    await this.checker.checkCapability();
+
     const postData: PostData = {
       profileId,
       contentURI,
@@ -579,6 +615,8 @@ export class LensClient {
     referenceModule?: string;
     referenceModuleInitData?: any[];
   }) {
+    await this.checker.checkCapability();
+
     const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
       ["uint256", "address", "address", "uint16", "bool"],
       [
@@ -644,6 +682,8 @@ export class LensClient {
     referenceModule?: string;
     referenceModuleInitData?: any[];
   }) {
+    await this.checker.checkCapability();
+
     const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
       ["bool"],
       [collectModuleInitParams.followerOnly]
@@ -716,6 +756,8 @@ export class LensClient {
     referenceModule?: string;
     referenceModuleInitData?: any[];
   }) {
+    await this.checker.checkCapability();
+
     const nonce = await this.getSigNonce();
 
     const sig = await this._getPostWithSigPartsByWallet({
@@ -791,6 +833,8 @@ export class LensClient {
     referenceModule?: string;
     referenceModuleInitData?: any[];
   }) {
+    await this.checker.checkCapability();
+
     const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
       ["uint256", "address", "address", "uint16", "bool"],
       [
@@ -859,6 +903,8 @@ export class LensClient {
   }
 
   public async getSigNonce() {
+    this.checker.checkWallet();
+
     const address = await this.signer.getAddress();
 
     const nonce = await this.runtimeConnector.contractCall({
@@ -878,6 +924,8 @@ export class LensClient {
     profileId: BigNumberish;
     pubId: BigNumberish;
   }) {
+    await this.checker.checkCapability();
+
     const collectModule = await this.getCollectModule({ profileId, pubId });
 
     const { collectModuleValidateData, publicationData } =
@@ -890,7 +938,7 @@ export class LensClient {
     if (publicationData) {
       await this._approveERC20({
         contract: publicationData.currency,
-        owner: this.runtimeConnector.address,
+        owner: this.runtimeConnector.address!,
         spender: collectModule,
         amount: publicationData.amount,
       });
@@ -930,6 +978,8 @@ export class LensClient {
     profileId: BigNumberish;
     pubId: BigNumberish;
   }) {
+    await this.checker.checkCapability();
+
     const collectModule = await this.getCollectModule({ profileId, pubId });
 
     const { collectModuleValidateData, publicationData } =
@@ -942,7 +992,7 @@ export class LensClient {
     if (publicationData) {
       await this._approveERC20({
         contract: publicationData.currency,
-        owner: this.runtimeConnector.address,
+        owner: this.runtimeConnector.address!,
         spender: collectModule,
         amount: publicationData.amount,
       });
@@ -997,6 +1047,8 @@ export class LensClient {
   }
 
   public async comment(commentData: CommentData) {
+    await this.checker.checkCapability();
+
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -1030,6 +1082,8 @@ export class LensClient {
   }
 
   public async commentWithSig(commentData: CommentData) {
+    await this.checker.checkCapability();
+
     const nonce = await this.getSigNonce();
 
     const sig = await this._getCommentWithSigPartsByWallet({
@@ -1087,6 +1141,8 @@ export class LensClient {
   }
 
   public async mirror(mirrorData: MirrorData) {
+    await this.checker.checkCapability();
+
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -1118,6 +1174,8 @@ export class LensClient {
   }
 
   public async mirrorWithSig(mirrorData: MirrorData) {
+    await this.checker.checkCapability();
+
     const nonce = await this.getSigNonce();
 
     const sig = await this._getMirrorWithSigPartsByWallet({
@@ -1176,6 +1234,8 @@ export class LensClient {
     profileId: BigNumberish;
     pubId: BigNumberish;
   }) {
+    this.checker.checkWallet();
+
     const collectNFT = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -1193,6 +1253,8 @@ export class LensClient {
     collectNFT: string;
     collector: string;
   }) {
+    this.checker.checkWallet();
+
     const balance = await this.runtimeConnector.contractCall({
       contractAddress: collectNFT,
       abi: CollectNFTJson.abi,
@@ -1210,6 +1272,8 @@ export class LensClient {
     profileId: BigNumberish;
     pubId: BigNumberish;
   }) {
+    this.checker.checkWallet();
+
     const collectModule = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -1221,6 +1285,8 @@ export class LensClient {
   }
 
   public async getFollowModule(profileId: BigNumberish) {
+    this.checker.checkWallet();
+
     const followModule = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -1238,6 +1304,8 @@ export class LensClient {
     profileId: BigNumberish;
     pubId: BigNumberish;
   }) {
+    this.checker.checkWallet();
+
     const referenceModule = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -1249,6 +1317,8 @@ export class LensClient {
   }
 
   public async isFollowModuleWhitelisted(followModule: string) {
+    this.checker.checkWallet();
+
     const isWhitelisted = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -1260,6 +1330,8 @@ export class LensClient {
   }
 
   public async isReferenceModuleWhitelisted(referenceModule: string) {
+    this.checker.checkWallet();
+
     const isWhitelisted = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -1271,6 +1343,8 @@ export class LensClient {
   }
 
   public async isCollectModuleWhitelisted(collectModule: string) {
+    this.checker.checkWallet();
+
     const isWhitelisted = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
@@ -1282,6 +1356,8 @@ export class LensClient {
   }
 
   public async getPersistedPublications() {
+    await this.checker.checkCapability();
+
     const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelIds[ModelType.Publication],
@@ -1291,6 +1367,8 @@ export class LensClient {
   }
 
   public async getPersistedCollections() {
+    await this.checker.checkCapability();
+
     const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelIds[ModelType.Collection],

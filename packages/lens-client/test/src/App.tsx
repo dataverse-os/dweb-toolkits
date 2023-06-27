@@ -76,14 +76,14 @@ const App = () => {
     const { address, wallet } = await lensClient.runtimeConnector.connectWallet(
       WALLET.METAMASK
     );
-    console.log({ address });
+    console.log("address:", address);
     setAccount(address);
     const did = await lensClient.runtimeConnector.createCapability({
       wallet,
       app: import.meta.env.VITE_APP_NAME,
     });
     setDid(did);
-    console.log("connected");
+    console.log("did:", did);
   };
 
   const getCollectModule = async () => {
@@ -847,7 +847,11 @@ const App = () => {
           <div className="textarea">{isFollowedRes}</div>
         </div>
         <div className="test-item">
-          <button onClick={getSigNonce} className="block">
+          <button
+            disabled={account ? false : true}
+            onClick={getSigNonce}
+            className="block"
+          >
             getSigNonce
           </button>
           <button

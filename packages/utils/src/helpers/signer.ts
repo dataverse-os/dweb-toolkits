@@ -37,7 +37,7 @@ export class RuntimeConnectorSigner extends Signer {
   }
 
   public async getAddress(): Promise<string> {
-    return this.runtimeConnector.address;
+    return this.runtimeConnector.address!;
   }
 
   public signTransaction(): Promise<string> {
