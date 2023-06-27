@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["./src/**/*"],
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "./dist/esm",
+    "jsx": "react-jsx",
+    "resolveJsonModule": true,
+    "composite": true
+  },
+  "files": [
+    "./contracts/LensHub.json",
+    "./contracts/CollectNFT.json",
+    "./contracts/FollowNFT.json",
+    "./contracts/modules/collect/FeeCollectModule.json",
+    "./contracts/modules/collect/FreeCollectModule.json",
+    "./contracts/modules/collect/LimitedFeeCollectModule.json",
+    "./contracts/modules/collect/LimitedTimedFeeCollectModule.json",
+    "./contracts/modules/collect/TimedFeeCollectModule.json",
+    "./contracts/modules/collect/RevertCollectModule.json",
+    "./contracts/ProfileCreationProxy.json",
+    "./contracts/modules/follow/FeeFollowModule.json",
+    "./contracts/modules/follow/ProfileFollowModule.json",
+    "./contracts/modules/follow/RevertFollowModule.json"
+  ]
+}

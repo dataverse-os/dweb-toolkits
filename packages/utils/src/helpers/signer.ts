@@ -37,9 +37,7 @@ export class RuntimeConnectorSigner extends Signer {
   }
 
   public async getAddress(): Promise<string> {
-    const did = await this.runtimeConnector.wallet.getCurrentPkh();
-    const address = did.split(":")[4];
-    return address;
+    return this.runtimeConnector.address!;
   }
 
   public signTransaction(): Promise<string> {

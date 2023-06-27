@@ -6,7 +6,8 @@
     "livepeer-demo",
     "push-demo",
     "tableland-demo",
-    "xmtp-demo"
+    "xmtp-demo",
+    "lens-demo"
   ],
   "command": {
     "publish": {

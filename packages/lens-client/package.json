@@ -1,10 +1,10 @@
 {
-  "name": "@dataverse/livepeer-client-toolkit",
-  "version": "1.0.18",
+  "name": "@dataverse/lens-client-toolkit",
+  "version": "1.0.15",
   "description": "",
-  "module": "dist/esm/index.js",
-  "main": "dist/cjs/index.js",
-  "types": "dist/esm/index.d.ts",
+  "module": "dist/esm/src/index.js",
+  "main": "dist/cjs/src/index.js",
+  "types": "dist/esm/src/index.d.ts",
   "files": [
     "dist/"
   ],
@@ -18,19 +18,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@dataverse/utils-toolkit": "^1.0.15",
-    "@livepeer/react": "^2.5.2",
-    "axios": "^1.4.0",
+    "@dataverse/utils-toolkit": "workspace:*",
+    "graphql": "^16.6.0",
+    "graphql-request": "^6.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-dropzone": "^14.2.3",
-    "react-spinners": "^0.13.8",
-    "react-toastify": "^9.1.3",
-    "request": "^2.88.2",
     "typescript": "^4.9.5"
   },
   "devDependencies": {
     "@types/react": "^18.2.9"
-  },
-  "gitHead": "ab790f2b49dc1533fa8f7701e4f85586575df066"
+  }
 }
