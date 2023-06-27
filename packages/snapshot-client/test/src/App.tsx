@@ -3,23 +3,34 @@ import {useContext, useState} from "react";
 import {WALLET} from "@dataverse/runtime-connector";
 import {Context} from "./main";
 import {SnapshotClient} from "./snapshot-client/client";
-import {SNAP_SHOT_HUB, test_ens, test_proposal, test_space, test_vote} from "./snapshot-client/constants";
-import {Strategy} from "@snapshot-labs/snapshot.js/dist/voting/types";
 import {
-  getActions,
-  getProposalById,
-  getProposals,
-  getSpaceDetail,
-  getVoteDetail
-} from "./graphql-client/graphql";
+  AppName,
+  now,
+  ProposalModelId,
+  SNAP_SHOT_HUB,
+  test_space,
+  test_proposal,
+  test_space_obj,
+  test_vote, test_vote_receipt,
+  VoteModelId
+} from "./snapshot-client/constants";
+import {Strategy} from "@snapshot-labs/snapshot.js/dist/voting/types";
+import {getActions, getProposalById, getProposals, getSpaceDetail, getVoteDetail} from "./graphql-client/graphql";
 import {GetActionParams, GetProposalsParams, OrderDirection, State} from "./graphql-client/types";
+import {ModelType} from "./snapshot-client/types";
 
 const App = () => {
   const {runtimeConnector} = useContext(Context);
   const [address, setAddress] = useState<string>();
   const [streamId, setStreamId] = useState<string>();
 
-  const snapshotClient = new SnapshotClient(runtimeConnector, SNAP_SHOT_HUB.dev);
+  const modelIds = {
+    [ModelType.PROPOSAL]: ProposalModelId,
+    [ModelType.VOTE]: VoteModelId
+  }
+  const snapshotClient = new SnapshotClient({
+    runtimeConnector, modelIds, appName: AppName, env: SNAP_SHOT_HUB.dev
+  });
 
   const createCapability = async () => {
     const {address, wallet} = await runtimeConnector.connectWallet(WALLET.METAMASK);
@@ -27,7 +38,7 @@ const App = () => {
     setAddress(address);
     await runtimeConnector.createCapability({
       wallet,
-      app: import.meta.env.VITE_APP_NAME,
+      app: AppName,
     });
     console.log("connected");
   };
@@ -45,7 +56,7 @@ const App = () => {
   }
 
   const joinSpace = async () => {
-    await snapshotClient.joinSpace(test_space);
+    await snapshotClient.joinSpace(test_space_obj);
   }
 
   const getScores = async () => {
@@ -77,8 +88,8 @@ const App = () => {
     });
   }
 
-  const getVp = async () => {
-    const address = '0xa478c2975ab1ea89e8196811f51a7b7ade33eb11';
+  const getVotePower = async () => {
+    const address = '0x66Fe30d178aCE40F50B5d30A35041fCe8e097D98';
     const network = '1';
     const strategies = [
       {
@@ -91,22 +102,23 @@ const App = () => {
       } as unknown as Strategy
     ];
     const snapshot = 11437846;
-    const space = 'yam.eth';
+    const space = test_space;
     const delegation = false;
 
-    await snapshotClient.getVp({
+    await snapshotClient.getVotePower({
       address: address,
       network: network,
       strategies: strategies,
       snapshotNumber: snapshot,
       space: space,
-      delegation: delegation});
+      delegation: delegation
+    });
   }
 
   // const validate = async () => {
   //   const validationName = 'basic';
   //   const author = '0xb5AB443DfF53F0e397a9E0778A3343Cbaf4D001a';
-  //   const spaceId = 'toolkits.eth';
+  //   const spaceId = test_ens;
   //   const networkId = '5';
   //   const snapshotNumber = 17561820;
   //   const validationParams = {
@@ -128,7 +140,7 @@ const App = () => {
 
   const queryActions = async () => {
     const params = {
-      space: test_ens,
+      space: test_space,
       first: 20,
       skip: 10,
       orderDirection: OrderDirection.asc
@@ -143,9 +155,9 @@ const App = () => {
 
   const queryProposals = async () => {
     const variables = {
-      space: test_ens,
+      space: test_space,
       first: 20,
-      skip: 1,
+      skip: 0,
       state: State.active,
       orderDirection: OrderDirection.asc
     } as GetProposalsParams;
@@ -158,7 +170,26 @@ const App = () => {
   }
 
   const querySpaceDetail = async () => {
-    await getSpaceDetail(test_ens);
+    await getSpaceDetail(test_space);
+  }
+
+  const createStream = async () => {
+    await runtimeConnector.createCapability({app: AppName});
+
+    const content = {
+      vote_id: test_vote_receipt.id,
+      proposal_id: test_vote.proposal,
+      ipfs: test_vote_receipt.ipfs,
+      space: test_vote.space,
+      type: test_vote.type,
+      reason: test_vote.reason,
+      relayer_address: test_vote_receipt.relayer.address,
+      relayer_receipt: test_vote_receipt.relayer.receipt,
+      app: test_vote.app,
+      created_at: now()
+    }
+    const res = await runtimeConnector.createStream({modelId: modelIds[ModelType.VOTE], streamContent: content});
+    console.log("create vote stream res: ", res);
   }
 
   return (
@@ -175,11 +206,11 @@ const App = () => {
       <br/>
       <button onClick={getScores}>getScores</button>
       <br/>
-      <button onClick={getVp}>getVotePower</button>
+      <button onClick={getVotePower}>getVotePower</button>
       <br/>
+      <hr/>
       {/*<button onClick={validate}>validate</button>*/}
       {/*<br/>*/}
-      <hr/>
       <button onClick={queryActions}>queryActions</button>
       <br/>
       <button onClick={queryVoteDetail}>queryVoteDetail</button>
@@ -190,6 +221,10 @@ const App = () => {
       <br/>
       <button onClick={querySpaceDetail}>querySpaceDetail</button>
       <br/>
+      <hr/>
+      <button onClick={createStream}>createStream</button>
+      <br/>
+
     </>
   );
 };

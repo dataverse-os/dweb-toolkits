@@ -52,3 +52,9 @@ export interface Strategy {
   network: string;
   params: Record<string, unknown>;
 }
+
+export enum ModelType {
+  PROPOSAL, VOTE
+}
+
+export type ModelIds = Record<ModelType, string>;
