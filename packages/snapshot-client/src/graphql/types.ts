@@ -1,4 +1,3 @@
-
 export enum OrderDirection {
   asc = "asc",
   desc = "desc"
@@ -18,10 +17,8 @@ export type GetProposalsParams = {
   state: State
 } & Pagination
 
-
 export type Pagination = {
   first: number,
   skip?: number
   orderDirection: OrderDirection
-
 }

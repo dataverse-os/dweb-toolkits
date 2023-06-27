@@ -19,6 +19,7 @@
   "license": "ISC",
   "dependencies": {
     "@dataverse/utils-toolkit": "workspace:*",
+    "@snapshot-labs/snapshot.js": "^0.4.100",
     "graphql": "^16.6.0",
     "graphql-request": "^6.1.0",
     "react": "^18.2.0",

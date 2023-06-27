@@ -3,11 +3,10 @@ import snapshot from "@snapshot-labs/snapshot.js";
 import Client from "@snapshot-labs/snapshot.js/dist/sign";
 import {Wallet} from "ethers";
 import {Proposal, Vote, Follow, Message, Options, Strategy, ModelIds, ModelType} from "./types";
-import {
-  now,
-} from "./constants";
+import {now} from "./constants";
+import {GraphqlApi} from "./graphql";
 
-export class SnapshotClient {
+export class SnapshotClient extends GraphqlApi{
   public appName: string;
   public modelIds: ModelIds;
   public runtimeConnector: RuntimeConnector;
@@ -19,10 +18,12 @@ export class SnapshotClient {
     runtimeConnector,
     appName,
     modelIds,
-    env
+    env,
+    apiKey
   }: {
-    runtimeConnector: RuntimeConnector, appName: string, modelIds: ModelIds, env: string
+    runtimeConnector: RuntimeConnector, appName: string, modelIds: ModelIds, env: string, apiKey?: string
   }) {
+    super({apiUrl: env, apiKey});
     this.runtimeConnector = runtimeConnector;
     this.appName = appName;
     this.env = env;
@@ -71,7 +72,8 @@ export class SnapshotClient {
       strategies,
       network,
       voters,
-      blockNumber
+      blockNumber,
+      scoreApiUrl
     )
 
     console.log('Scores', scores);

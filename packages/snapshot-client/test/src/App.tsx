@@ -1,23 +1,24 @@
 import "./App.css";
 import {useContext, useState} from "react";
 import {WALLET} from "@dataverse/runtime-connector";
-import {Context} from "./main";
-import {SnapshotClient} from "./snapshot-client/client";
 import {
-  AppName,
-  now,
-  ProposalModelId,
+  SnapshotClient,
+  ModelType,
+  OrderDirection,
+  State,
+  Strategy,
+  GetActionParams,
+  GetProposalsParams,
   SNAP_SHOT_HUB,
+  now
+} from "@dataverse/snapshot-client-toolkit";
+import {Context} from "./main";
+import {
   test_space,
   test_proposal,
   test_space_obj,
   test_vote, test_vote_receipt,
-  VoteModelId
 } from "./snapshot-client/constants";
-import {Strategy} from "@snapshot-labs/snapshot.js/dist/voting/types";
-import {getActions, getProposalById, getProposals, getSpaceDetail, getVoteDetail} from "./graphql-client/graphql";
-import {GetActionParams, GetProposalsParams, OrderDirection, State} from "./graphql-client/types";
-import {ModelType} from "./snapshot-client/types";
 
 const App = () => {
   const {runtimeConnector} = useContext(Context);
@@ -25,11 +26,11 @@ const App = () => {
   const [streamId, setStreamId] = useState<string>();
 
   const modelIds = {
-    [ModelType.PROPOSAL]: ProposalModelId,
-    [ModelType.VOTE]: VoteModelId
+    [ModelType.PROPOSAL]: import.meta.env.VITE_PROPOSAL_MODEL_ID,
+    [ModelType.VOTE]: import.meta.env.VITE_VOTE_MODEL_ID
   }
   const snapshotClient = new SnapshotClient({
-    runtimeConnector, modelIds, appName: AppName, env: SNAP_SHOT_HUB.dev
+    runtimeConnector, modelIds, appName: import.meta.env.VITE_APP_NAME, env: SNAP_SHOT_HUB.dev
   });
 
   const createCapability = async () => {
@@ -38,7 +39,7 @@ const App = () => {
     setAddress(address);
     await runtimeConnector.createCapability({
       wallet,
-      app: AppName,
+      app: import.meta.env.VITE_APP_NAME,
     });
     console.log("connected");
   };
@@ -145,12 +146,12 @@ const App = () => {
       skip: 10,
       orderDirection: OrderDirection.asc
     } as GetActionParams
-    await getActions(params);
+    await snapshotClient.getActions(params);
   }
 
   const queryVoteDetail = async () => {
     const voteId = ""
-    await getVoteDetail(voteId);
+    await snapshotClient.getVoteDetail(voteId);
   }
 
   const queryProposals = async () => {
@@ -161,20 +162,20 @@ const App = () => {
       state: State.active,
       orderDirection: OrderDirection.asc
     } as GetProposalsParams;
-    await getProposals(variables);
+    await snapshotClient.getProposals(variables);
   }
 
   const queryProposalById = async () => {
     const proposalId = "0x5d790744b950c5d60e025b3076e1a37022f6a5a2ffcf56ba38e2d85192997ede"
-    await getProposalById(proposalId);
+    await snapshotClient.getProposalById(proposalId);
   }
 
   const querySpaceDetail = async () => {
-    await getSpaceDetail(test_space);
+    await snapshotClient.getSpaceDetail(test_space);
   }
 
   const createStream = async () => {
-    await runtimeConnector.createCapability({app: AppName});
+    await runtimeConnector.createCapability({app: import.meta.env.VITE_APP_NAME});
 
     const content = {
       vote_id: test_vote_receipt.id,

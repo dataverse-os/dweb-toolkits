@@ -1,14 +1,5 @@
-import {Proposal, Vote, ProposalType} from "./types";
+import {Proposal, Vote, ProposalType} from "../../../src/types";
 
-export const SNAP_SHOT_HUB = {
-  "prod": 'https://hub.snapshot.org',
-  "dev": 'https://testnet.snapshot.org'
-};
-
-export const GRAPHQL_API = {
-  "prod": 'https://hub.snapshot.org/graphql',
-  "dev": 'https://testnet.snapshot.org/graphql'
-}
 
 export const ONE_DAY = 24 * 60 * 60;
 
@@ -19,8 +10,8 @@ export const now = () => {
 export const test_proposal = {
   space: 'toolkits.eth',
   type: 'single-choice', // define the voting system
-  title: 'p_11',
-  body: 'proposal_p_11',
+  title: 'p_12',
+  body: 'proposal_p_12',
   choices: ['option01', 'option02', 'option03'],
   discussion: "",
   start: now(),
@@ -39,7 +30,7 @@ export const test_space_obj = {
 export const test_vote =
   {
     space: 'toolkits.eth',
-    proposal: '0x4e0bd9ec31fc0aaf6b5b0104ae98ce215363ae01ceae8601451a0ab0f1f672c8',
+    proposal: '0xb3df03c9b6ee68fa5bf9da05e0b1ebc826ef554781755b3edaf32d821c860b66',
     type: 'single-choice',
     choice: 1,
     reason: 'Choice 1 make lot of sense',
@@ -67,31 +58,26 @@ export const test_create_proposal_receipt = {
 }
 
 export const test_query_proposal_by_id =
-{
-  "id": "0xdafc511e75752078042d176822edcae4ff63ec01a4920045d26fc27836ea8855",
-  "title": "p_05",
-  "body": "proposal_p_05",
-  "choices": [
-  "option01",
-  "option02",
-  "option03"
-],
-  "start": 1687835057,
-  "end": 1687921457,
-  "snapshot": "17561820",
-  "state": "active",
-  "scores": [],
-  "scores_by_strategy": [],
-  "scores_total": 0,
-  "scores_updated": 0,
-  "author": "0xb5AB443DfF53F0e397a9E0778A3343Cbaf4D001a",
-  "space": {
-  "id": "toolkits.eth",
-    "name": "toolkits"
-}
-}
-
-
-export const ProposalModelId = "kjzl6hvfrbw6c92ko6uczj3p1rjx5mt6hyxryzurify8tf7wv5fn7xcj50wp8s3"
-export const VoteModelId = "kjzl6hvfrbw6c5itaiutvt6vk2tpngji467j7otb3avdqexkv6mdk0syk0xkgd3"
-export const AppName = "proposal_test06"
+  {
+    "id": "0xdafc511e75752078042d176822edcae4ff63ec01a4920045d26fc27836ea8855",
+    "title": "p_05",
+    "body": "proposal_p_05",
+    "choices": [
+      "option01",
+      "option02",
+      "option03"
+    ],
+    "start": 1687835057,
+    "end": 1687921457,
+    "snapshot": "17561820",
+    "state": "active",
+    "scores": [],
+    "scores_by_strategy": [],
+    "scores_total": 0,
+    "scores_updated": 0,
+    "author": "0xb5AB443DfF53F0e397a9E0778A3343Cbaf4D001a",
+    "space": {
+      "id": "toolkits.eth",
+      "name": "toolkits"
+    }
+  }

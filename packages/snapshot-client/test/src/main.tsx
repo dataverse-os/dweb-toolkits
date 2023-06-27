@@ -3,7 +3,6 @@ import React, { createContext } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import {AppName} from "./snapshot-client/constants";
 
 interface Context {
   runtimeConnector: RuntimeConnector;
