@@ -47,8 +47,6 @@ import ProfileCreationProxyJson from "../contracts/ProfileCreationProxy.json";
 import FeeFollowModuleJson from "../contracts/modules/follow/FeeFollowModule.json";
 import { RuntimeConnectorSigner } from "@dataverse/utils-toolkit";
 
-// import { StreamHelper } from "@dataverse/utils-toolkit";
-
 export class LensClient {
   public modelIds: ModelIds;
   public network: LensNetwork;
