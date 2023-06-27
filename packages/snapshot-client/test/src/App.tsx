@@ -174,25 +174,6 @@ const App = () => {
     await snapshotClient.getSpaceDetail(test_space);
   }
 
-  const createStream = async () => {
-    await runtimeConnector.createCapability({app: import.meta.env.VITE_APP_NAME});
-
-    const content = {
-      vote_id: test_vote_receipt.id,
-      proposal_id: test_vote.proposal,
-      ipfs: test_vote_receipt.ipfs,
-      space: test_vote.space,
-      type: test_vote.type,
-      reason: test_vote.reason,
-      relayer_address: test_vote_receipt.relayer.address,
-      relayer_receipt: test_vote_receipt.relayer.receipt,
-      app: test_vote.app,
-      created_at: now()
-    }
-    const res = await runtimeConnector.createStream({modelId: modelIds[ModelType.VOTE], streamContent: content});
-    console.log("create vote stream res: ", res);
-  }
-
   return (
     <>
       <button onClick={createCapability}>createCapability</button>
@@ -223,8 +204,6 @@ const App = () => {
       <button onClick={querySpaceDetail}>querySpaceDetail</button>
       <br/>
       <hr/>
-      <button onClick={createStream}>createStream</button>
-      <br/>
 
     </>
   );
