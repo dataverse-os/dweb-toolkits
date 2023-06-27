@@ -413,7 +413,7 @@ export class LensClient {
       deadline: MAX_UINT256,
       wallet: this.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.runtimeConnector.chain.chainId,
+      chainId: this.runtimeConnector.chain!.chainId,
     });
 
     const postWithSigData: PostWithSigData = {
@@ -662,7 +662,7 @@ export class LensClient {
       deadline: MAX_UINT256,
       wallet: this.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.runtimeConnector.chain.chainId,
+      chainId: this.runtimeConnector.chain!.chainId,
     });
 
     const postWithSigData: PostWithSigData = {
@@ -729,7 +729,7 @@ export class LensClient {
       deadline: MAX_UINT256,
       wallet: this.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.runtimeConnector.chain.chainId,
+      chainId: this.runtimeConnector.chain!.chainId,
     });
 
     const postWithSigData: PostWithSigData = {
@@ -815,7 +815,7 @@ export class LensClient {
       deadline: MAX_UINT256,
       wallet: this.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.runtimeConnector.chain.chainId,
+      chainId: this.runtimeConnector.chain!.chainId,
     });
 
     const postWithSigData: PostWithSigData = {
@@ -966,7 +966,7 @@ export class LensClient {
       deadline: MAX_UINT256,
       wallet: this.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.runtimeConnector.chain.chainId,
+      chainId: this.runtimeConnector.chain!.chainId,
     });
 
     const res = await this.runtimeConnector.contractCall({
@@ -1046,7 +1046,7 @@ export class LensClient {
       deadline: MAX_UINT256,
       wallet: this.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.runtimeConnector.chain.chainId,
+      chainId: this.runtimeConnector.chain!.chainId,
     });
 
     const commentWithSigData: CommentWithSigData = {
@@ -1131,7 +1131,7 @@ export class LensClient {
       deadline: MAX_UINT256,
       wallet: this.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.runtimeConnector.chain.chainId,
+      chainId: this.runtimeConnector.chain!.chainId,
     });
 
     const mirrorWithSigData: MirrorWithSigData = {
@@ -1665,7 +1665,6 @@ export class LensClient {
         deadline,
       },
     };
-
     const sig = await wallet._signTypedData(
       msgParams.domain,
       msgParams.types,
