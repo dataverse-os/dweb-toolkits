@@ -7,6 +7,7 @@
     "build": "lerna run build",
     "build:utils": "lerna run build --scope=@dataverse/utils-toolkit",
     "build:livepeer-client": "lerna run build --scope=@dataverse/livepeer-client-toolkit",
+    "build:snapshot-client": "lerna run build --scope=@dataverse/snapshot-client-toolkit",
     "build:push-client": "lerna run build --scope=@dataverse/push-client-toolkit",
     "build:tableland-client": "lerna run build --scope=@dataverse/tableland-client-toolkit",
     "build:xmtp-client": "lerna run build --scope=@dataverse/xmtp-client-toolkit",
@@ -18,7 +19,7 @@
   },
   "dependencies": {
     "lerna": "^7.0.1",
-    "@dataverse/runtime-connector": "^1.0.59",
+    "@dataverse/runtime-connector": "*",
     "ethers": "^5.7.2"
   }
 }

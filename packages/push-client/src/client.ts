@@ -163,7 +163,7 @@ export class PushNotificationClient extends PushClientBase {
       env: this.env,
     });
   }
-7
+
   async getSubscriptionsByUser(userAddress: string) {
     return PushAPI.user.getSubscriptions({
       user: getICAPAddress(userAddress), // user address in CAIP
@@ -189,7 +189,7 @@ export class PushNotificationClient extends PushClientBase {
   }
 
   async getNotificationList() {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const pkh = await this.runtimeConnector.getCurrentPkh();
     const notificationStreams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelIds.notification,
       pkh: pkh,
@@ -270,7 +270,7 @@ export class PushNotificationClient extends PushClientBase {
   }
 
   private async _isChannelInfoStreamExist() {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelIds.channel,
       pkh: pkh,
@@ -381,7 +381,7 @@ export class PushChatClient extends PushClientBase {
     const msgStreamContent = this._generateChatMessageStreamContent(
       chats[0].msg
     );
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelIds.message,
       pkh: pkh,
@@ -466,7 +466,7 @@ export class PushChatClient extends PushClientBase {
     const streamContents =
       this._batchGenerateChatMessageStreamContent(chatHistory);
 
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelIds.message,
       pkh: pkh,
@@ -511,7 +511,7 @@ export class PushChatClient extends PushClientBase {
   }
 
   async getMessageList() {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelIds.message,
       pkh: pkh,
@@ -526,7 +526,7 @@ export class PushChatClient extends PushClientBase {
   }
 
   private async _checkCache(modelId: string) {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const pkh = await this.runtimeConnector.getCurrentPkh();
     const stream = await this.runtimeConnector.loadStreamsBy({
       modelId: modelId,
       pkh: pkh,
