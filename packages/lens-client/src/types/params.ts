@@ -25,6 +25,13 @@ export type CreateProfileData = {
   followNFTURI: string;
 };
 
+export type FollowWithSigData = {
+  follower: string;
+  profileIds: Array<string>;
+  datas: Array<any[]>;
+  sig: EIP712Signature;
+};
+
 export type PostData = {
   profileId: BigNumberish;
   contentURI: string;
