@@ -13,7 +13,7 @@ import { getCurrencyAddress } from "./utils";
 import { ethers } from "ethers";
 
 const modelIds = {
-  [ModelType.Post]: import.meta.env.VITE_POST_MODEL_ID,
+  [ModelType.Publication]: import.meta.env.VITE_POST_MODEL_ID,
   [ModelType.Collection]: import.meta.env.VITE_COLLECTION_MODEL_ID,
 };
 
@@ -513,9 +513,9 @@ const App = () => {
     console.log("[getSigNonce]res:", nonce);
   };
 
-  const getPersistedPosts = async () => {
-    const res = await lensClient.getPersistedPosts();
-    console.log("[getPersistedPosts]res:", res);
+  const getPersistedPublications = async () => {
+    const res = await lensClient.getPersistedPublications();
+    console.log("[getPersistedPublications]res:", res);
   }
 
   const getPersistedCollections = async () => {
@@ -922,10 +922,10 @@ const App = () => {
         <div className="test-item">
           <button
             disabled={did ? false : true}
-            onClick={getPersistedPosts}
+            onClick={getPersistedPublications}
             className="block"
           >
-            getPersistedPosts
+            getPersistedPublications
           </button>
           <button
             disabled={did ? false : true}

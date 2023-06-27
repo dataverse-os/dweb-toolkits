@@ -184,6 +184,24 @@ export class LensClient {
     return profileId;
   }
 
+  public async setFollowModule({
+    profileId,
+    followModule,
+    followModuleInitData,
+  }: {
+    profileId: BigNumberish;
+    followModule: string;
+    followModuleInitData: any[];
+  }) {
+    const res = await this.runtimeConnector.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "setFollowModule",
+      params: [profileId, followModule, followModuleInitData],
+    });
+    return res;
+  }
+
   public async setRevertFollowModule(profileId: BigNumberish) {
     const res = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
@@ -241,8 +259,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI: postData.contentURI,
@@ -293,8 +311,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI: postData.contentURI,
@@ -352,8 +370,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI,
@@ -402,8 +420,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI,
@@ -471,8 +489,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI,
@@ -547,8 +565,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI,
@@ -614,8 +632,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI,
@@ -700,8 +718,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "post",
+      await this._persistPublication({
+        pubType: "post",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         contentURI,
@@ -867,8 +885,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "comment",
+      await this._persistPublication({
+        pubType: "comment",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         profileIdPointed: commentData.profileIdPointed,
@@ -924,8 +942,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "comment",
+      await this._persistPublication({
+        pubType: "comment",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         profileIdPointed: commentData.profileIdPointed,
@@ -957,8 +975,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "mirror",
+      await this._persistPublication({
+        pubType: "mirror",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         profileIdPointed: mirrorData.profileIdPointed,
@@ -1009,8 +1027,8 @@ export class LensClient {
     });
 
     try {
-      await this._persistPost({
-        postType: "mirror",
+      await this._persistPublication({
+        pubType: "mirror",
         profileId: (targetEvent as any).topics[1],
         pubId: (targetEvent as any).topics[2],
         profileIdPointed: mirrorData.profileIdPointed,
@@ -1139,10 +1157,10 @@ export class LensClient {
     return isWhitelisted;
   }
 
-  public async getPersistedPosts() {
+  public async getPersistedPublications() {
     const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
-      modelId: this.modelIds[ModelType.Post],
+      modelId: this.modelIds[ModelType.Publication],
       pkh,
     });
     return streams;
@@ -1607,8 +1625,8 @@ export class LensClient {
     } as EIP712Signature;
   }
 
-  private async _persistPost({
-    postType,
+  private async _persistPublication({
+    pubType,
     profileId,
     pubId,
     profileIdPointed,
@@ -1617,7 +1635,7 @@ export class LensClient {
     collectModule,
     referenceModule,
   }: {
-    postType: "post" | "comment" | "mirror";
+    pubType: "post" | "comment" | "mirror";
     profileId: BigNumberish;
     pubId: BigNumberish;
     profileIdPointed?: BigNumberish;
@@ -1627,9 +1645,9 @@ export class LensClient {
     referenceModule: string;
   }) {
     await this.runtimeConnector.createStream({
-      modelId: this.modelIds[ModelType.Post],
+      modelId: this.modelIds[ModelType.Publication],
       streamContent: {
-        post_type: postType,
+        post_type: pubType,
         profile_id: profileId,
         pub_id: pubId,
         profile_id_pointed: profileIdPointed,
