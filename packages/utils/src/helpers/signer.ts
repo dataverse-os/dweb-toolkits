@@ -1,10 +1,9 @@
 import { Bytes, Signer } from "ethers";
-import { SignMethod } from "@dataverse/runtime-connector";
 import {
   TypedDataDomain,
   TypedDataField,
 } from "@ethersproject/abstract-signer";
-import { RuntimeConnector } from "@dataverse/runtime-connector";
+import { RuntimeConnector, SignMethod } from "@dataverse/runtime-connector";
 
 export class RuntimeConnectorSigner extends Signer {
   runtimeConnector: RuntimeConnector;
@@ -37,7 +36,7 @@ export class RuntimeConnectorSigner extends Signer {
   }
 
   public async getAddress(): Promise<string> {
-    return this.runtimeConnector.address;
+    return this.runtimeConnector.signer!.getAddress();
   }
 
   public signTransaction(): Promise<string> {

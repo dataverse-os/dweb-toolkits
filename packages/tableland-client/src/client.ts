@@ -74,7 +74,7 @@ export class TablelandClient {
   }
 
   private async loadTableStreams() {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const pkh = await this.runtimeConnector.getCurrentPkh();
     return await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelId,
       pkh: pkh,
@@ -245,7 +245,7 @@ export class TablelandClient {
   }
 
   async getAddress(): Promise<string> {
-    const did = await this.runtimeConnector.wallet.getCurrentPkh();
+    const did = await this.runtimeConnector.getCurrentPkh();
     const address = did.split(":")[4];
     return address;
   }

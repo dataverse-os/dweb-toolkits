@@ -33,7 +33,7 @@ export class SnapshotClient extends GraphqlApi{
 
   async createProposal(proposal: Proposal) {
     const {web3, address, msg} = this.buildMessage(proposal);
-    const receipt = await this.snapShot.proposal(web3, address, msg as Proposal);
+    const receipt = await this.snapShot.proposal(web3, address!, msg as Proposal);
     console.log("receipt:", receipt)
     await this._persistProposal(proposal, receipt);
     return receipt;
@@ -41,7 +41,7 @@ export class SnapshotClient extends GraphqlApi{
 
   async castVote(vote: Vote) {
     const {web3, address, msg} = this.buildMessage(vote);
-    const receipt = await this.snapShot.vote(web3, address, msg as Vote);
+    const receipt = await this.snapShot.vote(web3, address!, msg as Vote);
 
     await this._persistVote(vote, receipt);
     return receipt;
@@ -50,7 +50,7 @@ export class SnapshotClient extends GraphqlApi{
 
   async joinSpace(space: Follow) {
     const {web3, address, msg} = this.buildMessage(space);
-    const receipt = await this.snapShot.follow(web3, address, msg as Follow);
+    const receipt = await this.snapShot.follow(web3, address!, msg as Follow);
 
     console.log("join space receipt :", receipt)
     return receipt;

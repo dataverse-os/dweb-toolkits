@@ -82,7 +82,7 @@ export class LivepeerClient {
   }
 
   public async getAssetMetaList() {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelId,
       pkh: pkh,
@@ -98,7 +98,7 @@ export class LivepeerClient {
 
   public async updateAssetMeta(assetMeta: any) {
     const livepeerAsset: StreamContent = this._generateAssetMeta(assetMeta);
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelId,
       pkh: pkh,

@@ -261,7 +261,7 @@ export class LensClient {
         if (profileData) {
           await this._approveERC20({
             contract: profileData.currency,
-            owner: this.runtimeConnector.address,
+            owner: this.runtimeConnector.address!,
             spender: followModule,
             amount: profileData.amount,
           });
@@ -297,7 +297,7 @@ export class LensClient {
         if (profileData) {
           await this._approveERC20({
             contract: profileData.currency,
-            owner: this.runtimeConnector.address,
+            owner: this.runtimeConnector.address!,
             spender: followModule,
             amount: profileData.amount,
           });
@@ -314,11 +314,11 @@ export class LensClient {
       deadline: MAX_UINT256,
       wallet: this.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.runtimeConnector.chain.chainId,
+      chainId: this.runtimeConnector.chain!.chainId,
     });
 
     const followWithSigData: FollowWithSigData = {
-      follower: this.runtimeConnector.address,
+      follower: this.runtimeConnector.address!,
       profileIds,
       datas,
       sig,
@@ -890,7 +890,7 @@ export class LensClient {
     if (publicationData) {
       await this._approveERC20({
         contract: publicationData.currency,
-        owner: this.runtimeConnector.address,
+        owner: this.runtimeConnector.address!,
         spender: collectModule,
         amount: publicationData.amount,
       });
@@ -942,7 +942,7 @@ export class LensClient {
     if (publicationData) {
       await this._approveERC20({
         contract: publicationData.currency,
-        owner: this.runtimeConnector.address,
+        owner: this.runtimeConnector.address!,
         spender: collectModule,
         amount: publicationData.amount,
       });
