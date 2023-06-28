@@ -18,7 +18,6 @@ import {
   test_proposal,
   test_space_obj,
   test_vote,
-  test_vote_receipt,
 } from "./params";
 
 const App = () => {

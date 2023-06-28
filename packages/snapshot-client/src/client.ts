@@ -34,8 +34,9 @@ export class SnapshotClient extends GraphqlApi {
   }
 
   async createProposal(proposal: Proposal) {
+    this.checker.checkCapability();
     this.checker.checkWallet();
-    const { web3, address, msg } = this.buildMessage(proposal);
+    const { web3, address, msg } = this._buildMessage(proposal);
     return this.snapShot.proposal(
       web3,
       address!,
@@ -43,12 +44,13 @@ export class SnapshotClient extends GraphqlApi {
     ).then((receipt: any) => {
       this._persistProposal(proposal, receipt);
       return receipt;
-    }).catch(this.processError)
+    }).catch(this._processError)
   }
 
   async castVote(vote: Vote) {
+    this.checker.checkCapability();
     this.checker.checkWallet();
-    const { web3, address, msg } = this.buildMessage(vote);
+    const { web3, address, msg } = this._buildMessage(vote);
     const receipt = await this.snapShot.vote(web3, address!, msg as Vote);
 
     await this._persistVote(vote, receipt);
@@ -57,8 +59,9 @@ export class SnapshotClient extends GraphqlApi {
 
   async joinSpace(space: Follow) {
     this.checker.checkWallet();
-    const { web3, address, msg } = this.buildMessage(space);
-    return this.snapShot.follow(web3, address!, msg as Follow);
+    const { web3, address, msg } = this._buildMessage(space);
+    const receipt = await this.snapShot.follow(web3, address!, msg as Follow);
+    return receipt;
   }
 
   async getScores({
@@ -156,6 +159,7 @@ export class SnapshotClient extends GraphqlApi {
    return this._listStreamContent(this.modelIds[ModelType.VOTE]);
   }
   private async _listStreamContent(modelId: string) {
+    this.checker.checkCapability();
     const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: modelId,
@@ -170,7 +174,7 @@ export class SnapshotClient extends GraphqlApi {
     }
     return items;
   }
-  buildMessage = (msg: Message) => {
+  private _buildMessage(msg: Message){
     const web3 = this.runtimeConnector.signer as unknown as Wallet;
     const address = this.runtimeConnector.address;
     return { web3, address, msg };
@@ -224,13 +228,13 @@ export class SnapshotClient extends GraphqlApi {
     return res;
   }
 
-  processError = (error: any) => {
+
+  private _processError = (error: any) => {
     if(error.error_description == ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE) {
       console.warn(`${ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE}, you can create a space follow the link, https://docs.snapshot.org/user-guides/spaces/create`);
     }
     if(error.error_description == ERR_WRONG_PROPOSAL_FORMAT) {
       console.warn(`${ERR_WRONG_PROPOSAL_FORMAT}, check proposal format`);
     }
-    console.log("error: ", error);
   }
 }
