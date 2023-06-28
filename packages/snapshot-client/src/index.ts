@@ -1,6 +1,7 @@
-import { SnapshotClient } from "./client";
-export default SnapshotClient;
+import { SnapshotClient as Client } from "./client";
+export const SnapshotClient = Client;
+export default Client;
 export * from "./client";
 export * from "./constants";
 export * from "./types";
-export * from "./graphql"
+export * from "./graphql";

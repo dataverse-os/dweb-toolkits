@@ -1,17 +1,25 @@
-import {RuntimeConnector} from "@dataverse/runtime-connector";
+import { RuntimeConnector } from "@dataverse/runtime-connector";
 import snapshot from "@snapshot-labs/snapshot.js";
 import Client from "@snapshot-labs/snapshot.js/dist/sign";
-import {Wallet} from "ethers";
-import {Proposal, Vote, Follow, Message, Options, Strategy, ModelIds, ModelType} from "./types";
-import {now} from "./constants";
-import {GraphqlApi} from "./graphql";
+import { Wallet } from "ethers";
+import {
+  Proposal,
+  Vote,
+  Follow,
+  Message,
+  Options,
+  Strategy,
+  ModelIds,
+  ModelType,
+} from "./types";
+import { now } from "./constants";
+import { GraphqlApi } from "./graphql";
 
-export class SnapshotClient extends GraphqlApi{
+export class SnapshotClient extends GraphqlApi {
   public appName: string;
   public modelIds: ModelIds;
   public runtimeConnector: RuntimeConnector;
-  public snapShot: Client
-  // public web3: Web3Provider | Wallet
+  public snapShot: Client;
   public env: string;
 
   constructor({
@@ -19,11 +27,15 @@ export class SnapshotClient extends GraphqlApi{
     appName,
     modelIds,
     env,
-    apiKey
+    apiKey,
   }: {
-    runtimeConnector: RuntimeConnector, appName: string, modelIds: ModelIds, env: string, apiKey?: string
+    runtimeConnector: RuntimeConnector;
+    appName: string;
+    modelIds: ModelIds;
+    env: string;
+    apiKey?: string;
   }) {
-    super({apiUrl: env, apiKey});
+    super({ apiUrl: env, apiKey });
     this.runtimeConnector = runtimeConnector;
     this.appName = appName;
     this.env = env;
@@ -32,41 +44,47 @@ export class SnapshotClient extends GraphqlApi{
   }
 
   async createProposal(proposal: Proposal) {
-    const {web3, address, msg} = this.buildMessage(proposal);
-    const receipt = await this.snapShot.proposal(web3, address!, msg as Proposal);
-    console.log("receipt:", receipt)
+    const { web3, address, msg } = this.buildMessage(proposal);
+    const receipt = await this.snapShot.proposal(
+      web3,
+      address!,
+      msg as Proposal
+    );
+
     await this._persistProposal(proposal, receipt);
     return receipt;
   }
 
   async castVote(vote: Vote) {
-    const {web3, address, msg} = this.buildMessage(vote);
+    const { web3, address, msg } = this.buildMessage(vote);
     const receipt = await this.snapShot.vote(web3, address!, msg as Vote);
 
     await this._persistVote(vote, receipt);
     return receipt;
   }
 
-
   async joinSpace(space: Follow) {
-    const {web3, address, msg} = this.buildMessage(space);
+    const { web3, address, msg } = this.buildMessage(space);
     const receipt = await this.snapShot.follow(web3, address!, msg as Follow);
 
-    console.log("join space receipt :", receipt)
     return receipt;
   }
 
-  async getScores(
-    {space, strategies, network, voters, scoreApiUrl, blockNumber}:
-      {
-        space: string,
-        strategies: Strategy[],
-        network: string,
-        voters: string[],
-        scoreApiUrl?: string,
-        blockNumber: number
-      }) {
-
+  async getScores({
+    space,
+    strategies,
+    network,
+    voters,
+    scoreApiUrl,
+    blockNumber,
+  }: {
+    space: string;
+    strategies: Strategy[];
+    network: string;
+    voters: string[];
+    scoreApiUrl?: string;
+    blockNumber: number;
+  }) {
     const scores = await snapshot.utils.getScores(
       space,
       strategies,
@@ -74,30 +92,59 @@ export class SnapshotClient extends GraphqlApi{
       voters,
       blockNumber,
       scoreApiUrl
-    )
+    );
 
-    console.log('Scores', scores);
     return scores;
   }
 
-  async getVotePower({address, network, strategies, snapshotNumber, space, delegation, options}: {
-    address: string,
-    network: string,
-    strategies: Strategy[],
-    snapshotNumber: number | 'latest',
-    space: string,
-    delegation: boolean,
-    options?: Options
+  async getVotePower({
+    address,
+    network,
+    strategies,
+    snapshotNumber,
+    space,
+    delegation,
+    options,
+  }: {
+    address: string;
+    network: string;
+    strategies: Strategy[];
+    snapshotNumber: number | "latest";
+    space: string;
+    delegation: boolean;
+    options?: Options;
   }) {
+    const vp = await snapshot.utils.getVp(
+      address,
+      network,
+      strategies,
+      snapshotNumber,
+      space,
+      delegation,
+      options
+    );
 
-    const vp = await snapshot.utils.getVp(address, network, strategies, snapshotNumber, space, delegation, options)
-
-    console.log('Voting Power', vp);
-    return vp
+    return vp;
   }
 
-  async validate(
-    {
+  async validate({
+    validation,
+    author,
+    space,
+    network,
+    snapshotNumber,
+    params,
+    options,
+  }: {
+    validation: string;
+    author: string;
+    space: string;
+    network: string;
+    snapshotNumber: number | "latest";
+    params: any;
+    options: any;
+  }) {
+    const result = await snapshot.utils.validate(
       validation,
       author,
       space,
@@ -105,28 +152,16 @@ export class SnapshotClient extends GraphqlApi{
       snapshotNumber,
       params,
       options
-    }: {
-      validation: string,
-      author: string,
-      space: string,
-      network: string,
-      snapshotNumber: number | 'latest',
-      params: any,
-      options: any
-    }) {
+    );
 
-    const result = await snapshot.utils.validate(
-      validation, author, space, network, snapshotNumber, params, options
-    )
-
-    console.log('Validation Result', result);
+    return result;
   }
 
   buildMessage = (msg: Message) => {
     const web3 = this.runtimeConnector.signer as unknown as Wallet;
     const address = this.runtimeConnector.address;
-    return {web3, address, msg};
-  }
+    return { web3, address, msg };
+  };
 
   private async _persistProposal(proposal: Proposal, receipt: any) {
     const content = {
@@ -143,14 +178,15 @@ export class SnapshotClient extends GraphqlApi{
       relayer_receipt: receipt.relayer.receipt,
       created_at: now(),
       type: proposal.type ?? "",
-      app: proposal.app
-    }
+      app: proposal.app,
+    };
 
     const res = await this.runtimeConnector.createStream({
       modelId: this.modelIds[ModelType.PROPOSAL],
-      streamContent: content
-    })
-    console.log("_persistProposal: res", res);
+      streamContent: content,
+    });
+
+    return res;
   }
 
   private async _persistVote(vote: Vote, receipt: any) {
@@ -164,14 +200,14 @@ export class SnapshotClient extends GraphqlApi{
       relayer_address: receipt.relayer.address,
       relayer_receipt: receipt.relayer.receipt,
       app: vote.app,
-      created_at: now()
-    }
+      created_at: now(),
+    };
 
-    console.log("content : ", content);
     const res = await this.runtimeConnector.createStream({
       modelId: this.modelIds[ModelType.VOTE],
-      streamContent: content
+      streamContent: content,
     });
-    console.log("create vote stream res: ", res);
+
+    return res;
   }
 }

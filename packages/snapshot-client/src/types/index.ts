@@ -1,12 +1,12 @@
 export type ProposalType =
-  | 'single-choice'
-  | 'approval'
-  | 'quadratic'
-  | 'ranked-choice'
-  | 'weighted'
-  | 'basic';
+  | "single-choice"
+  | "approval"
+  | "quadratic"
+  | "ranked-choice"
+  | "weighted"
+  | "basic";
 
-export type Message = Proposal | Follow | Vote
+export type Message = Proposal | Follow | Vote;
 
 export interface Proposal {
   from?: string;
@@ -54,7 +54,8 @@ export interface Strategy {
 }
 
 export enum ModelType {
-  PROPOSAL, VOTE
+  PROPOSAL,
+  VOTE,
 }
 
 export type ModelIds = Record<ModelType, string>;
