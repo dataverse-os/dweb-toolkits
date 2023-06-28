@@ -24,9 +24,8 @@ The project list is as follows:
 | Livepeer  | Video      | https://livepeer.org/     | Complete |
 | Push      | Message    | https://staging.push.org/ | Complete |
 | XMTP      | Message    | https://xmtp.org/         | Complete |
-| Lens      | Social     | https://www.lens.xyz/     | Todo     |
-| Snapshot  | Dao        | https://snapshot.org/     | Todo     |
-| Dework    | Dao        | https://dework.xyz/       | Todo     |
+| Lens      | Social     | https://www.lens.xyz/     | Complete |
+| Snapshot  | Dao        | https://snapshot.org/     | Complete |
 | ...       | ...        | ...                       | ...      |
 
 More projects will be integrated into the toolkit in the future, making it easier for developers to use.
