@@ -12,7 +12,7 @@ import {
   ModelIds,
   ModelType,
 } from "./types";
-import { now } from "./constants";
+import {ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE, ERR_WRONG_PROPOSAL_FORMAT, now} from "./constants";
 import { GraphqlApi } from "./graphql";
 
 export class SnapshotClient extends GraphqlApi {
@@ -41,14 +41,14 @@ export class SnapshotClient extends GraphqlApi {
 
   async createProposal(proposal: Proposal) {
     const { web3, address, msg } = this.buildMessage(proposal);
-    const receipt = await this.snapShot.proposal(
+    return this.snapShot.proposal(
       web3,
       address!,
       msg as Proposal
-    );
-
-    await this._persistProposal(proposal, receipt);
-    return receipt;
+    ).then((receipt: any) => {
+      this._persistProposal(proposal, receipt);
+      return receipt;
+    }).catch(this.processError)
   }
 
   async castVote(vote: Vote) {
@@ -205,5 +205,15 @@ export class SnapshotClient extends GraphqlApi {
     });
 
     return res;
+  }
+
+  processError = (error: any) => {
+    if(error.error_description == ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE) {
+      console.warn(`${ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE}, you can create a space follow the link, https://docs.snapshot.org/user-guides/spaces/create`);
+    }
+    if(error.error_description == ERR_WRONG_PROPOSAL_FORMAT) {
+      console.warn(`${ERR_WRONG_PROPOSAL_FORMAT}, check proposal format`);
+    }
+    console.log("error: ", error);
   }
 }

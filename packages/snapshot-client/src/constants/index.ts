@@ -8,3 +8,6 @@ export const SNAP_SHOT_HUB = {
 export const now = () => {
   return Number((new Date().getTime() / 1000).toFixed(0));
 };
+
+export const ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE = "only space authors can propose"
+export const ERR_WRONG_PROPOSAL_FORMAT = "wrong proposal format"
