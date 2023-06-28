@@ -232,9 +232,12 @@ export class SnapshotClient extends GraphqlApi {
   private _processError = (error: any) => {
     if(error.error_description == ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE) {
       console.warn(`${ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE}, you can create a space follow the link, https://docs.snapshot.org/user-guides/spaces/create`);
+      return;
     }
     if(error.error_description == ERR_WRONG_PROPOSAL_FORMAT) {
       console.warn(`${ERR_WRONG_PROPOSAL_FORMAT}, check proposal format`);
+      return;
     }
+    throw new Error(error);
   }
 }
