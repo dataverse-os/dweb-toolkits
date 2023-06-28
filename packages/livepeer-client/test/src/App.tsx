@@ -1,4 +1,4 @@
-import "./App.css";
+import "./App.scss";
 import { AssetsCreator, LivepeerPlayer } from "./components";
 import { LivepeerClient } from "@dataverse/livepeer-client-toolkit";
 import { useContext, useMemo, useState } from "react";
@@ -20,7 +20,6 @@ const App = () => {
       apiKey: import.meta.env.VITE_LIVEPEER_API_KEY!,
       runtimeConnector: runtimeConnector,
       modelId: import.meta.env.VITE_MODEL_ID,
-      appName: import.meta.env.VITE_APP_NAME,
     });
   }, []);
   const [address, setAddress] = useState<string>();

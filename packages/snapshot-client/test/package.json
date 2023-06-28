@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@dataverse/snapshot-client-toolkit": "*",
+    "@dataverse/snapshot-client-toolkit": "workspace:*",
     "@apollo/client": "^3.7.16",
     "@ethersproject/providers": "^5.7.2",
     "@livepeer/react": "^2.5.2",

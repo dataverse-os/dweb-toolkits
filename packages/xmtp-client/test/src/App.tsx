@@ -1,4 +1,4 @@
-import "./App.css";
+import "./App.scss";
 import { useMemo, useState } from "react";
 import Client, {
   ModelIds,
@@ -29,7 +29,6 @@ function App() {
   const xmtpClient = useMemo(() => {
     return new Client({
       runtimeConnector,
-      appName: import.meta.env.VITE_APP_NAME,
       modelIds: {
         [ModelType.MESSAGE]: import.meta.env.VITE_MESSAGE_MODEL_ID,
         [ModelType.KEYS_CACHE]: import.meta.env.VITE_KEY_CACHE_MODEL_ID,

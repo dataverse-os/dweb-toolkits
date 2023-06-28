@@ -1,5 +1,5 @@
 import { RuntimeConnector, StreamContent } from "@dataverse/runtime-connector";
-import { RuntimeConnectorSigner, StreamHelper } from "@dataverse/utils-toolkit";
+import { StreamHelper } from "@dataverse/utils-toolkit";
 import { ModelIds, XmtpEnv } from "./types";
 import {
   Client,
@@ -20,9 +20,7 @@ import {
 import { Checker } from "@dataverse/utils-toolkit";
 
 export class XmtpClient {
-  public appName: string;
   public runtimeConnector: RuntimeConnector;
-  public signer: RuntimeConnectorSigner;
   public modelIds: ModelIds;
   public env: XmtpEnv;
   public xmtp?: Client;
@@ -31,20 +29,16 @@ export class XmtpClient {
 
   constructor({
     runtimeConnector,
-    appName,
     modelIds,
     env,
   }: {
     runtimeConnector: RuntimeConnector;
-    appName: string;
     modelIds: ModelIds;
     env: XmtpEnv;
   }) {
     this.runtimeConnector = runtimeConnector;
-    this.appName = appName;
     this.modelIds = modelIds;
     this.env = env;
-    this.signer = new RuntimeConnectorSigner(runtimeConnector);
     this.checker = new Checker(runtimeConnector);
     this.codecs = [new AttachmentCodec(), new RemoteAttachmentCodec()];
   }
@@ -101,6 +95,8 @@ export class XmtpClient {
   }
 
   public async getAllConversations() {
+    await this.checker.checkCapability();
+
     const xmtp = await this._lazyInitClient();
     return xmtp.conversations.list();
   }
@@ -155,11 +151,15 @@ export class XmtpClient {
   }
 
   async getConversationStream() {
+    await this.checker.checkCapability();
+
     const xmtp = await this._lazyInitClient();
     return xmtp.conversations.stream();
   }
 
   async getMessageStream(user?: string) {
+    await this.checker.checkCapability();
+
     const xmtp = await this._lazyInitClient();
     if (user) {
       if (!(await this.isUserOnNetwork(user, this.env))) {
@@ -178,6 +178,8 @@ export class XmtpClient {
   }
 
   private async _lazyInitClient() {
+    await this.checker.checkCapability();
+
     if (!this.xmtp) {
       const keys = await this._getKeys();
       this.xmtp = await Client.create(null, {
@@ -191,12 +193,14 @@ export class XmtpClient {
   }
 
   private async _getKeys() {
+    await this.checker.checkCapability();
+
     const { exist, value } = await this._checkCache(this.modelIds.keys_cache);
     if (exist) {
       const keys = await this._unlockKeys(value);
       return stringToUint8Array(keys);
     }
-    const keys = await Client.getKeys(this.signer, { env: this.env });
+    const keys = await Client.getKeys(this.runtimeConnector.signer!, { env: this.env });
     await this._persistKeys(keys);
     return keys;
   }
