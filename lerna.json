@@ -7,7 +7,8 @@
     "push-demo",
     "tableland-demo",
     "xmtp-demo",
-    "lens-demo"
+    "lens-demo",
+    "snapshot-demo"
   ],
   "command": {
     "publish": {

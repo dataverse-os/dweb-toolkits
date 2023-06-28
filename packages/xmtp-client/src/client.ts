@@ -17,6 +17,7 @@ import {
   AttachmentCodec,
   RemoteAttachmentCodec,
 } from "xmtp-content-type-remote-attachment";
+import { Checker } from "@dataverse/utils-toolkit";
 
 export class XmtpClient {
   public appName: string;
@@ -26,6 +27,7 @@ export class XmtpClient {
   public env: XmtpEnv;
   public xmtp?: Client;
   public codecs: ContentCodec<Object>[];
+  private checker: Checker;
 
   constructor({
     runtimeConnector,
@@ -42,11 +44,14 @@ export class XmtpClient {
     this.appName = appName;
     this.modelIds = modelIds;
     this.env = env;
-    this.signer = new RuntimeConnectorSigner(this.runtimeConnector);
+    this.signer = new RuntimeConnectorSigner(runtimeConnector);
+    this.checker = new Checker(runtimeConnector);
     this.codecs = [new AttachmentCodec(), new RemoteAttachmentCodec()];
   }
 
   public async sendMessageTo({ user, msg }: { user: string; msg: string }) {
+    await this.checker.checkCapability();
+
     if (!(await this.isUserOnNetwork(user, this.env))) {
       throw new Error(`${user} is not on network`);
     }
@@ -67,6 +72,8 @@ export class XmtpClient {
     content: any;
     options?: SendOptions;
   }) {
+    await this.checker.checkCapability();
+
     if (!(await this.isUserOnNetwork(user, this.env))) {
       throw new Error(`${user} is not on network`);
     }
@@ -107,6 +114,8 @@ export class XmtpClient {
     options?: ListMessagesOptions;
     paginatedOptions?: ListMessagesPaginatedOptions;
   }) {
+    await this.checker.checkCapability();
+
     if (!(await this.isUserOnNetwork(user, this.env))) {
       throw new Error(`${user} is not on network`);
     }
@@ -129,7 +138,9 @@ export class XmtpClient {
   }
 
   async getPersistedMessages() {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    await this.checker.checkCapability();
+
+    const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelIds.message,
       pkh: pkh,
@@ -233,7 +244,7 @@ export class XmtpClient {
   }
 
   private async _persistMessages(msgList: DecodedMessage[]) {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelIds.message,
       pkh: pkh,
@@ -275,7 +286,7 @@ export class XmtpClient {
   }
 
   private async _checkCache(modelId: string) {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    const pkh = await this.runtimeConnector.getCurrentPkh();
     const stream = await this.runtimeConnector.loadStreamsBy({
       modelId: modelId,
       pkh: pkh,

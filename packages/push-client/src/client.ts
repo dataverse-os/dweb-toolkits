@@ -4,6 +4,7 @@ import { ENV } from "@pushprotocol/restapi/src/lib/constants";
 import { getICAPAddress } from "./utils";
 import { RuntimeConnectorSigner, StreamHelper } from "@dataverse/utils-toolkit";
 import { ModelIds } from "./types";
+import { Checker } from "@dataverse/utils-toolkit";
 
 class PushClientBase {
   public appName: string;
@@ -11,6 +12,7 @@ class PushClientBase {
   public signer: RuntimeConnectorSigner;
   public env: ENV;
   public modelIds: ModelIds;
+  protected checker: Checker;
 
   constructor({
     runtimeConnector,
@@ -25,6 +27,7 @@ class PushClientBase {
   }) {
     this.appName = appName;
     this.runtimeConnector = runtimeConnector;
+    this.checker = new Checker(runtimeConnector);
     this.signer = new RuntimeConnectorSigner(runtimeConnector);
     this.env = env;
     this.modelIds = modelIds;
@@ -58,6 +61,8 @@ export class PushNotificationClient extends PushClientBase {
     img?: string,
     cta?: string
   ) {
+    await this.checker.checkCapability();
+
     await this._checkChannelExist();
 
     const channelDetail = await this.getChannelDetail(channel);
@@ -189,6 +194,8 @@ export class PushNotificationClient extends PushClientBase {
   }
 
   async getNotificationList() {
+    await this.checker.checkCapability();
+
     const pkh = await this.runtimeConnector.getCurrentPkh();
     const notificationStreams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelIds.notification,
@@ -308,8 +315,9 @@ export class PushChatClient extends PushClientBase {
   }
 
   async createPushChatUser() {
-    const address = await this.signer.getAddress();
-    const user = await this.getPushChatUser(address);
+    this.checker.checkWallet();
+
+    const user = await this.getPushChatUser(await this.signer.getAddress());
     if (!user?.encryptedPrivateKey) {
       return await PushAPI.user.create({
         signer: this.signer, // ethers.js signer
@@ -320,6 +328,8 @@ export class PushChatClient extends PushClientBase {
   }
 
   async decryptPushGPGKey() {
+    await this.checker.checkCapability();
+
     const user = await this.getPushChatUser(await this.signer.getAddress());
     if (!user) {
       throw new Error("user not exist");
@@ -344,6 +354,8 @@ export class PushChatClient extends PushClientBase {
     messageContent: string,
     messageType: "Text" | "Image" | "File" | "GIF" | "MediaURL"
   ) {
+    await this.checker.checkCapability();
+
     const user = await this.getPushChatUser(await this.signer.getAddress());
     if (!user) {
       throw new Error("user not exist");
@@ -367,6 +379,8 @@ export class PushChatClient extends PushClientBase {
   }
 
   async fetchUserChats() {
+    await this.checker.checkCapability();
+
     const address = await this.signer.getAddress();
     const pgpDecryptedPvtKey = await this.decryptPushGPGKey();
     const chats = await PushAPI.chat.chats({
@@ -407,6 +421,8 @@ export class PushChatClient extends PushClientBase {
   }
 
   async fetchChatRequest() {
+    this.checker.checkWallet();
+
     const address = await this.signer.getAddress();
     const pgpDecryptedPvtKey = await this.decryptPushGPGKey();
     const response = await PushAPI.chat.requests({
@@ -419,6 +435,8 @@ export class PushChatClient extends PushClientBase {
   }
 
   async approveChatRequest(senderAddress: string) {
+    this.checker.checkWallet();
+
     const address = await this.signer.getAddress();
     const pgpDecryptedPvtKey = await this.decryptPushGPGKey();
     const response = await PushAPI.chat.approve({
@@ -432,6 +450,8 @@ export class PushChatClient extends PushClientBase {
   }
 
   async fetchLatestChats(receiverAddress: string) {
+    this.checker.checkWallet();
+
     const address = await this.signer.getAddress();
     const pgpDecryptedPvtKey = await this.decryptPushGPGKey();
     const conversationHash = await this.getConversationHash(
@@ -449,6 +469,8 @@ export class PushChatClient extends PushClientBase {
   }
 
   async fetchHistoryChats(receiverAddress: string, limit: number) {
+    await this.checker.checkCapability();
+
     const address = await this.signer.getAddress();
     const pgpDecryptedPvtKey = await this.decryptPushGPGKey();
     const conversationHash = await this.getConversationHash(
@@ -511,6 +533,8 @@ export class PushChatClient extends PushClientBase {
   }
 
   async getMessageList() {
+    await this.checker.checkCapability();
+
     const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelIds.message,

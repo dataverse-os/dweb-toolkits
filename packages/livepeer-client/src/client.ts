@@ -11,11 +11,12 @@ import {
   studioProvider,
 } from "@livepeer/react";
 import axios, { AxiosInstance } from "axios";
-
+import { Checker } from "@dataverse/utils-toolkit";
 export { LivepeerConfig, createReactClient, ReactClient };
 
 export class LivepeerClient {
   private http: AxiosInstance;
+  private checker: Checker;
   public apiKey: string;
   public reactClient: ReactClient;
   public appName: string;
@@ -40,6 +41,7 @@ export class LivepeerClient {
     this.appName = appName;
     this.modelId = modelId;
     this.runtimeConnector = runtimeConnector;
+    this.checker = new Checker(runtimeConnector);
 
     this.http = axios.create({
       baseURL: "https://livepeer.studio/api/asset/",
@@ -61,6 +63,8 @@ export class LivepeerClient {
   }
 
   public async uploadVideo(rawVideoFile: any) {
+    await this.checker.checkCapability();
+
     const postRes = await this.http.post("request-upload", {
       name: rawVideoFile.name,
     });
@@ -98,7 +102,9 @@ export class LivepeerClient {
   }
 
   public async getVideoMetaList() {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
+    await this.checker.checkCapability();
+
+    const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelId,
       pkh: pkh,
@@ -123,6 +129,8 @@ export class LivepeerClient {
     lensNickName?: string;
     datatokenVars: Omit<DatatokenVars, "streamId">;
   }) {
+    await this.checker.checkCapability();
+
     if (!datatokenVars.profileId) {
       datatokenVars.profileId = await this._getProfileId({
         address,
