@@ -35,7 +35,7 @@ import {
   PostWithSigData,
   ProfileStruct,
 } from "./types";
-import { RuntimeConnectorSigner, Checker } from "@dataverse/utils-toolkit";
+import { Checker } from "@dataverse/utils-toolkit";
 import { request, gql } from "graphql-request";
 import LensHubJson from "../contracts/LensHub.json";
 import CollectNFTJson from "../contracts/CollectNFT.json";
@@ -53,7 +53,6 @@ export class LensClient {
   public lensContractsAddress!: any;
   public lensApiLink!: string;
   public runtimeConnector: RuntimeConnector;
-  public signer: RuntimeConnectorSigner;
   public checker: Checker;
 
   constructor({
@@ -68,7 +67,6 @@ export class LensClient {
     this.modelIds = modelIds;
     this.runtimeConnector = runtimeConnector;
     this.network = network;
-    this.signer = new RuntimeConnectorSigner(runtimeConnector);
     this.checker = new Checker(runtimeConnector);
     this._initLensContractsAddress(network);
     this._initLensApiLink(network);
@@ -336,7 +334,7 @@ export class LensClient {
       datas,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.signer as Wallet,
+      wallet: this.runtimeConnector.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
       chainId: this.runtimeConnector.chain!.chainId,
     });
@@ -443,7 +441,7 @@ export class LensClient {
       referenceModuleInitData: postData.referenceModuleInitData,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.signer as Wallet,
+      wallet: this.runtimeConnector.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
       chainId: this.runtimeConnector.chain!.chainId,
     });
@@ -700,7 +698,7 @@ export class LensClient {
       referenceModuleInitData: referenceModuleInitData || [],
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.signer as Wallet,
+      wallet: this.runtimeConnector.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
       chainId: this.runtimeConnector.chain!.chainId,
     });
@@ -769,7 +767,7 @@ export class LensClient {
       referenceModuleInitData: referenceModuleInitData || [],
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.signer as Wallet,
+      wallet: this.runtimeConnector.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
       chainId: this.runtimeConnector.chain!.chainId,
     });
@@ -857,7 +855,7 @@ export class LensClient {
       referenceModuleInitData: referenceModuleInitData || [],
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.signer as Wallet,
+      wallet: this.runtimeConnector.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
       chainId: this.runtimeConnector.chain!.chainId,
     });
@@ -905,7 +903,7 @@ export class LensClient {
   public async getSigNonce() {
     this.checker.checkWallet();
 
-    const address = await this.signer.getAddress();
+    const address = this.runtimeConnector.address!;
 
     const nonce = await this.runtimeConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
@@ -998,7 +996,7 @@ export class LensClient {
       });
     }
 
-    const collector = await this.signer.getAddress();
+    const collector = this.runtimeConnector.address!
     const collectWithSigData: Partial<CollectWithSigData> = {
       collector: collector,
       profileId: profileId,
@@ -1014,7 +1012,7 @@ export class LensClient {
       data: collectModuleValidateData,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.signer as Wallet,
+      wallet: this.runtimeConnector.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
       chainId: this.runtimeConnector.chain!.chainId,
     });
@@ -1098,7 +1096,7 @@ export class LensClient {
       referenceModuleInitData: commentData.referenceModuleInitData,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.signer as Wallet,
+      wallet: this.runtimeConnector.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
       chainId: this.runtimeConnector.chain!.chainId,
     });
@@ -1187,7 +1185,7 @@ export class LensClient {
       referenceModuleInitData: mirrorData.referenceModuleInitData,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.signer as Wallet,
+      wallet: this.runtimeConnector.signer as Wallet,
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
       chainId: this.runtimeConnector.chain!.chainId,
     });

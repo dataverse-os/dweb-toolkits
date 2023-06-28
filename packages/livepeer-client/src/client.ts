@@ -19,7 +19,6 @@ export class LivepeerClient {
   private checker: Checker;
   public apiKey: string;
   public reactClient: ReactClient;
-  public appName: string;
   public modelId: string;
   public runtimeConnector: RuntimeConnector;
 
@@ -27,18 +26,15 @@ export class LivepeerClient {
     apiKey,
     runtimeConnector,
     modelId,
-    appName,
   }: {
     apiKey: string;
     runtimeConnector: RuntimeConnector;
     modelId: string;
-    appName: string;
   }) {
     this.apiKey = apiKey;
     this.reactClient = createReactClient({
       provider: studioProvider({ apiKey }),
     });
-    this.appName = appName;
     this.modelId = modelId;
     this.runtimeConnector = runtimeConnector;
     this.checker = new Checker(runtimeConnector);

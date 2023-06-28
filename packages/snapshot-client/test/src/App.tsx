@@ -24,7 +24,6 @@ import {
 const App = () => {
   const { runtimeConnector } = useContext(Context);
   const [address, setAddress] = useState<string>();
-  const [streamId, setStreamId] = useState<string>();
 
   const modelIds = {
     [ModelType.PROPOSAL]: import.meta.env.VITE_PROPOSAL_MODEL_ID,
@@ -33,7 +32,6 @@ const App = () => {
   const snapshotClient = new SnapshotClient({
     runtimeConnector,
     modelIds,
-    appName: import.meta.env.VITE_APP_NAME,
     env: SNAP_SHOT_HUB.dev,
   });
 

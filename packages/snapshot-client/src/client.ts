@@ -16,7 +16,6 @@ import { now } from "./constants";
 import { GraphqlApi } from "./graphql";
 
 export class SnapshotClient extends GraphqlApi {
-  public appName: string;
   public modelIds: ModelIds;
   public runtimeConnector: RuntimeConnector;
   public snapShot: Client;
@@ -24,20 +23,17 @@ export class SnapshotClient extends GraphqlApi {
 
   constructor({
     runtimeConnector,
-    appName,
     modelIds,
     env,
     apiKey,
   }: {
     runtimeConnector: RuntimeConnector;
-    appName: string;
     modelIds: ModelIds;
     env: string;
     apiKey?: string;
   }) {
     super({ apiUrl: env, apiKey });
     this.runtimeConnector = runtimeConnector;
-    this.appName = appName;
     this.env = env;
     this.snapShot = new snapshot.Client712(this.env);
     this.modelIds = modelIds;

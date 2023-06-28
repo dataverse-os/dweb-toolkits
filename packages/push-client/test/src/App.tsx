@@ -23,7 +23,6 @@ const App = () => {
     return new PushNotificationClient({
       runtimeConnector,
       modelIds: modelIds,
-      appName: import.meta.env.VITE_APP_NAME,
       env: ENV.STAGING,
     });
   }, []);
@@ -31,7 +30,6 @@ const App = () => {
     return new PushChatClient({
       runtimeConnector,
       modelIds: modelIds,
-      appName: import.meta.env.VITE_APP_NAME,
       env: ENV.STAGING,
     });
   }, []);
