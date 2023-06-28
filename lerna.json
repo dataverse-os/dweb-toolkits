@@ -3,6 +3,8 @@
   "version": "1.0.18",
   "npmClient": "pnpm",
   "ignore": [
+    "template",
+    "template-demo",
     "livepeer-demo",
     "push-demo",
     "tableland-demo",
