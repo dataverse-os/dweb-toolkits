@@ -1,23 +1,16 @@
-import { RuntimeConnector } from "@dataverse/runtime-connector";
+import {RuntimeConnector} from "@dataverse/runtime-connector";
 import snapshot from "@snapshot-labs/snapshot.js";
 import Client from "@snapshot-labs/snapshot.js/dist/sign";
-import { Wallet } from "ethers";
-import {
-  Proposal,
-  Vote,
-  Follow,
-  Message,
-  Options,
-  Strategy,
-  ModelIds,
-  ModelType,
-} from "./types";
+import {Wallet} from "ethers";
+import {Follow, Message, ModelIds, ModelType, Options, Proposal, Strategy, Vote,} from "./types";
 import {ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE, ERR_WRONG_PROPOSAL_FORMAT, now} from "./constants";
-import { GraphqlApi } from "./graphql";
+import {GraphqlApi} from "./graphql";
+import {Checker} from "@dataverse/utils-toolkit";
 
 export class SnapshotClient extends GraphqlApi {
   public modelIds: ModelIds;
   public runtimeConnector: RuntimeConnector;
+  public checker: Checker
   public snapShot: Client;
   public env: string;
 
@@ -34,12 +27,14 @@ export class SnapshotClient extends GraphqlApi {
   }) {
     super({ apiUrl: env, apiKey });
     this.runtimeConnector = runtimeConnector;
+    this.checker = new Checker(runtimeConnector);
     this.env = env;
     this.snapShot = new snapshot.Client712(this.env);
     this.modelIds = modelIds;
   }
 
   async createProposal(proposal: Proposal) {
+    this.checker.checkWallet();
     const { web3, address, msg } = this.buildMessage(proposal);
     return this.snapShot.proposal(
       web3,
@@ -52,6 +47,7 @@ export class SnapshotClient extends GraphqlApi {
   }
 
   async castVote(vote: Vote) {
+    this.checker.checkWallet();
     const { web3, address, msg } = this.buildMessage(vote);
     const receipt = await this.snapShot.vote(web3, address!, msg as Vote);
 
@@ -60,10 +56,9 @@ export class SnapshotClient extends GraphqlApi {
   }
 
   async joinSpace(space: Follow) {
+    this.checker.checkWallet();
     const { web3, address, msg } = this.buildMessage(space);
-    const receipt = await this.snapShot.follow(web3, address!, msg as Follow);
-
-    return receipt;
+    return this.snapShot.follow(web3, address!, msg as Follow);
   }
 
   async getScores({
@@ -228,7 +223,6 @@ export class SnapshotClient extends GraphqlApi {
 
     return res;
   }
-
 
   processError = (error: any) => {
     if(error.error_description == ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE) {
