@@ -168,6 +168,16 @@ const App = () => {
     console.log("[querySpaceDetail]res:", res);
   };
 
+  const listProposals = async () => {
+    const res = await snapshotClient.listProposals();
+    console.log("[listProposals]res:", res);
+  }
+
+  const listVotes = async () => {
+    const res = await snapshotClient.listVotes();
+    console.log("[listVotes]res:", res);
+  }
+
   return (
     <>
       <button onClick={createCapability}>createCapability</button>
@@ -181,6 +191,10 @@ const App = () => {
       <button onClick={getScores}>getScores</button>
       <br />
       <button onClick={getVotePower}>getVotePower</button>
+      <br />
+      <button onClick={listProposals}>listProposals</button>
+      <br />
+      <button onClick={listVotes}>listVotes</button>
       <br />
       <hr />
       <button onClick={queryActions}>queryActions</button>

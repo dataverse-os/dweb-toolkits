@@ -153,6 +153,28 @@ export class SnapshotClient extends GraphqlApi {
     return result;
   }
 
+  async listProposals() {
+    return this._listStreamContent(this.modelIds[ModelType.PROPOSAL]);
+  }
+
+  async listVotes() {
+   return this._listStreamContent(this.modelIds[ModelType.VOTE]);
+  }
+  private async _listStreamContent(modelId: string) {
+    const pkh = await this.runtimeConnector.getCurrentPkh();
+    const streams = await this.runtimeConnector.loadStreamsBy({
+      modelId: modelId,
+      pkh: pkh,
+    });
+
+    const items = [];
+    for (const key in streams) {
+      if (Object.prototype.hasOwnProperty.call(streams, key)) {
+        items.push(streams[key].streamContent);
+      }
+    }
+    return items;
+  }
   buildMessage = (msg: Message) => {
     const web3 = this.runtimeConnector.signer as unknown as Wallet;
     const address = this.runtimeConnector.address;
@@ -206,6 +228,7 @@ export class SnapshotClient extends GraphqlApi {
 
     return res;
   }
+
 
   processError = (error: any) => {
     if(error.error_description == ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE) {
