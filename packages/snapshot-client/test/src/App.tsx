@@ -18,7 +18,6 @@ import {
   test_proposal,
   test_space_obj,
   test_vote,
-  test_vote_receipt,
 } from "./params";
 
 const App = () => {
@@ -57,6 +56,10 @@ const App = () => {
 
   const vote = async () => {
     const vote = test_vote;
+    if(!proposalId) {
+      alert("create a proposal first");
+      return;
+    }
     vote.proposal = proposalId as string;
     const res = await snapshotClient.castVote(vote);
     console.log("[vote]res:", res);

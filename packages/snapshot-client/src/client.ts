@@ -1,23 +1,16 @@
-import { RuntimeConnector } from "@dataverse/runtime-connector";
+import {RuntimeConnector} from "@dataverse/runtime-connector";
 import snapshot from "@snapshot-labs/snapshot.js";
 import Client from "@snapshot-labs/snapshot.js/dist/sign";
-import { Wallet } from "ethers";
-import {
-  Proposal,
-  Vote,
-  Follow,
-  Message,
-  Options,
-  Strategy,
-  ModelIds,
-  ModelType,
-} from "./types";
+import {Wallet} from "ethers";
+import {Follow, Message, ModelIds, ModelType, Options, Proposal, Strategy, Vote,} from "./types";
 import {ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE, ERR_WRONG_PROPOSAL_FORMAT, now} from "./constants";
-import { GraphqlApi } from "./graphql";
+import {GraphqlApi} from "./graphql";
+import {Checker} from "@dataverse/utils-toolkit";
 
 export class SnapshotClient extends GraphqlApi {
   public modelIds: ModelIds;
   public runtimeConnector: RuntimeConnector;
+  public checker: Checker
   public snapShot: Client;
   public env: string;
 
@@ -34,13 +27,16 @@ export class SnapshotClient extends GraphqlApi {
   }) {
     super({ apiUrl: env, apiKey });
     this.runtimeConnector = runtimeConnector;
+    this.checker = new Checker(runtimeConnector);
     this.env = env;
     this.snapShot = new snapshot.Client712(this.env);
     this.modelIds = modelIds;
   }
 
   async createProposal(proposal: Proposal) {
-    const { web3, address, msg } = this.buildMessage(proposal);
+    this.checker.checkCapability();
+    this.checker.checkWallet();
+    const { web3, address, msg } = this._buildMessage(proposal);
     return this.snapShot.proposal(
       web3,
       address!,
@@ -48,11 +44,13 @@ export class SnapshotClient extends GraphqlApi {
     ).then((receipt: any) => {
       this._persistProposal(proposal, receipt);
       return receipt;
-    }).catch(this.processError)
+    }).catch(this._processError)
   }
 
   async castVote(vote: Vote) {
-    const { web3, address, msg } = this.buildMessage(vote);
+    this.checker.checkCapability();
+    this.checker.checkWallet();
+    const { web3, address, msg } = this._buildMessage(vote);
     const receipt = await this.snapShot.vote(web3, address!, msg as Vote);
 
     await this._persistVote(vote, receipt);
@@ -60,9 +58,9 @@ export class SnapshotClient extends GraphqlApi {
   }
 
   async joinSpace(space: Follow) {
-    const { web3, address, msg } = this.buildMessage(space);
+    this.checker.checkWallet();
+    const { web3, address, msg } = this._buildMessage(space);
     const receipt = await this.snapShot.follow(web3, address!, msg as Follow);
-
     return receipt;
   }
 
@@ -161,6 +159,7 @@ export class SnapshotClient extends GraphqlApi {
    return this._listStreamContent(this.modelIds[ModelType.VOTE]);
   }
   private async _listStreamContent(modelId: string) {
+    this.checker.checkCapability();
     const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: modelId,
@@ -175,7 +174,7 @@ export class SnapshotClient extends GraphqlApi {
     }
     return items;
   }
-  buildMessage = (msg: Message) => {
+  private _buildMessage(msg: Message){
     const web3 = this.runtimeConnector.signer as unknown as Wallet;
     const address = this.runtimeConnector.address;
     return { web3, address, msg };
@@ -230,13 +229,12 @@ export class SnapshotClient extends GraphqlApi {
   }
 
 
-  processError = (error: any) => {
+  private _processError = (error: any) => {
     if(error.error_description == ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE) {
       console.warn(`${ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE}, you can create a space follow the link, https://docs.snapshot.org/user-guides/spaces/create`);
     }
     if(error.error_description == ERR_WRONG_PROPOSAL_FORMAT) {
       console.warn(`${ERR_WRONG_PROPOSAL_FORMAT}, check proposal format`);
     }
-    console.log("error: ", error);
   }
 }
