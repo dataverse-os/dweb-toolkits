@@ -24,6 +24,7 @@ import {
 const App = () => {
   const { runtimeConnector } = useContext(Context);
   const [address, setAddress] = useState<string>();
+  const [proposalId, setProposalId] = useState<string>();
 
   const modelIds = {
     [ModelType.PROPOSAL]: import.meta.env.VITE_PROPOSAL_MODEL_ID,
@@ -50,11 +51,14 @@ const App = () => {
 
   const createProposal = async () => {
     const res = await snapshotClient.createProposal(test_proposal);
-    console.log("[createProposal]res:", res);
+    setProposalId(res.id);
+    console.log("[createProposal]res: ", res)
   };
 
   const vote = async () => {
-    const res = await snapshotClient.castVote(test_vote);
+    const vote = test_vote;
+    vote.proposal = proposalId as string;
+    const res = await snapshotClient.castVote(vote);
     console.log("[vote]res:", res);
   };
 
@@ -164,6 +168,16 @@ const App = () => {
     console.log("[querySpaceDetail]res:", res);
   };
 
+  const listProposals = async () => {
+    const res = await snapshotClient.listProposals();
+    console.log("[listProposals]res:", res);
+  }
+
+  const listVotes = async () => {
+    const res = await snapshotClient.listVotes();
+    console.log("[listVotes]res:", res);
+  }
+
   return (
     <>
       <button onClick={createCapability}>createCapability</button>
@@ -177,6 +191,10 @@ const App = () => {
       <button onClick={getScores}>getScores</button>
       <br />
       <button onClick={getVotePower}>getVotePower</button>
+      <br />
+      <button onClick={listProposals}>listProposals</button>
+      <br />
+      <button onClick={listVotes}>listVotes</button>
       <br />
       <hr />
       <button onClick={queryActions}>queryActions</button>

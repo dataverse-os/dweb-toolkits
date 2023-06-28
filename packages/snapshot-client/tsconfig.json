@@ -6,6 +6,7 @@
     "outDir": "./dist/esm",
     "jsx": "react-jsx",
     "resolveJsonModule": true,
-    "composite": true
+    "composite": true,
+    "experimentalDecorators": true
   }
 }
