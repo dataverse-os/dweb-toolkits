@@ -2,7 +2,7 @@ import { Extension, RuntimeConnector } from "@dataverse/runtime-connector";
 import React, { createContext } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import "./index.css";
+import "./index.scss";
 
 interface Context {
   runtimeConnector: RuntimeConnector;

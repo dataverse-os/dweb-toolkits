@@ -1,4 +1,4 @@
-import "./App.css";
+import "./App.scss";
 import { AssetsCreator, LivepeerPlayer } from "./components";
 import { LivepeerClient } from "@dataverse/livepeer-client-toolkit";
 import { useContext, useMemo, useState } from "react";

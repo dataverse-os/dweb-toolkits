@@ -1,4 +1,4 @@
-import "./App.css";
+import "./App.scss";
 import { useMemo, useState } from "react";
 import Client, {
   ModelIds,

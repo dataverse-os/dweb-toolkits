@@ -1,4 +1,4 @@
-import "./App.css";
+import "./App.scss";
 import { useContext, useState } from "react";
 import { WALLET } from "@dataverse/runtime-connector";
 import {
