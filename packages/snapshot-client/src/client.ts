@@ -238,6 +238,6 @@ export class SnapshotClient extends GraphqlApi {
       console.warn(`${ERR_WRONG_PROPOSAL_FORMAT}, check proposal format`);
       return;
     }
-    throw new Error(error);
+    throw error;
   }
 }
