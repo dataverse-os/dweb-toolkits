@@ -53,6 +53,15 @@ export interface Strategy {
   params: Record<string, unknown>;
 }
 
+export interface Receipt {
+  id: string;
+  ipfs: string;
+  "relayer": {
+    "address": string;
+    "receipt": string;
+  }
+}
+
 export enum ModelType {
   PROPOSAL,
   VOTE,

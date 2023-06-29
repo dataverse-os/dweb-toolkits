@@ -2,7 +2,7 @@ import {RuntimeConnector} from "@dataverse/runtime-connector";
 import snapshot from "@snapshot-labs/snapshot.js";
 import Client from "@snapshot-labs/snapshot.js/dist/sign";
 import {Wallet} from "ethers";
-import {Follow, Message, ModelIds, ModelType, Options, Proposal, Strategy, Vote,} from "./types";
+import {Follow, Message, ModelIds, ModelType, Options, Proposal, Receipt, Strategy, Vote,} from "./types";
 import {ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE, ERR_WRONG_PROPOSAL_FORMAT, now} from "./constants";
 import {GraphqlApi} from "./graphql";
 import {Checker} from "@dataverse/utils-toolkit";
@@ -41,9 +41,9 @@ export class SnapshotClient extends GraphqlApi {
       web3,
       address!,
       msg as Proposal
-    ).then((receipt: any) => {
+    ).then((receipt) => {
       this._persistProposal(proposal, receipt);
-      return receipt;
+      return receipt as Receipt;
     }).catch(this._processError)
   }
 

@@ -1,16 +1,17 @@
 import { Proposal, Vote, now } from "@dataverse/snapshot-client-toolkit";
 
 export const ONE_DAY = 24 * 60 * 60;
+export const TEN_MINUTES = 10 * 60;
 
-export const test_proposal = {
+export const proposal_template = {
   space: "toolkits.eth",
   type: "single-choice", // define the voting system
-  title: "p_12",
-  body: "proposal_p_12",
+  title: "demo_proposal",
+  body: "proposal_description",
   choices: ["option01", "option02", "option03"],
   discussion: "",
   start: now(),
-  end: now() + ONE_DAY,
+  end: now() + TEN_MINUTES,
   snapshot: 17561820,
   plugins: JSON.stringify({}),
   app: "my-app-01", // provide the name of your project which is using this snapshot.js integration

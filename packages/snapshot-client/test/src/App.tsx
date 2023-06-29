@@ -15,7 +15,7 @@ import {
 import { Context } from "./main";
 import {
   test_space,
-  test_proposal,
+  proposal_template,
   test_space_obj,
   test_vote,
 } from "./params";
@@ -24,6 +24,7 @@ const App = () => {
   const { runtimeConnector } = useContext(Context);
   const [address, setAddress] = useState<string>();
   const [proposalId, setProposalId] = useState<string>();
+  const [spaceId, setSpaceId] = useState<string>();
 
   const modelIds = {
     [ModelType.PROPOSAL]: import.meta.env.VITE_PROPOSAL_MODEL_ID,
@@ -49,7 +50,14 @@ const App = () => {
   };
 
   const createProposal = async () => {
-    const res = await snapshotClient.createProposal(test_proposal);
+    if(!spaceId) {
+      alert("please enter spaceId ...");
+      return;
+    }
+    const proposal = proposal_template;
+    proposal.space = spaceId as string;
+    const res = await snapshotClient.createProposal(proposal);
+    console.log("res: ", res);
     setProposalId(res.id);
     console.log("[createProposal]res: ", res)
   };
@@ -184,6 +192,13 @@ const App = () => {
   return (
     <>
       <button onClick={createCapability}>createCapability</button>
+      <br />
+      <input
+        type="text"
+        value={spaceId}
+        placeholder="spaceId: toolkits.eth"
+        onChange={(event) => setSpaceId(event.target.value)}
+      />
       <br />
       <button onClick={createProposal}>createProposal</button>
       <br />
