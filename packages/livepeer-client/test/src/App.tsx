@@ -84,6 +84,12 @@ const App = () => {
     const content = await livepeerClient.runtimeConnector.unlock({indexFileId: streamContent?.file.indexFileId });
     console.log("unlock content: ", content);
   }
+  //
+  // const testDeleteStream = async () => {
+  //   const indexFileId = "kjzl6kcym7w8y9i60b8nori6snffasvc0zwiegtgeh7gt2nifwcqox3xg2t90o2";
+  //   const res =  await livepeerClient.runtimeConnector.removeFiles({indexFileIds: [indexFileId]});
+  //   console.log("delete res: ", res);
+  // }
 
   return (
     <>
@@ -106,6 +112,8 @@ const App = () => {
         <br />
         <button onClick={unlockVideo}>unlockVideo</button>
         <br />
+        {/*<button onClick={testDeleteStream}>testDeleteStream</button>*/}
+        {/*<br />*/}
       </LivepeerConfig>
     </>
   );

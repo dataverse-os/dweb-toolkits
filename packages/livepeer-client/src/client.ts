@@ -12,6 +12,8 @@ import {
 } from "@livepeer/react";
 import axios, { AxiosInstance } from "axios";
 import { Checker } from "@dataverse/utils-toolkit";
+import {Video, Stream, IndexFileId} from "./types"
+
 export { LivepeerConfig, createReactClient, ReactClient };
 
 export class LivepeerClient {
@@ -99,7 +101,6 @@ export class LivepeerClient {
 
   public async getVideoMetaList() {
     await this.checker.checkCapability();
-
     const pkh = await this.runtimeConnector.getCurrentPkh();
     const streams = await this.runtimeConnector.loadStreamsBy({
       modelId: this.modelId,
@@ -111,6 +112,7 @@ export class LivepeerClient {
         assets.push(streams[key]);
       }
     }
+    await this._syncVideoWithLivepeer(assets as unknown as Stream[]);
     return assets;
   }
 
@@ -165,6 +167,31 @@ export class LivepeerClient {
       playback_id: assetMeta.playbackId,
       encrypted,
     };
+  }
+
+  private async _syncVideoWithLivepeer(streams: Stream[]){
+    const videos = (await this.retrieveVideos()) as unknown as Video[];
+    const videosMap = new Map<string, Video>();
+    videos.forEach((video: Video) => {
+      videosMap.set(video.id, video);
+    });
+
+    // find out no exist stream to delete , remove matched video from videoMap
+    const streamToDelete = new Set<IndexFileId>();
+    streams.forEach(stream => {
+      if (!videosMap.has(stream.streamContent.content.asset_id)) {
+        streamToDelete.add(stream.streamContent.file.indexFileId);
+      } else {
+        videosMap.delete(stream.streamContent.content.asset_id);
+      }
+    });
+
+    this.runtimeConnector.removeFiles({indexFileIds: [... streamToDelete]});
+
+    // the remaining of videoMap should be not exist in folder, so add it
+    videosMap.forEach((value: Video, _: string) =>{
+      this._persistAssetMeta(value).catch((_: Error) => { });
+    })
   }
 
   private async _getProfileId({
