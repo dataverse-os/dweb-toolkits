@@ -1,41 +1,53 @@
 {
   "createDapp": {
-    "id": "395052d7-77ee-4c04-b3cf-cda280f76b37",
+    "id": "f1feee67-66bf-41e8-9b86-c20b18420809",
     "streamIDs": [
       {
-        "name": "lens_toolkit_test07_lenspublication",
-        "stream_id": "kjzl6hvfrbw6c5mph5h2z1gpdehqrytv4zmq0arml40apud2dsr4eswqnt91x7w",
+        "name": "toolkits_test0015_lenspublication",
+        "stream_id": "kjzl6hvfrbw6c73rbdg7xq4cvg5dw0e4ytajt5tiy881kx4khlkdxs60q63x7lm",
         "isPublicDomain": false,
         "encryptable": []
       },
       {
-        "name": "lens_toolkit_test07_indexFolders",
-        "stream_id": "kjzl6hvfrbw6c6wr26sjpxur1kfchst6r6ma10c0vf58sb56ne86dzij5a9l3s3",
+        "name": "toolkits_test0015_profile",
+        "stream_id": "kjzl6hvfrbw6c8g8vdfimueyn86382l0p9kipuyc7z4jq3chxga65xzr9vxl344",
+        "isPublicDomain": true,
+        "encryptable": null
+      },
+      {
+        "name": "toolkits_test0015_post",
+        "stream_id": "kjzl6hvfrbw6ca3pj9tq8bpfrjpe2sp2j7l6ec1wcep84cltruxn879nfu0fwks",
+        "isPublicDomain": false,
+        "encryptable": ["text", "images", "videos"]
+      },
+      {
+        "name": "toolkits_test0015_indexFiles",
+        "stream_id": "kjzl6hvfrbw6c7ze3hmzfczqr565whbdfd9qicqymyt7qk7a4c6ic8lwk62oqb1",
         "isPublicDomain": false,
         "encryptable": null
       },
       {
-        "name": "lens_toolkit_test07_contentFolders",
-        "stream_id": "kjzl6hvfrbw6cb2wmrepe9caf3mhfdzhzu6q6cetqv717bpa78h9xnzcalh5s4p",
+        "name": "toolkits_test0015_indexFolders",
+        "stream_id": "kjzl6hvfrbw6c9sof3ed4efrm7h89bs6zwd20aa7c031yp3y0bbyhcxlu70idmw",
         "isPublicDomain": false,
         "encryptable": null
       },
       {
-        "name": "lens_toolkit_test07_lenscollection",
-        "stream_id": "kjzl6hvfrbw6c552a5a3s39gekc60ckvy4g0s95jffom5isx1zcquwz0jburdhr",
+        "name": "toolkits_test0015_contentFolders",
+        "stream_id": "kjzl6hvfrbw6ca0ghac6oyrq9udr1ajwyfhupgnhpbeeoofk5cwjv0pc4g0u1ax",
+        "isPublicDomain": false,
+        "encryptable": null
+      },
+      {
+        "name": "toolkits_test0015_lenscollection",
+        "stream_id": "kjzl6hvfrbw6c7uce0hf346wp68m36iwzaums1r8xf4jbgzo75umyzgur4i8qyb",
         "isPublicDomain": false,
         "encryptable": []
-      },
-      {
-        "name": "lens_toolkit_test07_indexFiles",
-        "stream_id": "kjzl6hvfrbw6c5wc6y4il2f9g2l9fosiovjaxxrkb18832cek1tmkovluk0ykkz",
-        "isPublicDomain": false,
-        "encryptable": null
       }
     ],
     "website": "",
-    "name": "lens_toolkit_test07",
-    "slug": "lens_toolkit_test07",
+    "name": "toolkits_test0015",
+    "slug": "toolkits_test0015",
     "logo": "http://no-logo.com",
     "description": "",
     "defaultFolderName": "Untitled",

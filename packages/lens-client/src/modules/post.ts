@@ -29,6 +29,43 @@ export class Post extends ClientBase {
     });
   }
 
+  public async postStream({
+    modelId,
+    stream,
+    encrypted,
+    postParams,
+    withSig = false,
+  }: {
+    modelId: string;
+    stream: Object;
+    encrypted: Record<string, boolean>;
+    postParams: Omit<PostData, "contentURI">;
+    withSig?: boolean;
+  }) {
+    await this.checker.checkCapability();
+
+    const streamContent = {
+      ...stream,
+      encrypted: JSON.stringify(encrypted),
+    };
+
+    const { streamId } = await this.runtimeConnector.createStream({
+      modelId,
+      streamContent,
+    });
+
+    const postData: PostData = {
+      ...postParams,
+      contentURI: streamId,
+    };
+
+    if (!withSig) {
+      return this.post(postData);
+    } else {
+      return this.postWithSig(postData);
+    }
+  }
+
   public async post(postData: PostData) {
     await this.checker.checkCapability();
 

@@ -180,7 +180,7 @@ export class ClientBase {
     await this.runtimeConnector.createStream({
       modelId: this.modelIds[ModelType.Publication],
       streamContent: {
-        post_type: pubType,
+        publication_type: pubType,
         profile_id: profileId,
         pub_id: pubId,
         profile_id_pointed: profileIdPointed,

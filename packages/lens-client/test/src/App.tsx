@@ -13,7 +13,7 @@ import { getCurrencyAddress } from "./utils";
 import { ethers } from "ethers";
 
 const modelIds = {
-  [ModelType.Publication]: import.meta.env.VITE_POST_MODEL_ID,
+  [ModelType.Publication]: import.meta.env.VITE_PUBLICATION_MODEL_ID,
   [ModelType.Collection]: import.meta.env.VITE_COLLECTION_MODEL_ID,
 };
 
@@ -285,6 +285,101 @@ const App = () => {
       follower,
     });
     setIsFollowedRes(JSON.stringify(res));
+  };
+
+  const postStream = async () => {
+    if (!profileId) {
+      return;
+    }
+    const date = new Date().toISOString();
+
+    const collectModule = lensClient.lensContractsAddress.FreeCollectModule;
+    const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
+      ["bool"],
+      [false]
+    ) as any;
+    const modelId =
+      "kjzl6hvfrbw6ca3pj9tq8bpfrjpe2sp2j7l6ec1wcep84cltruxn879nfu0fwks";
+    const stream = {
+      appVersion: "1.2.1",
+      text: "hello world!",
+      images: [
+        "https://bafkreib76wz6wewtkfmp5rhm3ep6tf4xjixvzzyh64nbyge5yhjno24yl4.ipfs.w3s.link",
+      ],
+      videos: [],
+      createdAt: date,
+      updatedAt: date,
+    };
+    const encrypted = {
+      text: true,
+      images: true,
+      videos: false,
+    };
+    const postParams: Omit<PostData, "contentURI"> = {
+      profileId,
+      collectModule,
+      collectModuleInitData,
+      referenceModule: ethers.constants.AddressZero,
+      referenceModuleInitData: [],
+    };
+
+    const res = await lensClient.postStream({
+      modelId,
+      stream,
+      encrypted,
+      postParams
+    });
+
+    console.log("[postStream]res:", res);
+    setCreatePostRes(JSON.stringify(res));
+  };
+
+  const postStreamWithSig = async () => {
+    if (!profileId) {
+      return;
+    }
+    const date = new Date().toISOString();
+
+    const collectModule = lensClient.lensContractsAddress.FreeCollectModule;
+    const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
+      ["bool"],
+      [false]
+    ) as any;
+    const modelId =
+      "kjzl6hvfrbw6ca3pj9tq8bpfrjpe2sp2j7l6ec1wcep84cltruxn879nfu0fwks";
+    const stream = {
+      appVersion: "1.2.1",
+      text: "hello world!",
+      images: [
+        "https://bafkreib76wz6wewtkfmp5rhm3ep6tf4xjixvzzyh64nbyge5yhjno24yl4.ipfs.w3s.link",
+      ],
+      videos: [],
+      createdAt: date,
+      updatedAt: date,
+    };
+    const encrypted = {
+      text: true,
+      images: true,
+      videos: false,
+    };
+    const postParams: Omit<PostData, "contentURI"> = {
+      profileId,
+      collectModule,
+      collectModuleInitData,
+      referenceModule: ethers.constants.AddressZero,
+      referenceModuleInitData: [],
+    };
+
+    const res = await lensClient.postStream({
+      modelId,
+      stream,
+      encrypted,
+      postParams,
+      withSig: true,
+    });
+
+    console.log("[postStreamWithSig]res:", res);
+    setCreatePostRes(JSON.stringify(res));
   };
 
   const post = async () => {
@@ -853,6 +948,20 @@ const App = () => {
             className="block"
           >
             getSigNonce
+          </button>
+          <button
+            disabled={did ? false : true}
+            onClick={postStream}
+            className="block"
+          >
+            postStream
+          </button>
+          <button
+            disabled={did ? false : true}
+            onClick={postStreamWithSig}
+            className="block"
+          >
+            postStreamWithSig
           </button>
           <button
             disabled={account ? false : true}
