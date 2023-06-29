@@ -68,7 +68,7 @@ const App = () => {
   useEffect(() => {
     if (profiles.length > 0) {
       console.log("profiles: ", profiles);
-      setProfileId(JSON.parse(profiles)[0].id);
+      setProfileId(JSON.parse(profiles)[0]);
     }
   }, [profiles]);
 
