@@ -25,7 +25,7 @@ export class GraphqlApi {
 
   async getVoteDetail(voteId: string) {
     const res: any = await this.graphqlClient.request(QueryVoteDetail, {id: voteId});
-    return res.messages;
+    return res.vote;
   }
 
   async getProposals(variables: GetProposalsParams) {

@@ -16,8 +16,7 @@ import { Context } from "./main";
 import {
   test_space,
   proposal_template,
-  test_space_obj,
-  test_vote,
+  vote_template,
 } from "./params";
 
 const App = () => {
@@ -25,6 +24,7 @@ const App = () => {
   const [address, setAddress] = useState<string>();
   const [proposalId, setProposalId] = useState<string>();
   const [spaceId, setSpaceId] = useState<string>();
+  const [voteId, setVoteId] = useState<string>();
 
   const modelIds = {
     [ModelType.PROPOSAL]: import.meta.env.VITE_PROPOSAL_MODEL_ID,
@@ -57,24 +57,33 @@ const App = () => {
     const proposal = proposal_template;
     proposal.space = spaceId as string;
     const res = await snapshotClient.createProposal(proposal);
-    console.log("res: ", res);
     setProposalId(res.id);
     console.log("[createProposal]res: ", res)
   };
 
   const vote = async () => {
-    const vote = test_vote;
+    const vote = vote_template;
     if(!proposalId) {
       alert("create a proposal first");
       return;
     }
+
     vote.proposal = proposalId as string;
     const res = await snapshotClient.castVote(vote);
     console.log("[vote]res:", res);
+    setVoteId(res.id);
   };
 
   const joinSpace = async () => {
-    const res = await snapshotClient.joinSpace(test_space_obj);
+    if(!spaceId) {
+      alert("please enter spaceId ...");
+      return;
+    }
+
+    const spaceTemplate = {
+      space: spaceId as string
+    }
+    const res = await snapshotClient.joinSpace(spaceTemplate);
     console.log("[joinSpace]res:", res);
   };
 
@@ -140,7 +149,7 @@ const App = () => {
 
   const queryActions = async () => {
     const params = {
-      space: test_space,
+      space: spaceId,
       first: 20,
       skip: 10,
       orderDirection: OrderDirection.asc,
@@ -150,14 +159,22 @@ const App = () => {
   };
 
   const queryVoteDetail = async () => {
-    const voteId = "";
+    if(!voteId) {
+      alert("vote before query vote detail");
+      return;
+    }
+    console.log("voteId: ", voteId);
     const res = await snapshotClient.getVoteDetail(voteId);
     console.log("[queryVoteDetail]res:", res);
   };
 
   const queryProposals = async () => {
+    if(!spaceId) {
+      alert("please enter space Id");
+      return;
+    }
     const variables = {
-      space: test_space,
+      space: spaceId,
       first: 20,
       skip: 0,
       state: State.active,

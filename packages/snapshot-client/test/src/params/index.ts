@@ -19,11 +19,7 @@ export const proposal_template = {
 
 export const test_space = "toolkits.eth";
 
-export const test_space_obj = {
-  space: test_space,
-};
-
-export const test_vote = {
+export const vote_template = {
   space: "toolkits.eth",
   proposal:
     "0xb3df03c9b6ee68fa5bf9da05e0b1ebc826ef554781755b3edaf32d821c860b66",
