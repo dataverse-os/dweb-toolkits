@@ -54,14 +54,14 @@ export class SnapshotClient extends GraphqlApi {
     const receipt = await this.snapShot.vote(web3, address!, msg as Vote);
 
     await this._persistVote(vote, receipt);
-    return receipt;
+    return receipt as Receipt;
   }
 
   async joinSpace(space: Follow) {
     this.checker.checkWallet();
     const { web3, address, msg } = this._buildMessage(space);
     const receipt = await this.snapShot.follow(web3, address!, msg as Follow);
-    return receipt;
+    return receipt as Receipt;
   }
 
   async getScores({
