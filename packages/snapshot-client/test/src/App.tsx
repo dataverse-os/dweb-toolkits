@@ -14,7 +14,6 @@ import {
 } from "@dataverse/snapshot-client-toolkit";
 import { Context } from "./main";
 import {
-  test_space,
   proposal_template,
   vote_template,
 } from "./params";
@@ -67,7 +66,6 @@ const App = () => {
       alert("create a proposal first");
       return;
     }
-
     vote.proposal = proposalId as string;
     const res = await snapshotClient.castVote(vote);
     console.log("[vote]res:", res);
@@ -79,7 +77,6 @@ const App = () => {
       alert("please enter spaceId ...");
       return;
     }
-
     const spaceTemplate = {
       space: spaceId as string
     }
@@ -132,7 +129,7 @@ const App = () => {
       } as unknown as Strategy,
     ];
     const snapshot = 11437846;
-    const space = test_space;
+    const space = spaceId as string;
     const delegation = false;
 
     const res = await snapshotClient.getVotePower({
@@ -148,6 +145,10 @@ const App = () => {
   };
 
   const queryActions = async () => {
+    if(!spaceId) {
+      alert("please enter spaceId ...");
+      return;
+    }
     const params = {
       space: spaceId,
       first: 20,
@@ -185,14 +186,20 @@ const App = () => {
   };
 
   const queryProposalById = async () => {
-    const proposalId =
-      "0x5d790744b950c5d60e025b3076e1a37022f6a5a2ffcf56ba38e2d85192997ede";
-    const res = await snapshotClient.getProposalById(proposalId);
+    if(!proposalId) {
+      alert("please create a proposal");
+      return;
+    }
+    const res = await snapshotClient.getProposalById(proposalId as string);
     console.log("[queryProposalById]res:", res);
   };
 
   const querySpaceDetail = async () => {
-    const res = await snapshotClient.getSpaceDetail(test_space);
+    if(!spaceId) {
+      alert("please enter space Id");
+      return;
+    }
+    const res = await snapshotClient.getSpaceDetail(spaceId);
     console.log("[querySpaceDetail]res:", res);
   };
 
