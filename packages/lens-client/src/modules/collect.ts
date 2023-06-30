@@ -112,13 +112,14 @@ export class Collect extends ClientBase {
     withSig?: boolean;
   }) {
     await this.checker.checkCapability();
+    
     const { modelId, streamContent } = await this.runtimeConnector.loadStream(
       streamId
     );
     if (modelId != this.modelIds[ModelType.Publication]) {
       throw new Error("stream id not available to collect");
     }
-    console.log("loaded, streamContent:", streamContent)
+
     const profileId = streamContent.content.profile_id;
     const pubId = streamContent.content.pub_id;
     const pointedStreamId = streamContent.content.content_uri;
@@ -126,7 +127,7 @@ export class Collect extends ClientBase {
     const {streamContent: pointedStreamContent} = await this.runtimeConnector.loadStream(
       pointedStreamId
     );
-    console.log("pointedStreamContent:", pointedStreamContent)
+
     if(pointedStreamContent.file.fileType !== FileType.Datatoken) {
       throw new Error("stream id pointed not available to collect");
     }
@@ -137,17 +138,6 @@ export class Collect extends ClientBase {
       datatokenId,
       address: this.runtimeConnector.address!
     })
-
-    console.log("isCollected:", isCollected)
-
-    // const collectNFT = await this.getCollectNFT({ profileId, pubId });
-    // const isCollected =
-    //   collectNFT === ethers.constants.AddressZero
-    //     ? false
-    //     : await this.isCollected({
-    //         collectNFT,
-    //         collector: this.runtimeConnector.address!,
-    //       });
 
     let persistRes;
     if (!isCollected) {
@@ -186,14 +176,10 @@ export class Collect extends ClientBase {
       }
     }
 
-    console.log("collected");
-
     const { streamContent: unlockedStreamContent } =
     await this.runtimeConnector.unlock({
       streamId: streamContent.content.content_uri,
     });
-
-    console.log("unlocked")
 
     return {
       collectionStreamId: persistRes?.streamId,

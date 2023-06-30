@@ -61,9 +61,7 @@ export class Post extends ClientBase {
         streamContent,
       });
 
-    console.log("streamCreated, streamId:", streamId)
-
-    const {streamContent: monetizedStreamContent} = await this.runtimeConnector.monetizeFile({
+    await this.runtimeConnector.monetizeFile({
       streamId,
       datatokenVars: {
         profileId: postParams.profileId,
@@ -72,8 +70,6 @@ export class Post extends ClientBase {
         collectLimit,
       },
     });
-
-    console.log("monitized, monetizedStreamContent:", monetizedStreamContent)
 
     const postData: PostData = {
       ...postParams,
