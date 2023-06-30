@@ -125,16 +125,21 @@ export class Profile extends ClientBase {
 
     const balanceCount = BigNumber.from(balance).toNumber();
 
-    const profileIds = [];
-    for (let index = 0; index < balanceCount; index++) {
-      const profileId = await this.runtimeConnector.contractCall({
-        contractAddress: this.lensContractsAddress.LensHubProxy,
-        abi: LensHubJson.abi,
-        method: "tokenOfOwnerByIndex",
-        params: [address, index],
-      });
-      profileIds.push(BigNumber.from(profileId));
-    }
+    const container = Array.from({
+      length: balanceCount
+    });;
+
+    const profileIds = await Promise.all(
+      container.map((_, index) => {
+        console.log("")
+        return this.runtimeConnector.contractCall({
+          contractAddress: this.lensContractsAddress.LensHubProxy,
+          abi: LensHubJson.abi,
+          method: "tokenOfOwnerByIndex",
+          params: [address, index],
+        });
+      })
+    );
 
     return profileIds.map((profileId: BigNumber) => {
       return profileId._hex;

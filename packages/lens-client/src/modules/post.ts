@@ -1,4 +1,4 @@
-import { RuntimeConnector } from "@dataverse/runtime-connector";
+import { Currency, RuntimeConnector } from "@dataverse/runtime-connector";
 import { BigNumberish, ethers, Wallet } from "ethers";
 import { EVENT_SIG_POST_CREATED, MAX_UINT256 } from "../constants";
 import {
@@ -29,17 +29,23 @@ export class Post extends ClientBase {
     });
   }
 
-  public async postStream({
+  public async postOnCeramic({
     modelId,
     stream,
     encrypted,
     postParams,
+    currency,
+    amount,
+    collectLimit,
     withSig = false,
   }: {
     modelId: string;
     stream: Object;
     encrypted: Record<string, boolean>;
     postParams: Omit<PostData, "contentURI">;
+    currency: Currency;
+    amount: number;
+    collectLimit: number;
     withSig?: boolean;
   }) {
     await this.checker.checkCapability();
@@ -49,21 +55,57 @@ export class Post extends ClientBase {
       encrypted: JSON.stringify(encrypted),
     };
 
-    const { streamId } = await this.runtimeConnector.createStream({
-      modelId,
-      streamContent,
+    const { streamId } =
+      await this.runtimeConnector.createStream({
+        modelId,
+        streamContent,
+      });
+
+    console.log("streamCreated, streamId:", streamId)
+
+    const {streamContent: monetizedStreamContent} = await this.runtimeConnector.monetizeFile({
+      streamId,
+      datatokenVars: {
+        profileId: postParams.profileId,
+        currency,
+        amount,
+        collectLimit,
+      },
     });
+
+    console.log("monitized, monetizedStreamContent:", monetizedStreamContent)
 
     const postData: PostData = {
       ...postParams,
       contentURI: streamId,
     };
 
+    let res: EventPostCreated;
     if (!withSig) {
-      return this.post(postData);
+      res = await this.post(postData);
     } else {
-      return this.postWithSig(postData);
+      res = await this.postWithSig(postData);
     }
+
+    let persistRes;
+    try {
+      persistRes = await this._persistPublication({
+        pubType: "post",
+        profileId: res.profileId,
+        pubId: res.pubId,
+        modelId,
+        contentURI: postData.contentURI,
+        collectModule: postData.collectModule,
+        referenceModule: postData.referenceModule,
+      });
+    } catch (e) {
+      console.warn(e);
+    }
+
+    return {
+      publicationStreamId: persistRes?.streamId,
+      ...res,
+    };
   }
 
   public async post(postData: PostData) {
@@ -79,19 +121,6 @@ export class Post extends ClientBase {
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
-
-    try {
-      await this._persistPublication({
-        pubType: "post",
-        profileId: (targetEvent as any).topics[1],
-        pubId: (targetEvent as any).topics[2],
-        contentURI: postData.contentURI,
-        collectModule: postData.collectModule,
-        referenceModule: postData.referenceModule,
-      });
-    } catch (e) {
-      console.warn(e);
-    }
 
     return {
       profileId: (targetEvent as any).topics[1],
@@ -134,18 +163,18 @@ export class Post extends ClientBase {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
 
-    try {
-      await this._persistPublication({
-        pubType: "post",
-        profileId: (targetEvent as any).topics[1],
-        pubId: (targetEvent as any).topics[2],
-        contentURI: postData.contentURI,
-        collectModule: postData.collectModule,
-        referenceModule: postData.referenceModule,
-      });
-    } catch (e) {
-      console.warn(e);
-    }
+    // try {
+    //   await this._persistPublication({
+    //     pubType: "post",
+    //     profileId: (targetEvent as any).topics[1],
+    //     pubId: (targetEvent as any).topics[2],
+    //     contentURI: postData.contentURI,
+    //     collectModule: postData.collectModule,
+    //     referenceModule: postData.referenceModule,
+    //   });
+    // } catch (e) {
+    //   console.warn(e);
+    // }
 
     return {
       profileId: (targetEvent as any).topics[1],
@@ -195,18 +224,18 @@ export class Post extends ClientBase {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
 
-    try {
-      await this._persistPublication({
-        pubType: "post",
-        profileId: (targetEvent as any).topics[1],
-        pubId: (targetEvent as any).topics[2],
-        contentURI,
-        collectModule: this.lensContractsAddress.FreeCollectModule,
-        referenceModule: referenceModule || ethers.constants.AddressZero,
-      });
-    } catch (e) {
-      console.warn(e);
-    }
+    // try {
+    //   await this._persistPublication({
+    //     pubType: "post",
+    //     profileId: (targetEvent as any).topics[1],
+    //     pubId: (targetEvent as any).topics[2],
+    //     contentURI,
+    //     collectModule: this.lensContractsAddress.FreeCollectModule,
+    //     referenceModule: referenceModule || ethers.constants.AddressZero,
+    //   });
+    // } catch (e) {
+    //   console.warn(e);
+    // }
 
     return {
       profileId: (targetEvent as any).topics[1],
@@ -247,18 +276,18 @@ export class Post extends ClientBase {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
 
-    try {
-      await this._persistPublication({
-        pubType: "post",
-        profileId: (targetEvent as any).topics[1],
-        pubId: (targetEvent as any).topics[2],
-        contentURI,
-        collectModule: this.lensContractsAddress.RevertCollectModule,
-        referenceModule: referenceModule || ethers.constants.AddressZero,
-      });
-    } catch (e) {
-      console.warn(e);
-    }
+    // try {
+    //   await this._persistPublication({
+    //     pubType: "post",
+    //     profileId: (targetEvent as any).topics[1],
+    //     pubId: (targetEvent as any).topics[2],
+    //     contentURI,
+    //     collectModule: this.lensContractsAddress.RevertCollectModule,
+    //     referenceModule: referenceModule || ethers.constants.AddressZero,
+    //   });
+    // } catch (e) {
+    //   console.warn(e);
+    // }
 
     return {
       profileId: (targetEvent as any).topics[1],
@@ -318,18 +347,18 @@ export class Post extends ClientBase {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
 
-    try {
-      await this._persistPublication({
-        pubType: "post",
-        profileId: (targetEvent as any).topics[1],
-        pubId: (targetEvent as any).topics[2],
-        contentURI,
-        collectModule: this.lensContractsAddress.FeeCollectModule,
-        referenceModule: referenceModule || ethers.constants.AddressZero,
-      });
-    } catch (e) {
-      console.warn(e);
-    }
+    // try {
+    //   await this._persistPublication({
+    //     pubType: "post",
+    //     profileId: (targetEvent as any).topics[1],
+    //     pubId: (targetEvent as any).topics[2],
+    //     contentURI,
+    //     collectModule: this.lensContractsAddress.FeeCollectModule,
+    //     referenceModule: referenceModule || ethers.constants.AddressZero,
+    //   });
+    // } catch (e) {
+    //   console.warn(e);
+    // }
 
     return {
       profileId: (targetEvent as any).topics[1],
@@ -396,18 +425,18 @@ export class Post extends ClientBase {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
 
-    try {
-      await this._persistPublication({
-        pubType: "post",
-        profileId: (targetEvent as any).topics[1],
-        pubId: (targetEvent as any).topics[2],
-        contentURI,
-        collectModule: this.lensContractsAddress.FreeCollectModule,
-        referenceModule: referenceModule || ethers.constants.AddressZero,
-      });
-    } catch (e) {
-      console.warn(e);
-    }
+    // try {
+    //   await this._persistPublication({
+    //     pubType: "post",
+    //     profileId: (targetEvent as any).topics[1],
+    //     pubId: (targetEvent as any).topics[2],
+    //     contentURI,
+    //     collectModule: this.lensContractsAddress.FreeCollectModule,
+    //     referenceModule: referenceModule || ethers.constants.AddressZero,
+    //   });
+    // } catch (e) {
+    //   console.warn(e);
+    // }
 
     return {
       profileId: (targetEvent as any).topics[1],
@@ -465,18 +494,18 @@ export class Post extends ClientBase {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
 
-    try {
-      await this._persistPublication({
-        pubType: "post",
-        profileId: (targetEvent as any).topics[1],
-        pubId: (targetEvent as any).topics[2],
-        contentURI,
-        collectModule: this.lensContractsAddress.RevertCollectModule,
-        referenceModule: referenceModule || ethers.constants.AddressZero,
-      });
-    } catch (e) {
-      console.warn(e);
-    }
+    // try {
+    //   await this._persistPublication({
+    //     pubType: "post",
+    //     profileId: (targetEvent as any).topics[1],
+    //     pubId: (targetEvent as any).topics[2],
+    //     contentURI,
+    //     collectModule: this.lensContractsAddress.RevertCollectModule,
+    //     referenceModule: referenceModule || ethers.constants.AddressZero,
+    //   });
+    // } catch (e) {
+    //   console.warn(e);
+    // }
 
     return {
       profileId: (targetEvent as any).topics[1],
@@ -553,18 +582,18 @@ export class Post extends ClientBase {
       return event.topics[0] === EVENT_SIG_POST_CREATED;
     });
 
-    try {
-      await this._persistPublication({
-        pubType: "post",
-        profileId: (targetEvent as any).topics[1],
-        pubId: (targetEvent as any).topics[2],
-        contentURI,
-        collectModule: this.lensContractsAddress.FeeCollectModule,
-        referenceModule: referenceModule || ethers.constants.AddressZero,
-      });
-    } catch (e) {
-      console.warn(e);
-    }
+    // try {
+    //   await this._persistPublication({
+    //     pubType: "post",
+    //     profileId: (targetEvent as any).topics[1],
+    //     pubId: (targetEvent as any).topics[2],
+    //     contentURI,
+    //     collectModule: this.lensContractsAddress.FeeCollectModule,
+    //     referenceModule: referenceModule || ethers.constants.AddressZero,
+    //   });
+    // } catch (e) {
+    //   console.warn(e);
+    // }
 
     return {
       profileId: (targetEvent as any).topics[1],

@@ -23,7 +23,7 @@ const App = () => {
     return new Client({
       modelIds: modelIds,
       runtimeConnector: runtimeConnector,
-      network: LensNetwork.MumbaiTestnet,
+      network: LensNetwork.SandboxMumbaiTestnet,
     });
   }, []);
   const [account, setAccount] = useState<string>();
@@ -58,6 +58,8 @@ const App = () => {
   const [mirrorRes, setMirrorRes] = useState<string>("");
   const [profileIdPointed, setProfileIdPointed] = useState<string>("0x80e4");
   const [pubIdPointed, setPubIdPointed] = useState<string>("0x10");
+
+  const [currentStreamId, setCurrentStreamId] = useState<string>();
 
   useEffect(() => {
     if (account) {
@@ -287,7 +289,7 @@ const App = () => {
     setIsFollowedRes(JSON.stringify(res));
   };
 
-  const postStream = async () => {
+  const postOnCeramic = async () => {
     if (!profileId) {
       return;
     }
@@ -299,7 +301,7 @@ const App = () => {
       [false]
     ) as any;
     const modelId =
-      "kjzl6hvfrbw6ca3pj9tq8bpfrjpe2sp2j7l6ec1wcep84cltruxn879nfu0fwks";
+      "kjzl6hvfrbw6c91p8jnyo40e7nn0ij3uykssjjyn38fhtq5pc5wpawcwopi5v9p";
     const stream = {
       appVersion: "1.2.1",
       text: "hello world!",
@@ -323,62 +325,69 @@ const App = () => {
       referenceModuleInitData: [],
     };
 
-    const res = await lensClient.postStream({
-      modelId,
-      stream,
-      encrypted,
-      postParams
-    });
-
-    console.log("[postStream]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
-
-  const postStreamWithSig = async () => {
-    if (!profileId) {
-      return;
-    }
-    const date = new Date().toISOString();
-
-    const collectModule = lensClient.lensContractsAddress.FreeCollectModule;
-    const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
-      ["bool"],
-      [false]
-    ) as any;
-    const modelId =
-      "kjzl6hvfrbw6ca3pj9tq8bpfrjpe2sp2j7l6ec1wcep84cltruxn879nfu0fwks";
-    const stream = {
-      appVersion: "1.2.1",
-      text: "hello world!",
-      images: [
-        "https://bafkreib76wz6wewtkfmp5rhm3ep6tf4xjixvzzyh64nbyge5yhjno24yl4.ipfs.w3s.link",
-      ],
-      videos: [],
-      createdAt: date,
-      updatedAt: date,
-    };
-    const encrypted = {
-      text: true,
-      images: true,
-      videos: false,
-    };
-    const postParams: Omit<PostData, "contentURI"> = {
-      profileId,
-      collectModule,
-      collectModuleInitData,
-      referenceModule: ethers.constants.AddressZero,
-      referenceModuleInitData: [],
-    };
-
-    const res = await lensClient.postStream({
+    const res = await lensClient.postOnCeramic({
       modelId,
       stream,
       encrypted,
       postParams,
+      currency: Currency.WMATIC,
+      amount: 0.0001,
+      collectLimit: 1000,
+    });
+
+    console.log("[postOnCeramic]res:", res);
+    setCurrentStreamId(res.publicationStreamId);
+    setCreatePostRes(JSON.stringify(res));
+  };
+
+  const postOnCeramicWithSig = async () => {
+    if (!profileId) {
+      return;
+    }
+    const date = new Date().toISOString();
+
+    const collectModule = lensClient.lensContractsAddress.FreeCollectModule;
+    const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
+      ["bool"],
+      [false]
+    ) as any;
+    const modelId =
+      "kjzl6hvfrbw6c91p8jnyo40e7nn0ij3uykssjjyn38fhtq5pc5wpawcwopi5v9p";
+    const stream = {
+      appVersion: "1.2.1",
+      text: "hello world!",
+      images: [
+        "https://bafkreib76wz6wewtkfmp5rhm3ep6tf4xjixvzzyh64nbyge5yhjno24yl4.ipfs.w3s.link",
+      ],
+      videos: [],
+      createdAt: date,
+      updatedAt: date,
+    };
+    const encrypted = {
+      text: true,
+      images: true,
+      videos: false,
+    };
+    const postParams: Omit<PostData, "contentURI"> = {
+      profileId,
+      collectModule,
+      collectModuleInitData,
+      referenceModule: ethers.constants.AddressZero,
+      referenceModuleInitData: [],
+    };
+
+    const res = await lensClient.postOnCeramic({
+      modelId,
+      stream,
+      encrypted,
+      postParams,
+      currency: Currency.WMATIC,
+      amount: 0.0001,
+      collectLimit: 1000,
       withSig: true,
     });
 
-    console.log("[postStreamWithSig]res:", res);
+    console.log("[postOnCeramicWithSig]res:", res);
     setCreatePostRes(JSON.stringify(res));
   };
 
@@ -517,6 +526,20 @@ const App = () => {
     });
     console.log("[createFeeCollectPostWithSig]res:", res);
     setCreatePostRes(JSON.stringify(res));
+  };
+
+  const collectOnCeramic = async () => {
+    if (!did || !currentStreamId) {
+      return;
+    }
+
+    const res = await lensClient.collectOnCeramic({
+      streamId:
+        currentStreamId,
+    });
+
+    console.log("[collectOnCeramic]res:", res);
+    setCollectRes(JSON.stringify(res));
   };
 
   const collect = async () => {
@@ -951,17 +974,17 @@ const App = () => {
           </button>
           <button
             disabled={did ? false : true}
-            onClick={postStream}
+            onClick={postOnCeramic}
             className="block"
           >
-            postStream
+            postOnCeramic
           </button>
           <button
             disabled={did ? false : true}
-            onClick={postStreamWithSig}
+            onClick={postOnCeramicWithSig}
             className="block"
           >
-            postStreamWithSig
+            postOnCeramicWithSig
           </button>
           <button
             disabled={account ? false : true}
@@ -1029,6 +1052,13 @@ const App = () => {
           <div className="textarea">{createPostRes}</div>
         </div>
         <div className="test-item">
+          <button
+            disabled={did ? false : true}
+            onClick={collectOnCeramic}
+            className="block"
+          >
+            collectOnCeramic
+          </button>
           <button
             disabled={profileId && pubId ? false : true}
             onClick={collect}

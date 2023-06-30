@@ -1,4 +1,4 @@
-import { RuntimeConnector } from "@dataverse/runtime-connector";
+import { FileType, RuntimeConnector } from "@dataverse/runtime-connector";
 import { BigNumber, BigNumberish, ethers, Wallet } from "ethers";
 import { EVENT_SIG_COLLECTED, MAX_UINT256 } from "../constants";
 import {
@@ -104,6 +104,103 @@ export class Collect extends ClientBase {
     return BigNumber.from(balance).gt(0);
   }
 
+  public async collectOnCeramic({
+    streamId,
+    withSig = false,
+  }: {
+    streamId: string;
+    withSig?: boolean;
+  }) {
+    await this.checker.checkCapability();
+    const { modelId, streamContent } = await this.runtimeConnector.loadStream(
+      streamId
+    );
+    if (modelId != this.modelIds[ModelType.Publication]) {
+      throw new Error("stream id not available to collect");
+    }
+    console.log("loaded, streamContent:", streamContent)
+    const profileId = streamContent.content.profile_id;
+    const pubId = streamContent.content.pub_id;
+    const pointedStreamId = streamContent.content.content_uri;
+
+    const {streamContent: pointedStreamContent} = await this.runtimeConnector.loadStream(
+      pointedStreamId
+    );
+    console.log("pointedStreamContent:", pointedStreamContent)
+    if(pointedStreamContent.file.fileType !== FileType.Datatoken) {
+      throw new Error("stream id pointed not available to collect");
+    }
+
+    const datatokenId = pointedStreamContent.file.datatokenId!;
+
+    const isCollected = await this.runtimeConnector.isCollected({
+      datatokenId,
+      address: this.runtimeConnector.address!
+    })
+
+    console.log("isCollected:", isCollected)
+
+    // const collectNFT = await this.getCollectNFT({ profileId, pubId });
+    // const isCollected =
+    //   collectNFT === ethers.constants.AddressZero
+    //     ? false
+    //     : await this.isCollected({
+    //         collectNFT,
+    //         collector: this.runtimeConnector.address!,
+    //       });
+
+    let persistRes;
+    if (!isCollected) {
+      let res: EventCollected;
+      if (!withSig) {
+        res = await this.collect({
+          profileId,
+          pubId,
+        });
+      } else {
+        res = await this.collectWithSig({
+          profileId,
+          pubId,
+        });
+      }
+
+      const datatokenInfo = await this.runtimeConnector.getDatatokenBaseInfo(
+        datatokenId
+      );
+
+      try {
+        persistRes = await this._persistCollection({
+          profileId: res.profileId,
+          pubId: res.pubId,
+          modelId: streamContent.content.model_id,
+          streamId: streamContent.content.content_uri,
+          collector: res.collector,
+          currency: (datatokenInfo as any).collect_info.price.currency_addr,
+          amount: `${(datatokenInfo as any).collect_info.price.amount} ${
+            (datatokenInfo as any).collect_info.price.currency
+          }`,
+          collectLimit: (datatokenInfo as any).collect_info.total,
+        });
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    console.log("collected");
+
+    const { streamContent: unlockedStreamContent } =
+    await this.runtimeConnector.unlock({
+      streamId: streamContent.content.content_uri,
+    });
+
+    console.log("unlocked")
+
+    return {
+      collectionStreamId: persistRes?.streamId,
+      unlockedStreamContent,
+    };
+  }
+
   public async collect({
     profileId,
     pubId,
@@ -142,14 +239,14 @@ export class Collect extends ClientBase {
       return event.topics[0] === EVENT_SIG_COLLECTED;
     });
 
-    try {
-      await this._persistCollection({
-        profileId,
-        pubId,
-      });
-    } catch (e) {
-      console.warn(e);
-    }
+    // try {
+    //   await this._persistCollection({
+    //     profileId,
+    //     pubId,
+    //   });
+    // } catch (e) {
+    //   console.warn(e);
+    // }
 
     return {
       collector: (targetEvent as any).topics[1],
@@ -217,14 +314,14 @@ export class Collect extends ClientBase {
       return event.topics[0] === EVENT_SIG_COLLECTED;
     });
 
-    try {
-      await this._persistCollection({
-        profileId,
-        pubId,
-      });
-    } catch (e) {
-      console.warn(e);
-    }
+    // try {
+    //   await this._persistCollection({
+    //     profileId,
+    //     pubId,
+    //   });
+    // } catch (e) {
+    //   console.warn(e);
+    // }
 
     return {
       collector: (targetEvent as any).topics[1],
@@ -384,19 +481,37 @@ export class Collect extends ClientBase {
   private async _persistCollection({
     profileId,
     pubId,
+    modelId,
+    streamId,
+    collector,
+    currency,
+    amount,
+    collectLimit,
   }: {
     profileId: string;
     pubId: string;
+    modelId: string;
+    streamId: string;
+    collector: string;
+    currency: string;
+    amount: BigNumberish;
+    collectLimit: BigNumberish;
   }) {
     const collectNFT = await this.getCollectNFT({
       profileId,
       pubId,
     });
-    await this.runtimeConnector.createStream({
+    return await this.runtimeConnector.createStream({
       modelId: this.modelIds[ModelType.Collection],
       streamContent: {
         profile_id: profileId,
         pub_id: pubId,
+        model_id: modelId,
+        stream_id: streamId,
+        collector,
+        currency,
+        amount,
+        collect_limit: collectLimit,
         collect_nft: collectNFT,
         collected_at: Date.now(),
       },

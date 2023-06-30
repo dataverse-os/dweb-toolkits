@@ -162,6 +162,7 @@ export class ClientBase {
     pubType,
     profileId,
     pubId,
+    modelId,
     profileIdPointed,
     pubIdPointed,
     contentURI,
@@ -171,18 +172,20 @@ export class ClientBase {
     pubType: "post" | "comment" | "mirror";
     profileId: BigNumberish;
     pubId: BigNumberish;
+    modelId?: string;
     profileIdPointed?: BigNumberish;
     pubIdPointed?: BigNumberish;
     contentURI?: string;
     collectModule?: string;
     referenceModule: string;
   }) {
-    await this.runtimeConnector.createStream({
+    return await this.runtimeConnector.createStream({
       modelId: this.modelIds[ModelType.Publication],
       streamContent: {
         publication_type: pubType,
         profile_id: profileId,
         pub_id: pubId,
+        model_id: modelId,
         profile_id_pointed: profileIdPointed,
         pub_id_pointed: pubIdPointed,
         content_uri: contentURI,
