@@ -16,7 +16,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@livepeer/react": "^2.5.2",
     "axios": "^1.4.0",

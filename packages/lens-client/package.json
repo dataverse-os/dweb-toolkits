@@ -16,7 +16,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "graphql": "^16.6.0",
     "graphql-request": "^6.1.0",

@@ -16,7 +16,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@snapshot-labs/snapshot.js": "^0.4.100",
     "graphql": "^16.6.0",
