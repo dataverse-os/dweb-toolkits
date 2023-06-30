@@ -56,8 +56,8 @@ const App = () => {
   const [isCollectedRes, setIsCollectedRes] = useState<string>();
   const [commentRes, setCommentRes] = useState<string>("");
   const [mirrorRes, setMirrorRes] = useState<string>("");
-  const [profileIdPointed, setProfileIdPointed] = useState<string>("0x80e4");
-  const [pubIdPointed, setPubIdPointed] = useState<string>("0x10");
+  const [profileIdPointed, setProfileIdPointed] = useState<string>();
+  const [pubIdPointed, setPubIdPointed] = useState<string>();
 
   const [currentStreamId, setCurrentStreamId] = useState<string>();
 
@@ -337,6 +337,8 @@ const App = () => {
 
     console.log("[postOnCeramic]res:", res);
     setCurrentStreamId(res.publicationStreamId);
+    setProfileIdPointed(res.profileId);
+    setPubIdPointed(res.pubId);
     setCreatePostRes(JSON.stringify(res));
   };
 
@@ -388,6 +390,9 @@ const App = () => {
     });
 
     console.log("[postOnCeramicWithSig]res:", res);
+    setCurrentStreamId(res.publicationStreamId);
+    setProfileIdPointed(res.profileId);
+    setPubIdPointed(res.pubId);
     setCreatePostRes(JSON.stringify(res));
   };
 
