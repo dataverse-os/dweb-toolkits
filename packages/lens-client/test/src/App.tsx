@@ -391,178 +391,30 @@ const App = () => {
     setCreatePostRes(JSON.stringify(res));
   };
 
-  const post = async () => {
-    if (!profileId) {
-      return;
-    }
-    const collectModule = lensClient.lensContractsAddress.FreeCollectModule;
-    const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
-      ["bool"],
-      [false]
-    ) as any;
-    const postData: PostData = {
-      profileId,
-      contentURI: "https://dataverse-os.com/",
-      collectModule,
-      collectModuleInitData,
-      referenceModule: ethers.constants.AddressZero,
-      referenceModuleInitData: [],
-    };
-    const res = await lensClient.post(postData);
-    console.log("[post]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
-
-  const postWithSig = async () => {
-    if (!profileId) {
-      return;
-    }
-    const collectModule = lensClient.lensContractsAddress.FreeCollectModule;
-    const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
-      ["bool"],
-      [false]
-    ) as any;
-    const postData: PostData = {
-      profileId,
-      contentURI: "https://dataverse-os.com/",
-      collectModule,
-      collectModuleInitData,
-      referenceModule: ethers.constants.AddressZero,
-      referenceModuleInitData: [],
-    };
-    const res = await lensClient.postWithSig(postData);
-    console.log("[postWithSig]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
-
-  const createFreeCollectPost = async () => {
-    if (!profileId) {
-      return;
-    }
-    const res = await lensClient.createFreeCollectPost({
-      profileId,
-      contentURI: "https://github.com/dataverse-os",
-      collectModuleInitParams: {
-        followerOnly: false,
-      },
-    });
-    console.log("[createFreeCollectPost]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
-
-  const createFreeCollectPostWithSig = async () => {
-    if (!account || !profileId) {
-      return;
-    }
-
-    const res = await lensClient.createFreeCollectPostWithSig({
-      profileId,
-      contentURI: "https://github.com/dataverse-os",
-      collectModuleInitParams: {
-        followerOnly: false,
-      },
-    });
-    console.log("[createFreeCollectPostWithSig]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
-
-  const createRevertCollectPost = async () => {
-    if (!profileId) {
-      return;
-    }
-    const res = await lensClient.createRevertCollectPost({
-      profileId,
-      contentURI: "https://github.com/dataverse-os",
-    });
-    console.log("[createRevertCollectPost]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
-
-  const createRevertCollectPostWithSig = async () => {
-    if (!profileId) {
-      return;
-    }
-    const res = await lensClient.createRevertCollectPostWithSig({
-      profileId,
-      contentURI: "https://github.com/dataverse-os",
-    });
-    console.log("[createRevertCollectPostWithSig]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
-
-  const createFeeCollectPost = async () => {
-    if (!account || !profileId) {
-      return;
-    }
-    const res = await lensClient.createFeeCollectPost({
-      profileId,
-      contentURI: "https://github.com/dataverse-os",
-      collectModuleInitParams: {
-        amount: 10e8,
-        currency: getCurrencyAddress(Currency.WMATIC),
-        recipient: account,
-        referralFee: 0,
-        followerOnly: false,
-      },
-    });
-    console.log("[createFeeCollectPost]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
-
-  const createFeeCollectPostWithSig = async () => {
-    if (!account || !profileId) {
-      return;
-    }
-    const res = await lensClient.createFeeCollectPostWithSig({
-      profileId,
-      contentURI: "https://github.com/dataverse-os",
-      collectModuleInitParams: {
-        amount: 10e8,
-        currency: getCurrencyAddress(Currency.WMATIC),
-        recipient: account,
-        referralFee: 0,
-        followerOnly: false,
-      },
-    });
-    console.log("[createFeeCollectPostWithSig]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
-
   const collectOnCeramic = async () => {
     if (!did || !currentStreamId) {
       return;
     }
 
     const res = await lensClient.collectOnCeramic({
-      streamId:
-        currentStreamId,
+      streamId: currentStreamId,
     });
 
     console.log("[collectOnCeramic]res:", res);
     setCollectRes(JSON.stringify(res));
   };
 
-  const collect = async () => {
-    if (!profileId || !pubId) {
+  const collectOnCeramicWithSig = async () => {
+    if (!did || !currentStreamId) {
       return;
     }
-    const res = await lensClient.collect({
-      profileId,
-      pubId,
-    });
-    console.log("[collect]res:", res);
-    setCollectRes(JSON.stringify(res));
-  };
 
-  const collectWithSig = async () => {
-    if (!profileId || !pubId) {
-      return;
-    }
-    const res = await lensClient.collectWithSig({
-      profileId,
-      pubId,
+    const res = await lensClient.collectOnCeramic({
+      streamId: currentStreamId,
+      withSig: true,
     });
-    console.log("[collectWithSig]res:", res);
+
+    console.log("[collectOnCeramicWithSig]res:", res);
     setCollectRes(JSON.stringify(res));
   };
 
@@ -986,62 +838,6 @@ const App = () => {
           >
             postOnCeramicWithSig
           </button>
-          <button
-            disabled={account ? false : true}
-            onClick={post}
-            className="block"
-          >
-            post
-          </button>
-          <button
-            disabled={account ? false : true}
-            onClick={postWithSig}
-            className="block"
-          >
-            postWithSig
-          </button>
-          <button
-            disabled={account ? false : true}
-            onClick={createFreeCollectPost}
-            className="block"
-          >
-            createFreeCollectPost
-          </button>
-          <button
-            disabled={account ? false : true}
-            onClick={createFreeCollectPostWithSig}
-            className="block"
-          >
-            createFreeCollectPostWithSig
-          </button>
-          <button
-            disabled={account ? false : true}
-            onClick={createRevertCollectPost}
-            className="block"
-          >
-            createRevertCollectPost
-          </button>
-          <button
-            disabled={account ? false : true}
-            onClick={createRevertCollectPostWithSig}
-            className="block"
-          >
-            createRevertCollectPostWithSig
-          </button>
-          <button
-            disabled={account ? false : true}
-            onClick={createFeeCollectPost}
-            className="block"
-          >
-            createFeeCollectPost
-          </button>
-          <button
-            disabled={account ? false : true}
-            onClick={createFeeCollectPostWithSig}
-            className="block"
-          >
-            createFeeCollectPostWithSig
-          </button>
           <div className="title">ProfileId</div>
           <input
             type="text"
@@ -1060,18 +856,11 @@ const App = () => {
             collectOnCeramic
           </button>
           <button
-            disabled={profileId && pubId ? false : true}
-            onClick={collect}
+            disabled={did ? false : true}
+            onClick={collectOnCeramicWithSig}
             className="block"
           >
-            collect
-          </button>
-          <button
-            disabled={profileId && pubId ? false : true}
-            onClick={collectWithSig}
-            className="block"
-          >
-            collectWithSig
+            collectOnCeramicWithSig
           </button>
           <div className="title">ProfileId</div>
           <input

@@ -153,12 +153,12 @@ export class Collect extends ClientBase {
     if (!isCollected) {
       let res: EventCollected;
       if (!withSig) {
-        res = await this.collect({
+        res = await this._collect({
           profileId,
           pubId,
         });
       } else {
-        res = await this.collectWithSig({
+        res = await this._collectWithSig({
           profileId,
           pubId,
         });
@@ -201,7 +201,7 @@ export class Collect extends ClientBase {
     };
   }
 
-  public async collect({
+  private async _collect({
     profileId,
     pubId,
   }: {
@@ -239,15 +239,6 @@ export class Collect extends ClientBase {
       return event.topics[0] === EVENT_SIG_COLLECTED;
     });
 
-    // try {
-    //   await this._persistCollection({
-    //     profileId,
-    //     pubId,
-    //   });
-    // } catch (e) {
-    //   console.warn(e);
-    // }
-
     return {
       collector: (targetEvent as any).topics[1],
       profileId: (targetEvent as any).topics[2],
@@ -255,7 +246,7 @@ export class Collect extends ClientBase {
     } as EventCollected;
   }
 
-  public async collectWithSig({
+  private async _collectWithSig({
     profileId,
     pubId,
   }: {
@@ -313,15 +304,6 @@ export class Collect extends ClientBase {
     const targetEvent = Object.values(res.events).find((event: any) => {
       return event.topics[0] === EVENT_SIG_COLLECTED;
     });
-
-    // try {
-    //   await this._persistCollection({
-    //     profileId,
-    //     pubId,
-    //   });
-    // } catch (e) {
-    //   console.warn(e);
-    // }
 
     return {
       collector: (targetEvent as any).topics[1],
