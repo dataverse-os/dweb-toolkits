@@ -13,7 +13,7 @@ import { getCurrencyAddress } from "./utils";
 import { ethers } from "ethers";
 
 const modelIds = {
-  [ModelType.Publication]: import.meta.env.VITE_POST_MODEL_ID,
+  [ModelType.Publication]: import.meta.env.VITE_PUBLICATION_MODEL_ID,
   [ModelType.Collection]: import.meta.env.VITE_COLLECTION_MODEL_ID,
 };
 
@@ -23,7 +23,7 @@ const App = () => {
     return new Client({
       modelIds: modelIds,
       runtimeConnector: runtimeConnector,
-      network: LensNetwork.MumbaiTestnet,
+      network: LensNetwork.SandboxMumbaiTestnet,
     });
   }, []);
   const [account, setAccount] = useState<string>();
@@ -56,8 +56,10 @@ const App = () => {
   const [isCollectedRes, setIsCollectedRes] = useState<string>();
   const [commentRes, setCommentRes] = useState<string>("");
   const [mirrorRes, setMirrorRes] = useState<string>("");
-  const [profileIdPointed, setProfileIdPointed] = useState<string>("0x80e4");
-  const [pubIdPointed, setPubIdPointed] = useState<string>("0x10");
+  const [profileIdPointed, setProfileIdPointed] = useState<string>();
+  const [pubIdPointed, setPubIdPointed] = useState<string>();
+
+  const [currentStreamId, setCurrentStreamId] = useState<string>();
 
   useEffect(() => {
     if (account) {
@@ -68,7 +70,7 @@ const App = () => {
   useEffect(() => {
     if (profiles.length > 0) {
       console.log("profiles: ", profiles);
-      setProfileId(JSON.parse(profiles)[0].id);
+      setProfileId(JSON.parse(profiles)[0]);
     }
   }, [profiles]);
 
@@ -287,164 +289,137 @@ const App = () => {
     setIsFollowedRes(JSON.stringify(res));
   };
 
-  const post = async () => {
+  const postOnCeramic = async () => {
     if (!profileId) {
       return;
     }
+    const date = new Date().toISOString();
+
     const collectModule = lensClient.lensContractsAddress.FreeCollectModule;
     const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
       ["bool"],
       [false]
     ) as any;
-    const postData: PostData = {
+    const modelId =
+      "kjzl6hvfrbw6c91p8jnyo40e7nn0ij3uykssjjyn38fhtq5pc5wpawcwopi5v9p";
+    const stream = {
+      appVersion: "1.2.1",
+      text: "hello world!",
+      images: [
+        "https://bafkreib76wz6wewtkfmp5rhm3ep6tf4xjixvzzyh64nbyge5yhjno24yl4.ipfs.w3s.link",
+      ],
+      videos: [],
+      createdAt: date,
+      updatedAt: date,
+    };
+    const encrypted = {
+      text: true,
+      images: true,
+      videos: false,
+    };
+    const postParams: Omit<PostData, "contentURI"> = {
       profileId,
-      contentURI: "https://dataverse-os.com/",
       collectModule,
       collectModuleInitData,
       referenceModule: ethers.constants.AddressZero,
       referenceModuleInitData: [],
     };
-    const res = await lensClient.post(postData);
-    console.log("[post]res:", res);
+
+    const res = await lensClient.postOnCeramic({
+      modelId,
+      stream,
+      encrypted,
+      postParams,
+      currency: Currency.WMATIC,
+      amount: 0.0001,
+      collectLimit: 1000,
+    });
+
+    console.log("[postOnCeramic]res:", res);
+    setCurrentStreamId(res.publicationStreamId);
+    setProfileIdPointed(res.profileId);
+    setPubIdPointed(res.pubId);
     setCreatePostRes(JSON.stringify(res));
   };
 
-  const postWithSig = async () => {
+  const postOnCeramicWithSig = async () => {
     if (!profileId) {
       return;
     }
+    const date = new Date().toISOString();
+
     const collectModule = lensClient.lensContractsAddress.FreeCollectModule;
     const collectModuleInitData = ethers.utils.defaultAbiCoder.encode(
       ["bool"],
       [false]
     ) as any;
-    const postData: PostData = {
+    const modelId =
+      "kjzl6hvfrbw6c91p8jnyo40e7nn0ij3uykssjjyn38fhtq5pc5wpawcwopi5v9p";
+    const stream = {
+      appVersion: "1.2.1",
+      text: "hello world!",
+      images: [
+        "https://bafkreib76wz6wewtkfmp5rhm3ep6tf4xjixvzzyh64nbyge5yhjno24yl4.ipfs.w3s.link",
+      ],
+      videos: [],
+      createdAt: date,
+      updatedAt: date,
+    };
+    const encrypted = {
+      text: true,
+      images: true,
+      videos: false,
+    };
+    const postParams: Omit<PostData, "contentURI"> = {
       profileId,
-      contentURI: "https://dataverse-os.com/",
       collectModule,
       collectModuleInitData,
       referenceModule: ethers.constants.AddressZero,
       referenceModuleInitData: [],
     };
-    const res = await lensClient.postWithSig(postData);
-    console.log("[postWithSig]res:", res);
+
+    const res = await lensClient.postOnCeramic({
+      modelId,
+      stream,
+      encrypted,
+      postParams,
+      currency: Currency.WMATIC,
+      amount: 0.0001,
+      collectLimit: 1000,
+      withSig: true,
+    });
+
+    console.log("[postOnCeramicWithSig]res:", res);
+    setCurrentStreamId(res.publicationStreamId);
+    setProfileIdPointed(res.profileId);
+    setPubIdPointed(res.pubId);
     setCreatePostRes(JSON.stringify(res));
   };
 
-  const createFreeCollectPost = async () => {
-    if (!profileId) {
-      return;
-    }
-    const res = await lensClient.createFreeCollectPost({
-      profileId,
-      contentURI: "https://github.com/dataverse-os",
-      collectModuleInitParams: {
-        followerOnly: false,
-      },
-    });
-    console.log("[createFreeCollectPost]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
-
-  const createFreeCollectPostWithSig = async () => {
-    if (!account || !profileId) {
+  const collectOnCeramic = async () => {
+    if (!did || !currentStreamId) {
       return;
     }
 
-    const res = await lensClient.createFreeCollectPostWithSig({
-      profileId,
-      contentURI: "https://github.com/dataverse-os",
-      collectModuleInitParams: {
-        followerOnly: false,
-      },
+    const res = await lensClient.collectOnCeramic({
+      streamId: currentStreamId,
     });
-    console.log("[createFreeCollectPostWithSig]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
 
-  const createRevertCollectPost = async () => {
-    if (!profileId) {
-      return;
-    }
-    const res = await lensClient.createRevertCollectPost({
-      profileId,
-      contentURI: "https://github.com/dataverse-os",
-    });
-    console.log("[createRevertCollectPost]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
-
-  const createRevertCollectPostWithSig = async () => {
-    if (!profileId) {
-      return;
-    }
-    const res = await lensClient.createRevertCollectPostWithSig({
-      profileId,
-      contentURI: "https://github.com/dataverse-os",
-    });
-    console.log("[createRevertCollectPostWithSig]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
-
-  const createFeeCollectPost = async () => {
-    if (!account || !profileId) {
-      return;
-    }
-    const res = await lensClient.createFeeCollectPost({
-      profileId,
-      contentURI: "https://github.com/dataverse-os",
-      collectModuleInitParams: {
-        amount: 10e8,
-        currency: getCurrencyAddress(Currency.WMATIC),
-        recipient: account,
-        referralFee: 0,
-        followerOnly: false,
-      },
-    });
-    console.log("[createFeeCollectPost]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
-
-  const createFeeCollectPostWithSig = async () => {
-    if (!account || !profileId) {
-      return;
-    }
-    const res = await lensClient.createFeeCollectPostWithSig({
-      profileId,
-      contentURI: "https://github.com/dataverse-os",
-      collectModuleInitParams: {
-        amount: 10e8,
-        currency: getCurrencyAddress(Currency.WMATIC),
-        recipient: account,
-        referralFee: 0,
-        followerOnly: false,
-      },
-    });
-    console.log("[createFeeCollectPostWithSig]res:", res);
-    setCreatePostRes(JSON.stringify(res));
-  };
-
-  const collect = async () => {
-    if (!profileId || !pubId) {
-      return;
-    }
-    const res = await lensClient.collect({
-      profileId,
-      pubId,
-    });
-    console.log("[collect]res:", res);
+    console.log("[collectOnCeramic]res:", res);
     setCollectRes(JSON.stringify(res));
   };
 
-  const collectWithSig = async () => {
-    if (!profileId || !pubId) {
+  const collectOnCeramicWithSig = async () => {
+    if (!did || !currentStreamId) {
       return;
     }
-    const res = await lensClient.collectWithSig({
-      profileId,
-      pubId,
+
+    const res = await lensClient.collectOnCeramic({
+      streamId: currentStreamId,
+      withSig: true,
     });
-    console.log("[collectWithSig]res:", res);
+
+    console.log("[collectOnCeramicWithSig]res:", res);
     setCollectRes(JSON.stringify(res));
   };
 
@@ -855,60 +830,18 @@ const App = () => {
             getSigNonce
           </button>
           <button
-            disabled={account ? false : true}
-            onClick={post}
+            disabled={did ? false : true}
+            onClick={postOnCeramic}
             className="block"
           >
-            post
+            postOnCeramic
           </button>
           <button
-            disabled={account ? false : true}
-            onClick={postWithSig}
+            disabled={did ? false : true}
+            onClick={postOnCeramicWithSig}
             className="block"
           >
-            postWithSig
-          </button>
-          <button
-            disabled={account ? false : true}
-            onClick={createFreeCollectPost}
-            className="block"
-          >
-            createFreeCollectPost
-          </button>
-          <button
-            disabled={account ? false : true}
-            onClick={createFreeCollectPostWithSig}
-            className="block"
-          >
-            createFreeCollectPostWithSig
-          </button>
-          <button
-            disabled={account ? false : true}
-            onClick={createRevertCollectPost}
-            className="block"
-          >
-            createRevertCollectPost
-          </button>
-          <button
-            disabled={account ? false : true}
-            onClick={createRevertCollectPostWithSig}
-            className="block"
-          >
-            createRevertCollectPostWithSig
-          </button>
-          <button
-            disabled={account ? false : true}
-            onClick={createFeeCollectPost}
-            className="block"
-          >
-            createFeeCollectPost
-          </button>
-          <button
-            disabled={account ? false : true}
-            onClick={createFeeCollectPostWithSig}
-            className="block"
-          >
-            createFeeCollectPostWithSig
+            postOnCeramicWithSig
           </button>
           <div className="title">ProfileId</div>
           <input
@@ -921,18 +854,18 @@ const App = () => {
         </div>
         <div className="test-item">
           <button
-            disabled={profileId && pubId ? false : true}
-            onClick={collect}
+            disabled={did ? false : true}
+            onClick={collectOnCeramic}
             className="block"
           >
-            collect
+            collectOnCeramic
           </button>
           <button
-            disabled={profileId && pubId ? false : true}
-            onClick={collectWithSig}
+            disabled={did ? false : true}
+            onClick={collectOnCeramicWithSig}
             className="block"
           >
-            collectWithSig
+            collectOnCeramicWithSig
           </button>
           <div className="title">ProfileId</div>
           <input
