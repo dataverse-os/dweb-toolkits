@@ -1,4 +1,4 @@
-import { RuntimeConnector } from "@dataverse/runtime-connector";
+import { DataverseConnector } from "@dataverse/dataverse-connector";
 import { Checker } from "@dataverse/utils-toolkit";
 import { BigNumber, BigNumberish } from "ethers";
 import {
@@ -14,32 +14,32 @@ export class ClientBase {
   public modelIds: ModelIds;
   public lensContractsAddress!: any;
   public lensApiLink!: string;
-  public runtimeConnector: RuntimeConnector;
+  public dataverseConnector: DataverseConnector;
   public checker: Checker;
   public network: LensNetwork;
 
   constructor({
     modelIds,
-    runtimeConnector,
+    dataverseConnector,
     network,
   }: {
     modelIds: ModelIds;
-    runtimeConnector: RuntimeConnector;
+    dataverseConnector: DataverseConnector;
     network: LensNetwork;
   }) {
     this.modelIds = modelIds;
-    this.runtimeConnector = runtimeConnector;
+    this.dataverseConnector = dataverseConnector;
     this.network = network;
-    this.checker = new Checker(runtimeConnector);
+    this.checker = new Checker(dataverseConnector);
     this._initLensContractsAddress(network);
   }
 
   public async getSigNonce() {
     this.checker.checkWallet();
 
-    const address = this.runtimeConnector.address!;
+    const address = this.dataverseConnector.getProvider().address!;
 
-    const nonce = await this.runtimeConnector.contractCall({
+    const nonce = await this.dataverseConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "sigNonces",
@@ -94,7 +94,7 @@ export class ClientBase {
     spender: string;
     amount: BigNumberish;
   }) {
-    const allowance = await this.runtimeConnector.contractCall({
+    const allowance = await this.dataverseConnector.contractCall({
       contractAddress: contract,
       abi: [
         {
@@ -125,7 +125,7 @@ export class ClientBase {
       params: [owner, spender],
     });
     if (BigNumber.from(allowance).lt(amount)) {
-      await this.runtimeConnector.contractCall({
+      await this.dataverseConnector.contractCall({
         contractAddress: contract,
         abi: [
           {
@@ -179,7 +179,7 @@ export class ClientBase {
     collectModule?: string;
     referenceModule: string;
   }) {
-    return await this.runtimeConnector.createStream({
+    return await this.dataverseConnector.createStream({
       modelId: this.modelIds[ModelType.Publication],
       streamContent: {
         publication_type: pubType,

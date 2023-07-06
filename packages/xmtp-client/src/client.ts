@@ -1,4 +1,4 @@
-import { RuntimeConnector, StreamContent } from "@dataverse/runtime-connector";
+import { DataverseConnector, StreamContent } from "@dataverse/dataverse-connector";
 import { StreamHelper } from "@dataverse/utils-toolkit";
 import { ModelIds, XmtpEnv } from "./types";
 import {
@@ -20,7 +20,7 @@ import {
 import { Checker } from "@dataverse/utils-toolkit";
 
 export class XmtpClient {
-  public runtimeConnector: RuntimeConnector;
+  public dataverseConnector: DataverseConnector;
   public modelIds: ModelIds;
   public env: XmtpEnv;
   public xmtp?: Client;
@@ -28,18 +28,18 @@ export class XmtpClient {
   private checker: Checker;
 
   constructor({
-    runtimeConnector,
+    dataverseConnector,
     modelIds,
     env,
   }: {
-    runtimeConnector: RuntimeConnector;
+    dataverseConnector: DataverseConnector;
     modelIds: ModelIds;
     env: XmtpEnv;
   }) {
-    this.runtimeConnector = runtimeConnector;
+    this.dataverseConnector = dataverseConnector;
     this.modelIds = modelIds;
     this.env = env;
-    this.checker = new Checker(runtimeConnector);
+    this.checker = new Checker(dataverseConnector);
     this.codecs = [new AttachmentCodec(), new RemoteAttachmentCodec()];
   }
 
@@ -136,8 +136,8 @@ export class XmtpClient {
   async getPersistedMessages() {
     await this.checker.checkCapability();
 
-    const pkh = await this.runtimeConnector.getCurrentPkh();
-    const streams = await this.runtimeConnector.loadStreamsBy({
+    const pkh = await this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.loadStreamsBy({
       modelId: this.modelIds.message,
       pkh: pkh,
     });
@@ -200,7 +200,7 @@ export class XmtpClient {
       const keys = await this._unlockKeys(value);
       return stringToUint8Array(keys);
     }
-    const keys = await Client.getKeys(this.runtimeConnector.signer!, { env: this.env });
+    const keys = await Client.getKeys(this.dataverseConnector.getProvider(), { env: this.env });
     await this._persistKeys(keys);
     return keys;
   }
@@ -210,7 +210,7 @@ export class XmtpClient {
       if (Object.prototype.hasOwnProperty.call(value, key)) {
         const indexFileId = value[key].streamContent.file?.indexFileId;
         if (indexFileId) {
-          const unlocked = await this.runtimeConnector.unlock({ indexFileId });
+          const unlocked = await this.dataverseConnector.unlock({ indexFileId });
           const streamContent = unlocked.streamContent.content as {
             keys: string;
             encrypted: string;
@@ -241,15 +241,15 @@ export class XmtpClient {
       encrypted: encrypted,
     };
 
-    await this.runtimeConnector.createStream({
+    await this.dataverseConnector.createStream({
       modelId: this.modelIds.message,
       streamContent: streamContent,
     });
   }
 
   private async _persistMessages(msgList: DecodedMessage[]) {
-    const pkh = await this.runtimeConnector.getCurrentPkh();
-    const streams = await this.runtimeConnector.loadStreamsBy({
+    const pkh = await this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.loadStreamsBy({
       modelId: this.modelIds.message,
       pkh: pkh,
     });
@@ -283,15 +283,15 @@ export class XmtpClient {
       keys: keysStr,
       encrypted: encrypted,
     };
-    await this.runtimeConnector.createStream({
+    await this.dataverseConnector.createStream({
       modelId: this.modelIds.keys_cache,
       streamContent: streamContent,
     });
   }
 
   private async _checkCache(modelId: string) {
-    const pkh = await this.runtimeConnector.getCurrentPkh();
-    const stream = await this.runtimeConnector.loadStreamsBy({
+    const pkh = await this.dataverseConnector.getCurrentPkh();
+    const stream = await this.dataverseConnector.loadStreamsBy({
       modelId: modelId,
       pkh: pkh,
     });

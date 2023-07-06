@@ -1,6 +1,6 @@
 import "./App.scss";
 import { useContext, useState } from "react";
-import { WALLET } from "@dataverse/runtime-connector";
+import { WALLET } from "@dataverse/dataverse-connector";
 import {
   SnapshotClient,
   ModelType,
@@ -19,7 +19,7 @@ import {
 } from "./params";
 
 const App = () => {
-  const { runtimeConnector } = useContext(Context);
+  const { dataverseConnector } = useContext(Context);
   const [address, setAddress] = useState<string>();
   const [proposalId, setProposalId] = useState<string>();
   const [spaceId, setSpaceId] = useState<string>();
@@ -30,18 +30,18 @@ const App = () => {
     [ModelType.VOTE]: import.meta.env.VITE_VOTE_MODEL_ID,
   };
   const snapshotClient = new SnapshotClient({
-    runtimeConnector,
+    dataverseConnector,
     modelIds,
     env: SNAP_SHOT_HUB.dev,
   });
 
   const createCapability = async () => {
-    const { address, wallet } = await runtimeConnector.connectWallet(
+    const { address, wallet } = await dataverseConnector.connectWallet(
       WALLET.METAMASK
     );
     console.log({ address });
     setAddress(address);
-    await runtimeConnector.createCapability({
+    await dataverseConnector.createCapability({
       wallet,
       app: import.meta.env.VITE_APP_NAME,
     });

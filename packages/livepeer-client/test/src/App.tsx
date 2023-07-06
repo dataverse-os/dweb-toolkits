@@ -3,11 +3,11 @@ import { AssetsCreator, LivepeerPlayer } from "./components";
 import { LivepeerClient } from "@dataverse/livepeer-client-toolkit";
 import { useContext, useMemo, useState } from "react";
 import { LivepeerConfig } from "@livepeer/react";
-import { Currency, WALLET, StreamContent } from "@dataverse/runtime-connector";
+import { Currency, WALLET, StreamContent } from "@dataverse/dataverse-connector";
 import { Context } from "./main";
 
 const App = () => {
-  const { runtimeConnector } = useContext(Context);
+  const { dataverseConnector } = useContext(Context);
   const livepeerClient = useMemo(() => {
     console.log(
       "VITE_LIVEPEER_API_KEY:",
@@ -18,7 +18,7 @@ const App = () => {
 
     return new LivepeerClient({
       apiKey: import.meta.env.VITE_LIVEPEER_API_KEY!,
-      runtimeConnector: runtimeConnector,
+      dataverseConnector: dataverseConnector,
       modelId: import.meta.env.VITE_MODEL_ID,
     });
   }, []);
@@ -46,10 +46,10 @@ const App = () => {
 
   const createCapability = async () => {
     const { address, wallet } =
-      await livepeerClient.runtimeConnector.connectWallet(WALLET.METAMASK);
+      await livepeerClient.dataverseConnector.connectWallet(WALLET.METAMASK);
     console.log({ address });
     setAddress(address);
-    await livepeerClient.runtimeConnector.createCapability({
+    await livepeerClient.dataverseConnector.createCapability({
       wallet,
       app: import.meta.env.VITE_APP_NAME,
     });
@@ -81,13 +81,13 @@ const App = () => {
   };
 
   const unlockVideo = async () => {
-    const content = await livepeerClient.runtimeConnector.unlock({indexFileId: streamContent?.file.indexFileId });
+    const content = await livepeerClient.dataverseConnector.unlock({indexFileId: streamContent?.file.indexFileId });
     console.log("unlock content: ", content);
   }
   //
   // const testDeleteStream = async () => {
   //   const indexFileId = "kjzl6kcym7w8y9i60b8nori6snffasvc0zwiegtgeh7gt2nifwcqox3xg2t90o2";
-  //   const res =  await livepeerClient.runtimeConnector.removeFiles({indexFileIds: [indexFileId]});
+  //   const res =  await livepeerClient.dataverseConnector.removeFiles({indexFileIds: [indexFileId]});
   //   console.log("delete res: ", res);
   // }
 

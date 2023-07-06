@@ -15,12 +15,12 @@ import Client, {
 import {
   Extension,
   RESOURCE,
-  RuntimeConnector, StreamContent,
+  DataverseConnector, StreamContent,
   WALLET,
-} from "@dataverse/runtime-connector";
+} from "@dataverse/dataverse-connector";
 import Upload, { web3Storage } from "./web3-storage/web3-storage";
 
-const runtimeConnector = new RuntimeConnector(Extension);
+const dataverseConnector = new DataverseConnector(Extension);
 
 function App() {
   const msgReceiver = useMemo(() => {
@@ -28,7 +28,7 @@ function App() {
   }, []);
   const xmtpClient = useMemo(() => {
     return new Client({
-      runtimeConnector,
+      dataverseConnector,
       modelIds: {
         [ModelType.MESSAGE]: import.meta.env.VITE_MESSAGE_MODEL_ID,
         [ModelType.KEYS_CACHE]: import.meta.env.VITE_KEY_CACHE_MODEL_ID,
@@ -47,7 +47,7 @@ function App() {
 
   const connectWallet = async () => {
     try {
-      const { address } = await xmtpClient.runtimeConnector.connectWallet(
+      const { address } = await xmtpClient.dataverseConnector.connectWallet(
         WALLET.METAMASK
       );
       setAddress(address);
@@ -59,7 +59,7 @@ function App() {
   const createCapability = async () => {
     const app = import.meta.env.VITE_APP_NAME;
     console.log("app: ", app);
-    const pkh = await xmtpClient.runtimeConnector.createCapability({
+    const pkh = await xmtpClient.dataverseConnector.createCapability({
       app,
       resource: RESOURCE.CERAMIC,
       wallet: WALLET.METAMASK,
@@ -71,7 +71,7 @@ function App() {
 
   const checkCapability = async () => {
     const isCurrentPkhValid =
-      await xmtpClient.runtimeConnector.checkCapability();
+      await xmtpClient.dataverseConnector.checkCapability();
     console.log(isCurrentPkhValid);
     setIsCurrentPkhValid(isCurrentPkhValid);
   };
@@ -189,7 +189,7 @@ function App() {
       encrypted: encrypted,
     };
 
-    const res = await xmtpClient.runtimeConnector.createStream({
+    const res = await xmtpClient.dataverseConnector.createStream({
       modelId: import.meta.env.VITE_MESSAGE_MODEL_ID,
       streamContent: streamContent,
     });
@@ -263,7 +263,7 @@ function App() {
 
   const unlockMessage = async () => {
     console.log("msgStream: ", msgStream);
-    const res = await runtimeConnector.unlock({indexFileId: msgStream!.file.indexFileId});
+    const res = await dataverseConnector.unlock({indexFileId: msgStream!.file.indexFileId});
     console.log("msgStream.file?.indexFileId", msgStream!.file.indexFileId)
     console.log(res);
   }

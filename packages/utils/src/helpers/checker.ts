@@ -1,20 +1,20 @@
-import { RuntimeConnector } from "@dataverse/runtime-connector";
+import { DataverseConnector } from "@dataverse/dataverse-connector";
 
 export class Checker {
-  private runtimeConnector: RuntimeConnector;
+  private dataverseConnector: DataverseConnector;
 
-  constructor(runtimeConnector: RuntimeConnector) {
-    this.runtimeConnector = runtimeConnector;
+  constructor(dataverseConnector: DataverseConnector) {
+    this.dataverseConnector = dataverseConnector;
   }
 
   public checkWallet() {
-    if (!this.runtimeConnector.address) {
+    if (!this.dataverseConnector.getProvider().address) {
       throw new Error("Need to connect wallet");
     }
   }
 
   public async checkCapability() {
-    const hasCapability = await this.runtimeConnector.checkCapability();
+    const hasCapability = await this.dataverseConnector.checkCapability();
     if (!hasCapability) {
       throw new Error("Need to create capability");
     }

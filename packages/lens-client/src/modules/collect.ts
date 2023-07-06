@@ -1,4 +1,4 @@
-import { FileType, RuntimeConnector } from "@dataverse/runtime-connector";
+import { FileType, DataverseConnector } from "@dataverse/dataverse-connector";
 import { BigNumber, BigNumberish, ethers, Wallet } from "ethers";
 import { EVENT_SIG_COLLECTED, MAX_UINT256 } from "../constants";
 import {
@@ -20,16 +20,16 @@ import { ClientBase } from "./base";
 export class Collect extends ClientBase {
   constructor({
     modelIds,
-    runtimeConnector,
+    dataverseConnector,
     network,
   }: {
     modelIds: ModelIds;
-    runtimeConnector: RuntimeConnector;
+    dataverseConnector: DataverseConnector;
     network: LensNetwork;
   }) {
     super({
       modelIds,
-      runtimeConnector,
+      dataverseConnector,
       network,
     });
   }
@@ -43,7 +43,7 @@ export class Collect extends ClientBase {
   }) {
     this.checker.checkWallet();
 
-    const collectNFT = await this.runtimeConnector.contractCall({
+    const collectNFT = await this.dataverseConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "getCollectNFT",
@@ -62,7 +62,7 @@ export class Collect extends ClientBase {
   }) {
     this.checker.checkWallet();
 
-    const collectModule = await this.runtimeConnector.contractCall({
+    const collectModule = await this.dataverseConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "getCollectModule",
@@ -75,7 +75,7 @@ export class Collect extends ClientBase {
   public async isCollectModuleWhitelisted(collectModule: string) {
     this.checker.checkWallet();
 
-    const isWhitelisted = await this.runtimeConnector.contractCall({
+    const isWhitelisted = await this.dataverseConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "isCollectModuleWhitelisted",
@@ -94,7 +94,7 @@ export class Collect extends ClientBase {
   }) {
     this.checker.checkWallet();
 
-    const balance = await this.runtimeConnector.contractCall({
+    const balance = await this.dataverseConnector.contractCall({
       contractAddress: collectNFT,
       abi: CollectNFTJson.abi,
       method: "balanceOf",
@@ -113,7 +113,7 @@ export class Collect extends ClientBase {
   }) {
     await this.checker.checkCapability();
     
-    const { modelId, streamContent } = await this.runtimeConnector.loadStream(
+    const { modelId, streamContent } = await this.dataverseConnector.loadStream(
       streamId
     );
     if (modelId != this.modelIds[ModelType.Publication]) {
@@ -124,7 +124,7 @@ export class Collect extends ClientBase {
     const pubId = streamContent.content.pub_id;
     const pointedStreamId = streamContent.content.content_uri;
 
-    const {streamContent: pointedStreamContent} = await this.runtimeConnector.loadStream(
+    const {streamContent: pointedStreamContent} = await this.dataverseConnector.loadStream(
       pointedStreamId
     );
 
@@ -134,9 +134,9 @@ export class Collect extends ClientBase {
 
     const datatokenId = pointedStreamContent.file.datatokenId!;
 
-    const isCollected = await this.runtimeConnector.isCollected({
+    const isCollected = await this.dataverseConnector.isCollected({
       datatokenId,
-      address: this.runtimeConnector.address!
+      address: this.dataverseConnector.getProvider().address!
     })
 
     let persistRes;
@@ -154,7 +154,7 @@ export class Collect extends ClientBase {
         });
       }
 
-      const datatokenInfo = await this.runtimeConnector.getDatatokenBaseInfo(
+      const datatokenInfo = await this.dataverseConnector.getDatatokenBaseInfo(
         datatokenId
       );
 
@@ -177,7 +177,7 @@ export class Collect extends ClientBase {
     }
 
     const { streamContent: unlockedStreamContent } =
-    await this.runtimeConnector.unlock({
+    await this.dataverseConnector.unlock({
       streamId: streamContent.content.content_uri,
     });
 
@@ -208,13 +208,13 @@ export class Collect extends ClientBase {
     if (publicationData) {
       await this._approveERC20({
         contract: publicationData.currency,
-        owner: this.runtimeConnector.address!,
+        owner: this.dataverseConnector.getProvider().address!,
         spender: collectModule,
         amount: publicationData.amount,
       });
     }
 
-    const res = await this.runtimeConnector.contractCall({
+    const res = await this.dataverseConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "collect",
@@ -253,13 +253,13 @@ export class Collect extends ClientBase {
     if (publicationData) {
       await this._approveERC20({
         contract: publicationData.currency,
-        owner: this.runtimeConnector.address!,
+        owner: this.dataverseConnector.getProvider().address!,
         spender: collectModule,
         amount: publicationData.amount,
       });
     }
 
-    const collector = this.runtimeConnector.address!;
+    const collector = this.dataverseConnector.getProvider().address!;
     const collectWithSigData: Partial<CollectWithSigData> = {
       collector: collector,
       profileId: profileId,
@@ -275,12 +275,12 @@ export class Collect extends ClientBase {
       data: collectModuleValidateData,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.runtimeConnector.signer as Wallet,
+      wallet: this.dataverseConnector.getProvider(),
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.runtimeConnector.chain!.chainId,
+      chainId: this.dataverseConnector.getProvider().chain!.chainId,
     });
 
-    const res = await this.runtimeConnector.contractCall({
+    const res = await this.dataverseConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "collectWithSig",
@@ -313,7 +313,7 @@ export class Collect extends ClientBase {
       case this.lensContractsAddress.FeeCollectModule: {
         console.log("[FeeCollectModule]");
 
-        publicationData = await this.runtimeConnector.contractCall({
+        publicationData = await this.dataverseConnector.contractCall({
           contractAddress: collectModule,
           abi: FeeCollectModuleJson.abi,
           method: "getPublicationData",
@@ -330,7 +330,7 @@ export class Collect extends ClientBase {
       case this.lensContractsAddress.LimitedFeeCollectModule: {
         console.log("[LimitedFeeCollectModule]");
 
-        publicationData = await this.runtimeConnector.contractCall({
+        publicationData = await this.dataverseConnector.contractCall({
           contractAddress: collectModule,
           abi: LimitedFeeCollectModuleJson.abi,
           method: "getPublicationData",
@@ -347,7 +347,7 @@ export class Collect extends ClientBase {
       case this.lensContractsAddress.TimedFeeCollectModule: {
         console.log("[TimedFeeCollectModule]");
 
-        publicationData = await this.runtimeConnector.contractCall({
+        publicationData = await this.dataverseConnector.contractCall({
           contractAddress: collectModule,
           abi: TimedFeeCollectModuleJson.abi,
           method: "getPublicationData",
@@ -364,7 +364,7 @@ export class Collect extends ClientBase {
       case this.lensContractsAddress.LimitedTimedFeeCollectModule: {
         console.log("[LimitedTimedFeeCollectModule]");
 
-        publicationData = await this.runtimeConnector.contractCall({
+        publicationData = await this.dataverseConnector.contractCall({
           contractAddress: collectModule,
           abi: LimitedTimedFeeCollectModuleJson.abi,
           method: "getPublicationData",
@@ -469,7 +469,7 @@ export class Collect extends ClientBase {
       profileId,
       pubId,
     });
-    return await this.runtimeConnector.createStream({
+    return await this.dataverseConnector.createStream({
       modelId: this.modelIds[ModelType.Collection],
       streamContent: {
         profile_id: profileId,

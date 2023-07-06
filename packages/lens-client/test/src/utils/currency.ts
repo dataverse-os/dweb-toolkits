@@ -1,4 +1,4 @@
-import { Currency } from "@dataverse/runtime-connector";
+import { Currency } from "@dataverse/dataverse-connector";
 
 export const getCurrencyAddress = (currency: Currency) => {
   switch (currency) {

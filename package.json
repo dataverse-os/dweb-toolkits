@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "lerna": "^7.0.1",
-    "@dataverse/runtime-connector": "*",
+    "@dataverse/dataverse-connector": "1.0.4",
     "@dataverse/utils-toolkit": "workspace:*",
     "ethers": "^5.7.2"
   }

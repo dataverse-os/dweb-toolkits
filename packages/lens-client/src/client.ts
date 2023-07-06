@@ -1,4 +1,4 @@
-import { RuntimeConnector } from "@dataverse/runtime-connector";
+import { DataverseConnector } from "@dataverse/dataverse-connector";
 import { Profile, Follow, Post, Comment, Collect, Mirror } from "./modules";
 import { ClientBase } from "./modules/base";
 import { LensNetwork, ModelIds, ModelType } from "./types";
@@ -7,16 +7,16 @@ import { applyMixins } from "./utils";
 class LensClient extends ClientBase {
   constructor({
     modelIds,
-    runtimeConnector,
+    dataverseConnector,
     network,
   }: {
     modelIds: ModelIds;
-    runtimeConnector: RuntimeConnector;
+    dataverseConnector: DataverseConnector;
     network: LensNetwork;
   }) {
     super({
       modelIds,
-      runtimeConnector,
+      dataverseConnector,
       network,
     });
   }
@@ -24,8 +24,8 @@ class LensClient extends ClientBase {
   public async getPersistedPublications() {
     await this.checker.checkCapability();
 
-    const pkh = await this.runtimeConnector.getCurrentPkh();
-    const streams = await this.runtimeConnector.loadStreamsBy({
+    const pkh = await this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.loadStreamsBy({
       modelId: this.modelIds[ModelType.Publication],
       pkh,
     });
@@ -35,8 +35,8 @@ class LensClient extends ClientBase {
   public async getPersistedCollections() {
     await this.checker.checkCapability();
 
-    const pkh = await this.runtimeConnector.getCurrentPkh();
-    const streams = await this.runtimeConnector.loadStreamsBy({
+    const pkh = await this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.loadStreamsBy({
       modelId: this.modelIds[ModelType.Collection],
       pkh,
     });

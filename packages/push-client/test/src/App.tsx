@@ -1,4 +1,4 @@
-import { WALLET } from "@dataverse/runtime-connector";
+import { WALLET } from "@dataverse/dataverse-connector";
 import React, { useContext, useMemo, useState } from "react";
 import { Context } from "./main";
 import "./App.scss";
@@ -18,17 +18,17 @@ const modelIds = {
 };
 
 const App = () => {
-  const { runtimeConnector } = useContext(Context);
+  const { dataverseConnector } = useContext(Context);
   const pushNotificationClient = useMemo(() => {
     return new PushNotificationClient({
-      runtimeConnector,
+      dataverseConnector,
       modelIds: modelIds,
       env: ENV.STAGING,
     });
   }, []);
   const pushChatClient = useMemo(() => {
     return new PushChatClient({
-      runtimeConnector,
+      dataverseConnector,
       modelIds: modelIds,
       env: ENV.STAGING,
     });
@@ -57,13 +57,13 @@ const App = () => {
   const [chatterForHistory, setChatterForHistory] = useState<string>();
 
   const connectIdentity = async () => {
-    const { address, wallet } = await runtimeConnector.connectWallet(
+    const { address, wallet } = await dataverseConnector.connectWallet(
       WALLET.METAMASK
     );
     setAccount(address);
     console.log("address:", address);
 
-    const did = await runtimeConnector.createCapability({
+    const did = await dataverseConnector.createCapability({
       app: import.meta.env.VITE_APP_NAME,
       wallet,
     });

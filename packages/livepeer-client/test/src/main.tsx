@@ -1,22 +1,22 @@
-import { Extension, RuntimeConnector } from "@dataverse/runtime-connector";
+import { Extension, DataverseConnector } from "@dataverse/dataverse-connector";
 import React, { createContext } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.scss";
 
 interface Context {
-  runtimeConnector: RuntimeConnector;
+  dataverseConnector: DataverseConnector;
 }
 
 export const Context = createContext<Context>({} as Context);
-const runtimeConnector = new RuntimeConnector(Extension);
+const dataverseConnector = new DataverseConnector(Extension);
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <Context.Provider value={{ runtimeConnector }}>
+    <Context.Provider value={{ dataverseConnector }}>
       <App />
     </Context.Provider>
   </React.StrictMode>

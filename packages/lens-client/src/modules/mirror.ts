@@ -1,4 +1,4 @@
-import { RuntimeConnector } from "@dataverse/runtime-connector";
+import { DataverseConnector } from "@dataverse/dataverse-connector";
 import { BigNumberish, ethers, Wallet } from "ethers";
 import { MAX_UINT256, EVENT_SIG_MIRROR_CREATED } from "../constants";
 import {
@@ -15,16 +15,16 @@ import { ClientBase } from "./base";
 export class Mirror extends ClientBase {
   constructor({
     modelIds,
-    runtimeConnector,
+    dataverseConnector,
     network,
   }: {
     modelIds: ModelIds;
-    runtimeConnector: RuntimeConnector;
+    dataverseConnector: DataverseConnector;
     network: LensNetwork;
   }) {
     super({
       modelIds,
-      runtimeConnector,
+      dataverseConnector,
       network,
     });
   }
@@ -38,7 +38,7 @@ export class Mirror extends ClientBase {
   }) {
     this.checker.checkWallet();
 
-    const referenceModule = await this.runtimeConnector.contractCall({
+    const referenceModule = await this.dataverseConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "getReferenceModule",
@@ -51,7 +51,7 @@ export class Mirror extends ClientBase {
   public async isReferenceModuleWhitelisted(referenceModule: string) {
     this.checker.checkWallet();
 
-    const isWhitelisted = await this.runtimeConnector.contractCall({
+    const isWhitelisted = await this.dataverseConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "isReferenceModuleWhitelisted",
@@ -64,7 +64,7 @@ export class Mirror extends ClientBase {
   public async mirror(mirrorData: MirrorData) {
     await this.checker.checkCapability();
 
-    const res = await this.runtimeConnector.contractCall({
+    const res = await this.dataverseConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "mirror",
@@ -108,9 +108,9 @@ export class Mirror extends ClientBase {
       referenceModuleInitData: mirrorData.referenceModuleInitData,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.runtimeConnector.signer as Wallet,
+      wallet: this.dataverseConnector.getProvider(),
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.runtimeConnector.chain!.chainId,
+      chainId: this.dataverseConnector.getProvider().chain!.chainId,
     });
 
     const mirrorWithSigData: MirrorWithSigData = {
@@ -118,7 +118,7 @@ export class Mirror extends ClientBase {
       sig,
     };
 
-    const res = await this.runtimeConnector.contractCall({
+    const res = await this.dataverseConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "mirrorWithSig",

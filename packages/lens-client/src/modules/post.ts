@@ -1,4 +1,4 @@
-import { Currency, RuntimeConnector } from "@dataverse/runtime-connector";
+import { Currency, DataverseConnector } from "@dataverse/dataverse-connector";
 import { BigNumberish, ethers, Wallet } from "ethers";
 import { EVENT_SIG_POST_CREATED, MAX_UINT256 } from "../constants";
 import {
@@ -15,16 +15,16 @@ import { ClientBase } from "./base";
 export class Post extends ClientBase {
   constructor({
     modelIds,
-    runtimeConnector,
+    dataverseConnector,
     network,
   }: {
     modelIds: ModelIds;
-    runtimeConnector: RuntimeConnector;
+    dataverseConnector: DataverseConnector;
     network: LensNetwork;
   }) {
     super({
       modelIds,
-      runtimeConnector,
+      dataverseConnector,
       network,
     });
   }
@@ -55,13 +55,12 @@ export class Post extends ClientBase {
       encrypted: JSON.stringify(encrypted),
     };
 
-    const { streamId } =
-      await this.runtimeConnector.createStream({
-        modelId,
-        streamContent,
-      });
+    const { streamId } = await this.dataverseConnector.createStream({
+      modelId,
+      streamContent,
+    });
 
-    await this.runtimeConnector.monetizeFile({
+    await this.dataverseConnector.monetizeFile({
       streamId,
       datatokenVars: {
         profileId: postParams.profileId,
@@ -107,7 +106,7 @@ export class Post extends ClientBase {
   private async _post(postData: PostData) {
     await this.checker.checkCapability();
 
-    const res = await this.runtimeConnector.contractCall({
+    const res = await this.dataverseConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "post",
@@ -138,9 +137,9 @@ export class Post extends ClientBase {
       referenceModuleInitData: postData.referenceModuleInitData,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.runtimeConnector.signer as Wallet,
+      wallet: this.dataverseConnector.getProvider(),
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.runtimeConnector.chain!.chainId,
+      chainId: this.dataverseConnector.getProvider().chain!.chainId,
     });
 
     const postWithSigData: PostWithSigData = {
@@ -148,7 +147,7 @@ export class Post extends ClientBase {
       sig,
     };
 
-    const res = await this.runtimeConnector.contractCall({
+    const res = await this.dataverseConnector.contractCall({
       contractAddress: this.lensContractsAddress.LensHubProxy,
       abi: LensHubJson.abi,
       method: "postWithSig",
