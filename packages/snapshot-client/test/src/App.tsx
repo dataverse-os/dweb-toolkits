@@ -1,6 +1,6 @@
 import "./App.scss";
 import { useContext, useState } from "react";
-import { WALLET } from "@dataverse/dataverse-connector";
+import { Methods, WALLET } from "@dataverse/core-connector";
 import {
   SnapshotClient,
   ModelType,
@@ -13,13 +13,10 @@ import {
   now,
 } from "@dataverse/snapshot-client-toolkit";
 import { Context } from "./main";
-import {
-  proposal_template,
-  vote_template,
-} from "./params";
+import { proposal_template, vote_template } from "./params";
 
 const App = () => {
-  const { dataverseConnector } = useContext(Context);
+  const { coreConnector } = useContext(Context);
   const [address, setAddress] = useState<string>();
   const [proposalId, setProposalId] = useState<string>();
   const [spaceId, setSpaceId] = useState<string>();
@@ -30,26 +27,29 @@ const App = () => {
     [ModelType.VOTE]: import.meta.env.VITE_VOTE_MODEL_ID,
   };
   const snapshotClient = new SnapshotClient({
-    dataverseConnector,
+    coreConnector,
     modelIds,
     env: SNAP_SHOT_HUB.dev,
   });
 
   const createCapability = async () => {
-    const { address, wallet } = await dataverseConnector.connectWallet(
+    const { address, wallet } = await coreConnector.connectWallet(
       WALLET.METAMASK
     );
     console.log({ address });
     setAddress(address);
-    await dataverseConnector.createCapability({
-      wallet,
-      app: import.meta.env.VITE_APP_NAME,
+    await coreConnector.runOS({
+      method: Methods.createCapability,
+      params: {
+        wallet,
+        app: import.meta.env.VITE_APP_NAME,
+      },
     });
     console.log("connected");
   };
 
   const createProposal = async () => {
-    if(!spaceId) {
+    if (!spaceId) {
       alert("please enter spaceId ...");
       return;
     }
@@ -57,12 +57,12 @@ const App = () => {
     proposal.space = spaceId as string;
     const res = await snapshotClient.createProposal(proposal);
     setProposalId(res.id);
-    console.log("[createProposal]res: ", res)
+    console.log("[createProposal]res: ", res);
   };
 
   const vote = async () => {
     const vote = vote_template;
-    if(!proposalId) {
+    if (!proposalId) {
       alert("create a proposal first");
       return;
     }
@@ -73,13 +73,13 @@ const App = () => {
   };
 
   const joinSpace = async () => {
-    if(!spaceId) {
+    if (!spaceId) {
       alert("please enter spaceId ...");
       return;
     }
     const spaceTemplate = {
-      space: spaceId as string
-    }
+      space: spaceId as string,
+    };
     const res = await snapshotClient.joinSpace(spaceTemplate);
     console.log("[joinSpace]res:", res);
   };
@@ -145,7 +145,7 @@ const App = () => {
   };
 
   const queryActions = async () => {
-    if(!spaceId) {
+    if (!spaceId) {
       alert("please enter spaceId ...");
       return;
     }
@@ -160,7 +160,7 @@ const App = () => {
   };
 
   const queryVoteDetail = async () => {
-    if(!voteId) {
+    if (!voteId) {
       alert("vote before query vote detail");
       return;
     }
@@ -170,7 +170,7 @@ const App = () => {
   };
 
   const queryProposals = async () => {
-    if(!spaceId) {
+    if (!spaceId) {
       alert("please enter space Id");
       return;
     }
@@ -186,7 +186,7 @@ const App = () => {
   };
 
   const queryProposalById = async () => {
-    if(!proposalId) {
+    if (!proposalId) {
       alert("please create a proposal");
       return;
     }
@@ -195,7 +195,7 @@ const App = () => {
   };
 
   const querySpaceDetail = async () => {
-    if(!spaceId) {
+    if (!spaceId) {
       alert("please enter space Id");
       return;
     }
@@ -206,12 +206,12 @@ const App = () => {
   const listProposals = async () => {
     const res = await snapshotClient.listProposals();
     console.log("[listProposals]res:", res);
-  }
+  };
 
   const listVotes = async () => {
     const res = await snapshotClient.listVotes();
     console.log("[listVotes]res:", res);
-  }
+  };
 
   return (
     <>

@@ -18,6 +18,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@dataverse/core-connector": "1.0.3",
+    "@dataverse/utils-toolkit": "workspace:*",
     "@livepeer/react": "^2.5.2",
     "axios": "^1.4.0",
     "react": "^18.2.0",

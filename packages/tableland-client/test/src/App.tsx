@@ -10,14 +10,15 @@ import {
   INSERT_TABLE_SQL,
   UPDATE_TABLE_SQL,
 } from "./constant";
-import { WALLET } from "@dataverse/dataverse-connector";
+import { Methods, WALLET } from "@dataverse/core-connector";
 import { Context } from ".";
 
 const appName = "tableland_test10";
-const modelId = "kjzl6hvfrbw6c5zvcxkbclvybdjuq2owc8c49l223y9bz4radnxu9uu23mp4elj";
+const modelId =
+  "kjzl6hvfrbw6c5zvcxkbclvybdjuq2owc8c49l223y9bz4radnxu9uu23mp4elj";
 
 const App = () => {
-  const { dataverseConnector } = useContext(Context);
+  const { coreConnector } = useContext(Context);
   const [account, setAccount] = useState<string>();
   const [did, setDid] = useState<string>();
   const [network, setNetwork] = useState<Network>();
@@ -35,7 +36,7 @@ const App = () => {
   useEffect(() => {
     if (did) {
       const client = new Client({
-        dataverseConnector,
+        coreConnector,
         network: Network.MUMBAI,
         modelId,
       });
@@ -51,15 +52,18 @@ const App = () => {
   }, [tableName]);
 
   const connectIdentity = async () => {
-    const { address, wallet } = await dataverseConnector.connectWallet(
+    const { address, wallet } = await coreConnector.connectWallet(
       WALLET.METAMASK
     );
     setAccount(address);
     console.log("address:", address);
 
-    const did = await dataverseConnector.createCapability({
-      app: appName,
-      wallet,
+    const did = await coreConnector.runOS({
+      method: Methods.createCapability,
+      params: {
+        app: appName,
+        wallet,
+      },
     });
     setDid(did);
     console.log("did:", did);
@@ -153,7 +157,10 @@ const App = () => {
   };
 
   const selectNetwork = async (network: Network) => {
-    await dataverseConnector.switchNetwork(ChainId[network]);
+    await coreConnector.runOS({
+      method: Methods.switchNetwork,
+      params: ChainId[network],
+    });
     setNetwork(network);
   };
 

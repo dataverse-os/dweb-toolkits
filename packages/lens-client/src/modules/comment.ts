@@ -1,4 +1,4 @@
-import { DataverseConnector } from "@dataverse/dataverse-connector";
+import { CoreConnector, Methods } from "@dataverse/core-connector";
 import { BigNumberish, ethers, Wallet } from "ethers";
 import { MAX_UINT256, EVENT_SIG_COMMENT_CREATED } from "../constants";
 import {
@@ -16,16 +16,16 @@ import LensHubJson from "../../contracts/LensHub.json";
 export class Comment extends ClientBase {
   constructor({
     modelIds,
-    dataverseConnector,
+    coreConnector,
     network,
   }: {
     modelIds: ModelIds;
-    dataverseConnector: DataverseConnector;
+    coreConnector: CoreConnector;
     network: LensNetwork;
   }) {
     super({
       modelIds,
-      dataverseConnector,
+      coreConnector,
       network,
     });
   }
@@ -33,11 +33,14 @@ export class Comment extends ClientBase {
   public async comment(commentData: CommentData) {
     await this.checker.checkCapability();
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "comment",
-      params: [commentData],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "comment",
+        params: [commentData],
+      },
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -82,9 +85,9 @@ export class Comment extends ClientBase {
       referenceModuleInitData: commentData.referenceModuleInitData,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.dataverseConnector.getProvider(),
+      wallet: this.coreConnector.getProvider(),
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.dataverseConnector.getProvider().chain!.chainId,
+      chainId: this.coreConnector.getProvider().chain!.chainId,
     });
 
     const commentWithSigData: CommentWithSigData = {
@@ -92,11 +95,14 @@ export class Comment extends ClientBase {
       sig,
     };
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "commentWithSig",
-      params: [commentWithSigData],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "commentWithSig",
+        params: [commentWithSigData],
+      },
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {

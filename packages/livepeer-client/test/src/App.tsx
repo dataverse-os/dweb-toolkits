@@ -3,11 +3,16 @@ import { AssetsCreator, LivepeerPlayer } from "./components";
 import { LivepeerClient } from "@dataverse/livepeer-client-toolkit";
 import { useContext, useMemo, useState } from "react";
 import { LivepeerConfig } from "@livepeer/react";
-import { Currency, WALLET, StreamContent } from "@dataverse/dataverse-connector";
+import {
+  Currency,
+  WALLET,
+  StreamContent,
+  Methods,
+} from "@dataverse/core-connector";
 import { Context } from "./main";
 
 const App = () => {
-  const { dataverseConnector } = useContext(Context);
+  const { coreConnector } = useContext(Context);
   const livepeerClient = useMemo(() => {
     console.log(
       "VITE_LIVEPEER_API_KEY:",
@@ -18,13 +23,15 @@ const App = () => {
 
     return new LivepeerClient({
       apiKey: import.meta.env.VITE_LIVEPEER_API_KEY!,
-      dataverseConnector: dataverseConnector,
+      coreConnector: coreConnector,
       modelId: import.meta.env.VITE_MODEL_ID,
     });
   }, []);
   const [address, setAddress] = useState<string>();
   const [streamId, setStreamId] = useState<string>();
-  const [streamContent, setStreamContent] = useState<StreamContent| null>( null);
+  const [streamContent, setStreamContent] = useState<StreamContent | null>(
+    null
+  );
 
   const retrieveVideo = async () => {
     const res = await livepeerClient.retrieveVideo(
@@ -39,19 +46,20 @@ const App = () => {
   };
 
   const deleteVideo = async () => {
-    await livepeerClient.deleteVideo(
-      "5561fd95-cc5b-47a9-bb79-d6d460f79883"
-    );
+    await livepeerClient.deleteVideo("5561fd95-cc5b-47a9-bb79-d6d460f79883");
   };
 
   const createCapability = async () => {
     const { address, wallet } =
-      await livepeerClient.dataverseConnector.connectWallet(WALLET.METAMASK);
+      await livepeerClient.coreConnector.connectWallet(WALLET.METAMASK);
     console.log({ address });
     setAddress(address);
-    await livepeerClient.dataverseConnector.createCapability({
-      wallet,
-      app: import.meta.env.VITE_APP_NAME,
+    await livepeerClient.coreConnector.runOS({
+      method: Methods.createCapability,
+      params: {
+        wallet,
+        app: import.meta.env.VITE_APP_NAME,
+      },
     });
     console.log("connected");
   };
@@ -71,23 +79,28 @@ const App = () => {
         collectLimit: 1000,
       },
     });
-    console.log("AssetMeta monetized.")
+    console.log("AssetMeta monetized.");
   };
 
   const getVideoMetaList = async () => {
     const assets = await livepeerClient.getVideoMetaList();
-    setStreamContent(assets[0].streamContent)
+    setStreamContent(assets[0].streamContent);
     console.log("AssetMetaList:", assets);
   };
 
   const unlockVideo = async () => {
-    const content = await livepeerClient.dataverseConnector.unlock({indexFileId: streamContent?.file.indexFileId });
+    const content = await livepeerClient.coreConnector.runOS({
+      method: Methods.unlock,
+      params: {
+        indexFileId: streamContent?.file.indexFileId,
+      },
+    });
     console.log("unlock content: ", content);
-  }
+  };
   //
   // const testDeleteStream = async () => {
   //   const indexFileId = "kjzl6kcym7w8y9i60b8nori6snffasvc0zwiegtgeh7gt2nifwcqox3xg2t90o2";
-  //   const res =  await livepeerClient.dataverseConnector.removeFiles({indexFileIds: [indexFileId]});
+  //   const res =  await livepeerClient.coreConnector.removeFiles({indexFileIds: [indexFileId]});
   //   console.log("delete res: ", res);
   // }
 
@@ -95,7 +108,10 @@ const App = () => {
     <>
       <LivepeerPlayer reactClient={livepeerClient.reactClient} />
       <LivepeerConfig client={livepeerClient.reactClient}>
-        <AssetsCreator livepeerClient={livepeerClient} setStreamId={setStreamId} />
+        <AssetsCreator
+          livepeerClient={livepeerClient}
+          setStreamId={setStreamId}
+        />
         <button onClick={createCapability}>createCapability</button>
         <br />
         <button onClick={retrieveVideo}>retrieveVideo</button>

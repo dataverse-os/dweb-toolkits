@@ -1,4 +1,4 @@
-import { DataverseConnector } from "@dataverse/dataverse-connector";
+import { CoreConnector, Methods } from "@dataverse/core-connector";
 import { BigNumber, BigNumberish, ethers } from "ethers";
 import { EVENT_SIG_PROFILE_CREATED } from "../constants";
 import {
@@ -16,16 +16,16 @@ import { ClientBase } from "./base";
 export class Profile extends ClientBase {
   constructor({
     modelIds,
-    dataverseConnector,
+    coreConnector,
     network,
   }: {
     modelIds: ModelIds;
-    dataverseConnector: DataverseConnector;
+    coreConnector: CoreConnector;
     network: LensNetwork;
   }) {
     super({
       modelIds,
-      dataverseConnector,
+      coreConnector,
       network,
     });
   }
@@ -33,11 +33,14 @@ export class Profile extends ClientBase {
   public async isProfileCreatorWhitelisted(profileCreator: string) {
     this.checker.checkWallet();
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "isProfileCreatorWhitelisted",
-      params: [profileCreator],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "isProfileCreatorWhitelisted",
+        params: [profileCreator],
+      },
     });
 
     return res;
@@ -69,14 +72,17 @@ export class Profile extends ClientBase {
       followNFTURI: followNFTURI || "https://github.com/dataverse-os",
     };
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress:
-        this.network === LensNetwork.PloygonMainnet
-          ? this.lensContractsAddress.ProfileCreationProxy
-          : this.lensContractsAddress.MockProfileCreationProxy,
-      abi: ProfileCreationProxyJson.abi,
-      method: "proxyCreateProfile",
-      params: [createProfileData],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress:
+          this.network === LensNetwork.PloygonMainnet
+            ? this.lensContractsAddress.ProfileCreationProxy
+            : this.lensContractsAddress.MockProfileCreationProxy,
+        abi: ProfileCreationProxyJson.abi,
+        method: "proxyCreateProfile",
+        params: [createProfileData],
+      },
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -93,11 +99,14 @@ export class Profile extends ClientBase {
   public async burnProfile(profileId: BigNumberish) {
     this.checker.checkWallet();
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "burn",
-      params: [profileId],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "burn",
+        params: [profileId],
+      },
     });
 
     return res;
@@ -106,37 +115,46 @@ export class Profile extends ClientBase {
   public async setDefaultProfile(profileId: BigNumberish) {
     this.checker.checkWallet();
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "setDefaultProfile",
-      params: [profileId],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "setDefaultProfile",
+        params: [profileId],
+      },
     });
     return res;
   }
 
   public async getProfiles(address: string) {
-    const balance = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "balanceOf",
-      params: [address],
+    const balance = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "balanceOf",
+        params: [address],
+      },
     });
 
     const balanceCount = BigNumber.from(balance).toNumber();
 
     const container = Array.from({
-      length: balanceCount
-    });;
+      length: balanceCount,
+    });
 
     const profileIds = await Promise.all(
       container.map((_, index) => {
-        console.log("")
-        return this.dataverseConnector.contractCall({
-          contractAddress: this.lensContractsAddress.LensHubProxy,
-          abi: LensHubJson.abi,
-          method: "tokenOfOwnerByIndex",
-          params: [address, index],
+        console.log("");
+        return this.coreConnector.runOS({
+          method: Methods.contractCall,
+          params: {
+            contractAddress: this.lensContractsAddress.LensHubProxy,
+            abi: LensHubJson.abi,
+            method: "tokenOfOwnerByIndex",
+            params: [address, index],
+          },
         });
       })
     );
@@ -149,11 +167,14 @@ export class Profile extends ClientBase {
   public async getProfile(profileId: BigNumberish) {
     this.checker.checkWallet();
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "getProfile",
-      params: [profileId],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "getProfile",
+        params: [profileId],
+      },
     });
     return res as ProfileStruct;
   }
@@ -161,11 +182,14 @@ export class Profile extends ClientBase {
   public async getProfileIdByHandle(handle: string) {
     this.checker.checkWallet();
 
-    const profileId = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "getProfileIdByHandle",
-      params: [handle],
+    const profileId = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "getProfileIdByHandle",
+        params: [handle],
+      },
     });
     return profileId;
   }
@@ -181,11 +205,14 @@ export class Profile extends ClientBase {
   }) {
     this.checker.checkWallet();
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "setFollowModule",
-      params: [profileId, followModule, followModuleInitData],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "setFollowModule",
+        params: [profileId, followModule, followModuleInitData],
+      },
     });
     return res;
   }
@@ -193,11 +220,14 @@ export class Profile extends ClientBase {
   public async setRevertFollowModule(profileId: BigNumberish) {
     this.checker.checkWallet();
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "setFollowModule",
-      params: [profileId, this.lensContractsAddress.RevertFollowModule, []],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "setFollowModule",
+        params: [profileId, this.lensContractsAddress.RevertFollowModule, []],
+      },
     });
     return res;
   }
@@ -224,15 +254,18 @@ export class Profile extends ClientBase {
       ]
     );
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "setFollowModule",
-      params: [
-        profileId,
-        this.lensContractsAddress.FeeFollowModule,
-        moduleInitData,
-      ],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "setFollowModule",
+        params: [
+          profileId,
+          this.lensContractsAddress.FeeFollowModule,
+          moduleInitData,
+        ],
+      },
     });
 
     return res;

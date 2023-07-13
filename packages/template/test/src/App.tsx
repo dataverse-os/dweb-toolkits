@@ -1,6 +1,5 @@
 import "./App.scss";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { ethers } from "ethers";
 
 const App = () => {
   

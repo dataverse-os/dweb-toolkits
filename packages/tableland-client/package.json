@@ -18,7 +18,10 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@dataverse/core-connector": "1.0.3",
+    "@dataverse/utils-toolkit": "workspace:*",
     "@tableland/sdk": "^4.3.0",
+    "ethers": "^5.7.2",
     "typescript": "^4.9.5"
   },
   "gitHead": "ab790f2b49dc1533fa8f7701e4f85586575df066"

@@ -21,9 +21,6 @@
     "publish": "lerna publish --no-private"
   },
   "dependencies": {
-    "lerna": "^7.0.1",
-    "@dataverse/dataverse-connector": "1.0.4",
-    "@dataverse/utils-toolkit": "workspace:*",
-    "ethers": "^5.7.2"
+    "lerna": "^7.0.1"
   }
 }

@@ -1,8 +1,9 @@
 import {
   DatatokenVars,
-  DataverseConnector,
+  CoreConnector,
   StreamContent,
-} from "@dataverse/dataverse-connector";
+  Methods,
+} from "@dataverse/core-connector";
 
 import {
   createReactClient,
@@ -12,7 +13,7 @@ import {
 } from "@livepeer/react";
 import axios, { AxiosInstance } from "axios";
 import { Checker } from "@dataverse/utils-toolkit";
-import {Video, Stream, IndexFileId} from "./types"
+import { Video, Stream, IndexFileId } from "./types";
 
 export { LivepeerConfig, createReactClient, ReactClient };
 
@@ -22,15 +23,15 @@ export class LivepeerClient {
   public apiKey: string;
   public reactClient: ReactClient;
   public modelId: string;
-  public dataverseConnector: DataverseConnector;
+  public coreConnector: CoreConnector;
 
   constructor({
     apiKey,
-    dataverseConnector,
+    coreConnector,
     modelId,
   }: {
     apiKey: string;
-    dataverseConnector: DataverseConnector;
+    coreConnector: CoreConnector;
     modelId: string;
   }) {
     this.apiKey = apiKey;
@@ -38,8 +39,8 @@ export class LivepeerClient {
       provider: studioProvider({ apiKey }),
     });
     this.modelId = modelId;
-    this.dataverseConnector = dataverseConnector;
-    this.checker = new Checker(dataverseConnector);
+    this.coreConnector = coreConnector;
+    this.checker = new Checker(coreConnector);
 
     this.http = axios.create({
       baseURL: "https://livepeer.studio/api/asset/",
@@ -80,10 +81,10 @@ export class LivepeerClient {
 
     const videoMeta = (postRes as any).asset;
     const stream = await this._persistAssetMeta(videoMeta);
-    
+
     return {
       videoMeta,
-      stream
+      stream,
     };
   }
 
@@ -101,10 +102,15 @@ export class LivepeerClient {
 
   public async getVideoMetaList() {
     await this.checker.checkCapability();
-    const pkh = await this.dataverseConnector.getCurrentPkh();
-    const streams = await this.dataverseConnector.loadStreamsBy({
-      modelId: this.modelId,
-      pkh: pkh,
+    const pkh = await this.coreConnector.runOS({
+      method: Methods.getCurrentPkh,
+    });
+    const streams = await this.coreConnector.runOS({
+      method: Methods.loadStreamsBy,
+      params: {
+        modelId: this.modelId,
+        pkh: pkh,
+      },
     });
     const assets = [];
     for (const key in streams) {
@@ -136,17 +142,23 @@ export class LivepeerClient {
       });
     }
 
-    await this.dataverseConnector.monetizeFile({
-      streamId,
-      datatokenVars,
+    await this.coreConnector.runOS({
+      method: Methods.monetizeFile,
+      params: {
+        streamId,
+        datatokenVars,
+      },
     });
   }
 
   private _persistAssetMeta(assetMeta: any) {
     const livepeerAsset: StreamContent = this._generateAssetMeta(assetMeta);
-    return this.dataverseConnector.createStream({
-      modelId: this.modelId,
-      streamContent: livepeerAsset,
+    return this.coreConnector.runOS({
+      method: Methods.createStream,
+      params: {
+        modelId: this.modelId,
+        streamContent: livepeerAsset,
+      },
     });
   }
 
@@ -169,7 +181,7 @@ export class LivepeerClient {
     };
   }
 
-  private async _syncVideoWithLivepeer(streams: Stream[]){
+  private async _syncVideoWithLivepeer(streams: Stream[]) {
     const videos = (await this.retrieveVideos()) as unknown as Video[];
     const videosMap = new Map<string, Video>();
     videos.forEach((video: Video) => {
@@ -178,7 +190,7 @@ export class LivepeerClient {
 
     // find out no exist stream to delete , remove matched video from videoMap
     const streamToDelete = new Set<IndexFileId>();
-    streams.forEach(stream => {
+    streams.forEach((stream) => {
       if (!videosMap.has(stream.streamContent.content.asset_id)) {
         streamToDelete.add(stream.streamContent.file.indexFileId);
       } else {
@@ -186,12 +198,17 @@ export class LivepeerClient {
       }
     });
 
-    this.dataverseConnector.removeFiles({indexFileIds: [... streamToDelete]});
+    this.coreConnector.runOS({
+      method: Methods.removeFiles,
+      params: {
+        indexFileIds: [...streamToDelete],
+      },
+    });
 
     // the remaining of videoMap should be not exist in folder, so add it
-    videosMap.forEach((value: Video, _: string) =>{
-      this._persistAssetMeta(value).catch((_: Error) => { });
-    })
+    videosMap.forEach((value: Video, _: string) => {
+      this._persistAssetMeta(value).catch((_: Error) => {});
+    });
   }
 
   private async _getProfileId({
@@ -201,7 +218,10 @@ export class LivepeerClient {
     address: string;
     lensNickName?: string;
   }) {
-    const lensProfiles = await this.dataverseConnector.getProfiles(address);
+    const lensProfiles = await this.coreConnector.runOS({
+      method: Methods.getProfiles,
+      params: address,
+    });
 
     let profileId;
     if (lensProfiles?.[0]?.id) {
@@ -213,7 +233,10 @@ export class LivepeerClient {
       if (!/^[\da-z]{5,26}$/.test(lensNickName) || lensNickName.length > 26) {
         throw "Only supports lower case characters, numbers, must be minimum of 5 length and maximum of 26 length";
       }
-      profileId = await this.dataverseConnector.createProfile(lensNickName);
+      profileId = await this.coreConnector.runOS({
+        method: Methods.createProfile,
+        params: lensNickName,
+      });
     }
     return profileId;
   }

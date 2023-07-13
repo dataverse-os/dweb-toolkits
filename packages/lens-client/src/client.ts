@@ -1,4 +1,4 @@
-import { DataverseConnector } from "@dataverse/dataverse-connector";
+import { CoreConnector, Methods } from "@dataverse/core-connector";
 import { Profile, Follow, Post, Comment, Collect, Mirror } from "./modules";
 import { ClientBase } from "./modules/base";
 import { LensNetwork, ModelIds, ModelType } from "./types";
@@ -7,16 +7,16 @@ import { applyMixins } from "./utils";
 class LensClient extends ClientBase {
   constructor({
     modelIds,
-    dataverseConnector,
+    coreConnector,
     network,
   }: {
     modelIds: ModelIds;
-    dataverseConnector: DataverseConnector;
+    coreConnector: CoreConnector;
     network: LensNetwork;
   }) {
     super({
       modelIds,
-      dataverseConnector,
+      coreConnector,
       network,
     });
   }
@@ -24,10 +24,15 @@ class LensClient extends ClientBase {
   public async getPersistedPublications() {
     await this.checker.checkCapability();
 
-    const pkh = await this.dataverseConnector.getCurrentPkh();
-    const streams = await this.dataverseConnector.loadStreamsBy({
-      modelId: this.modelIds[ModelType.Publication],
-      pkh,
+    const pkh = await this.coreConnector.runOS({
+      method: Methods.getCurrentPkh,
+    });
+    const streams = await this.coreConnector.runOS({
+      method: Methods.loadStreamsBy,
+      params: {
+        modelId: this.modelIds[ModelType.Publication],
+        pkh,
+      },
     });
     return streams;
   }
@@ -35,10 +40,15 @@ class LensClient extends ClientBase {
   public async getPersistedCollections() {
     await this.checker.checkCapability();
 
-    const pkh = await this.dataverseConnector.getCurrentPkh();
-    const streams = await this.dataverseConnector.loadStreamsBy({
-      modelId: this.modelIds[ModelType.Collection],
-      pkh,
+    const pkh = await this.coreConnector.runOS({
+      method: Methods.getCurrentPkh,
+    });
+    const streams = await this.coreConnector.runOS({
+      method: Methods.loadStreamsBy,
+      params: {
+        modelId: this.modelIds[ModelType.Collection],
+        pkh,
+      },
     });
     return streams;
   }

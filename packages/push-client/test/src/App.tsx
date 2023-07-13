@@ -1,4 +1,4 @@
-import { WALLET } from "@dataverse/dataverse-connector";
+import { Methods, WALLET } from "@dataverse/core-connector";
 import React, { useContext, useMemo, useState } from "react";
 import { Context } from "./main";
 import "./App.scss";
@@ -18,17 +18,17 @@ const modelIds = {
 };
 
 const App = () => {
-  const { dataverseConnector } = useContext(Context);
+  const { coreConnector } = useContext(Context);
   const pushNotificationClient = useMemo(() => {
     return new PushNotificationClient({
-      dataverseConnector,
+      coreConnector,
       modelIds: modelIds,
       env: ENV.STAGING,
     });
   }, []);
   const pushChatClient = useMemo(() => {
     return new PushChatClient({
-      dataverseConnector,
+      coreConnector,
       modelIds: modelIds,
       env: ENV.STAGING,
     });
@@ -57,15 +57,18 @@ const App = () => {
   const [chatterForHistory, setChatterForHistory] = useState<string>();
 
   const connectIdentity = async () => {
-    const { address, wallet } = await dataverseConnector.connectWallet(
+    const { address, wallet } = await coreConnector.connectWallet(
       WALLET.METAMASK
     );
     setAccount(address);
     console.log("address:", address);
 
-    const did = await dataverseConnector.createCapability({
-      app: import.meta.env.VITE_APP_NAME,
-      wallet,
+    const did = await coreConnector.runOS({
+      method: Methods.createCapability,
+      params: {
+        app: import.meta.env.VITE_APP_NAME,
+        wallet,
+      },
     });
     setDid(did);
     console.log("did:", did);
@@ -256,7 +259,10 @@ const App = () => {
       console.error("undefined chatterForHistory");
       return;
     }
-    console.log("import.meta.env.VITE_CHAT_MESSAGE_MODEL_ID:", import.meta.env.VITE_CHAT_MESSAGE_MODEL_ID)
+    console.log(
+      "import.meta.env.VITE_CHAT_MESSAGE_MODEL_ID:",
+      import.meta.env.VITE_CHAT_MESSAGE_MODEL_ID
+    );
     const res = await pushChatClient.fetchHistoryChats(chatterForHistory, 20);
     console.log("[getHistoryChats]res:", res);
   };

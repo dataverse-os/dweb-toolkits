@@ -1,4 +1,4 @@
-import { Currency, DataverseConnector } from "@dataverse/dataverse-connector";
+import { Currency, CoreConnector, Methods } from "@dataverse/core-connector";
 import { BigNumberish, ethers, Wallet } from "ethers";
 import { EVENT_SIG_POST_CREATED, MAX_UINT256 } from "../constants";
 import {
@@ -15,16 +15,16 @@ import { ClientBase } from "./base";
 export class Post extends ClientBase {
   constructor({
     modelIds,
-    dataverseConnector,
+    coreConnector,
     network,
   }: {
     modelIds: ModelIds;
-    dataverseConnector: DataverseConnector;
+    coreConnector: CoreConnector;
     network: LensNetwork;
   }) {
     super({
       modelIds,
-      dataverseConnector,
+      coreConnector,
       network,
     });
   }
@@ -55,18 +55,24 @@ export class Post extends ClientBase {
       encrypted: JSON.stringify(encrypted),
     };
 
-    const { streamId } = await this.dataverseConnector.createStream({
-      modelId,
-      streamContent,
+    const { streamId } = await this.coreConnector.runOS({
+      method: Methods.createStream,
+      params: {
+        modelId,
+        streamContent,
+      },
     });
 
-    await this.dataverseConnector.monetizeFile({
-      streamId,
-      datatokenVars: {
-        profileId: postParams.profileId,
-        currency,
-        amount,
-        collectLimit,
+    await this.coreConnector.runOS({
+      method: Methods.monetizeFile,
+      params: {
+        streamId,
+        datatokenVars: {
+          profileId: postParams.profileId,
+          currency,
+          amount,
+          collectLimit,
+        },
       },
     });
 
@@ -106,11 +112,14 @@ export class Post extends ClientBase {
   private async _post(postData: PostData) {
     await this.checker.checkCapability();
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "post",
-      params: [postData],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "post",
+        params: [postData],
+      },
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -137,9 +146,9 @@ export class Post extends ClientBase {
       referenceModuleInitData: postData.referenceModuleInitData,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.dataverseConnector.getProvider(),
+      wallet: this.coreConnector.getProvider(),
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.dataverseConnector.getProvider().chain!.chainId,
+      chainId: this.coreConnector.getProvider().chain!.chainId,
     });
 
     const postWithSigData: PostWithSigData = {
@@ -147,11 +156,14 @@ export class Post extends ClientBase {
       sig,
     };
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "postWithSig",
-      params: [postWithSigData],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "postWithSig",
+        params: [postWithSigData],
+      },
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {

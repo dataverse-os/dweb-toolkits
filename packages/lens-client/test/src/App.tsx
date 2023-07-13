@@ -1,6 +1,6 @@
 import "./App.scss";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { Currency, WALLET } from "@dataverse/dataverse-connector";
+import { Currency, Methods, WALLET } from "@dataverse/core-connector";
 import { Context } from "./main";
 import Client, {
   CommentData,
@@ -18,11 +18,11 @@ const modelIds = {
 };
 
 const App = () => {
-  const { dataverseConnector } = useContext(Context);
+  const { coreConnector } = useContext(Context);
   const lensClient = useMemo(() => {
     return new Client({
       modelIds: modelIds,
-      dataverseConnector: dataverseConnector,
+      coreConnector: coreConnector,
       network: LensNetwork.SandboxMumbaiTestnet,
     });
   }, []);
@@ -75,14 +75,17 @@ const App = () => {
   }, [profiles]);
 
   const connectIdentity = async () => {
-    const { address, wallet } = await lensClient.dataverseConnector.connectWallet(
+    const { address, wallet } = await lensClient.coreConnector.connectWallet(
       WALLET.METAMASK
     );
     console.log("address:", address);
     setAccount(address);
-    const did = await lensClient.dataverseConnector.createCapability({
-      wallet,
-      app: import.meta.env.VITE_APP_NAME,
+    const did = await lensClient.coreConnector.runOS({
+      method: Methods.createCapability,
+      params: {
+        wallet,
+        app: import.meta.env.VITE_APP_NAME,
+      },
     });
     setDid(did);
     console.log("did:", did);

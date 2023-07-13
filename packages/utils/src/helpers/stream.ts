@@ -1,4 +1,4 @@
-import { StreamContent } from "@dataverse/dataverse-connector";
+import { StreamContent } from "@dataverse/core-connector";
 
 export class StreamHelper {
   static async traverseStreams(

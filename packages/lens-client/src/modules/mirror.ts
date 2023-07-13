@@ -1,4 +1,4 @@
-import { DataverseConnector } from "@dataverse/dataverse-connector";
+import { CoreConnector, Methods } from "@dataverse/core-connector";
 import { BigNumberish, ethers, Wallet } from "ethers";
 import { MAX_UINT256, EVENT_SIG_MIRROR_CREATED } from "../constants";
 import {
@@ -15,16 +15,16 @@ import { ClientBase } from "./base";
 export class Mirror extends ClientBase {
   constructor({
     modelIds,
-    dataverseConnector,
+    coreConnector,
     network,
   }: {
     modelIds: ModelIds;
-    dataverseConnector: DataverseConnector;
+    coreConnector: CoreConnector;
     network: LensNetwork;
   }) {
     super({
       modelIds,
-      dataverseConnector,
+      coreConnector,
       network,
     });
   }
@@ -38,11 +38,14 @@ export class Mirror extends ClientBase {
   }) {
     this.checker.checkWallet();
 
-    const referenceModule = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "getReferenceModule",
-      params: [profileId, pubId],
+    const referenceModule = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "getReferenceModule",
+        params: [profileId, pubId],
+      },
     });
 
     return referenceModule as string;
@@ -51,11 +54,14 @@ export class Mirror extends ClientBase {
   public async isReferenceModuleWhitelisted(referenceModule: string) {
     this.checker.checkWallet();
 
-    const isWhitelisted = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "isReferenceModuleWhitelisted",
-      params: [referenceModule],
+    const isWhitelisted = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "isReferenceModuleWhitelisted",
+        params: [referenceModule],
+      },
     });
 
     return isWhitelisted;
@@ -64,11 +70,14 @@ export class Mirror extends ClientBase {
   public async mirror(mirrorData: MirrorData) {
     await this.checker.checkCapability();
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "mirror",
-      params: [mirrorData],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "mirror",
+        params: [mirrorData],
+      },
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -108,9 +117,9 @@ export class Mirror extends ClientBase {
       referenceModuleInitData: mirrorData.referenceModuleInitData,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.dataverseConnector.getProvider(),
+      wallet: this.coreConnector.getProvider(),
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.dataverseConnector.getProvider().chain!.chainId,
+      chainId: this.coreConnector.getProvider().chain!.chainId,
     });
 
     const mirrorWithSigData: MirrorWithSigData = {
@@ -118,11 +127,14 @@ export class Mirror extends ClientBase {
       sig,
     };
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "mirrorWithSig",
-      params: [mirrorWithSigData],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "mirrorWithSig",
+        params: [mirrorWithSigData],
+      },
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {

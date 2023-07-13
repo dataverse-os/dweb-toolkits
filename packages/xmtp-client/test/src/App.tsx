@@ -15,12 +15,14 @@ import Client, {
 import {
   Extension,
   RESOURCE,
-  DataverseConnector, StreamContent,
+  CoreConnector,
+  StreamContent,
   WALLET,
-} from "@dataverse/dataverse-connector";
+  Methods,
+} from "@dataverse/core-connector";
 import Upload, { web3Storage } from "./web3-storage/web3-storage";
 
-const dataverseConnector = new DataverseConnector(Extension);
+const coreConnector = new CoreConnector(Extension);
 
 function App() {
   const msgReceiver = useMemo(() => {
@@ -28,7 +30,7 @@ function App() {
   }, []);
   const xmtpClient = useMemo(() => {
     return new Client({
-      dataverseConnector,
+      coreConnector,
       modelIds: {
         [ModelType.MESSAGE]: import.meta.env.VITE_MESSAGE_MODEL_ID,
         [ModelType.KEYS_CACHE]: import.meta.env.VITE_KEY_CACHE_MODEL_ID,
@@ -47,7 +49,7 @@ function App() {
 
   const connectWallet = async () => {
     try {
-      const { address } = await xmtpClient.dataverseConnector.connectWallet(
+      const { address } = await xmtpClient.coreConnector.connectWallet(
         WALLET.METAMASK
       );
       setAddress(address);
@@ -59,10 +61,13 @@ function App() {
   const createCapability = async () => {
     const app = import.meta.env.VITE_APP_NAME;
     console.log("app: ", app);
-    const pkh = await xmtpClient.dataverseConnector.createCapability({
-      app,
-      resource: RESOURCE.CERAMIC,
-      wallet: WALLET.METAMASK,
+    const pkh = await xmtpClient.coreConnector.runOS({
+      method: Methods.createCapability,
+      params: {
+        app,
+        resource: RESOURCE.CERAMIC,
+        wallet: WALLET.METAMASK,
+      },
     });
     setPkh(pkh);
     console.log(pkh);
@@ -70,8 +75,9 @@ function App() {
   };
 
   const checkCapability = async () => {
-    const isCurrentPkhValid =
-      await xmtpClient.dataverseConnector.checkCapability();
+    const isCurrentPkhValid = await xmtpClient.coreConnector.runOS({
+      method: Methods.checkCapability,
+    });
     console.log(isCurrentPkhValid);
     setIsCurrentPkhValid(isCurrentPkhValid);
   };
@@ -189,9 +195,12 @@ function App() {
       encrypted: encrypted,
     };
 
-    const res = await xmtpClient.dataverseConnector.createStream({
-      modelId: import.meta.env.VITE_MESSAGE_MODEL_ID,
-      streamContent: streamContent,
+    const res = await xmtpClient.coreConnector.runOS({
+      method: Methods.createStream,
+      params: {
+        modelId: import.meta.env.VITE_MESSAGE_MODEL_ID,
+        streamContent: streamContent,
+      },
     });
 
     return res;
@@ -263,10 +272,15 @@ function App() {
 
   const unlockMessage = async () => {
     console.log("msgStream: ", msgStream);
-    const res = await dataverseConnector.unlock({indexFileId: msgStream!.file.indexFileId});
-    console.log("msgStream.file?.indexFileId", msgStream!.file.indexFileId)
+    const res = await coreConnector.runOS({
+      method: Methods.unlock,
+      params: {
+        indexFileId: msgStream!.file.indexFileId,
+      },
+    });
+    console.log("msgStream.file?.indexFileId", msgStream!.file.indexFileId);
     console.log(res);
-  }
+  };
 
   return (
     <div className="App">
@@ -325,9 +339,7 @@ function App() {
         </button>
       </div>
       <hr />
-      <button onClick={unlockMessage}>
-        unlockMessage
-      </button>
+      <button onClick={unlockMessage}>unlockMessage</button>
     </div>
   );
 }

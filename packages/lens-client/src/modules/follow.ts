@@ -1,9 +1,6 @@
-import { DataverseConnector } from "@dataverse/dataverse-connector";
+import { CoreConnector, Methods } from "@dataverse/core-connector";
 import { BigNumber, BigNumberish, ethers, Wallet } from "ethers";
-import {
-  MAX_UINT256,
-  EVENT_SIG_FOLLOWED,
-} from "../constants";
+import { MAX_UINT256, EVENT_SIG_FOLLOWED } from "../constants";
 import {
   EIP712Signature,
   EventFollowed,
@@ -19,16 +16,16 @@ import FeeFollowModuleJson from "../../contracts/modules/follow/FeeFollowModule.
 export class Follow extends ClientBase {
   constructor({
     modelIds,
-    dataverseConnector,
+    coreConnector,
     network,
   }: {
     modelIds: ModelIds;
-    dataverseConnector: DataverseConnector;
+    coreConnector: CoreConnector;
     network: LensNetwork;
   }) {
     super({
       modelIds,
-      dataverseConnector,
+      coreConnector,
       network,
     });
   }
@@ -36,11 +33,14 @@ export class Follow extends ClientBase {
   public async getFollowNFT(profileId: BigNumberish) {
     this.checker.checkWallet();
 
-    const followNFT = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "getFollowNFT",
-      params: [profileId],
+    const followNFT = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "getFollowNFT",
+        params: [profileId],
+      },
     });
 
     return followNFT;
@@ -49,11 +49,14 @@ export class Follow extends ClientBase {
   public async getFollowModule(profileId: BigNumberish) {
     this.checker.checkWallet();
 
-    const followModule = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "getFollowModule",
-      params: [profileId],
+    const followModule = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "getFollowModule",
+        params: [profileId],
+      },
     });
 
     return followModule as string;
@@ -62,11 +65,14 @@ export class Follow extends ClientBase {
   public async isFollowModuleWhitelisted(followModule: string) {
     this.checker.checkWallet();
 
-    const isWhitelisted = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "isFollowModuleWhitelisted",
-      params: [followModule],
+    const isWhitelisted = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "isFollowModuleWhitelisted",
+        params: [followModule],
+      },
     });
 
     return isWhitelisted;
@@ -86,7 +92,7 @@ export class Follow extends ClientBase {
         if (profileData) {
           await this._approveERC20({
             contract: profileData.currency,
-            owner: this.dataverseConnector.getProvider().address!,
+            owner: this.coreConnector.address!,
             spender: followModule,
             amount: profileData.amount,
           });
@@ -94,11 +100,14 @@ export class Follow extends ClientBase {
         return followModuleValidateData;
       })
     );
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "follow",
-      params: [profileIds, datas],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "follow",
+        params: [profileIds, datas],
+      },
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -124,7 +133,7 @@ export class Follow extends ClientBase {
         if (profileData) {
           await this._approveERC20({
             contract: profileData.currency,
-            owner: this.dataverseConnector.getProvider().address!,
+            owner: this.coreConnector.address!,
             spender: followModule,
             amount: profileData.amount,
           });
@@ -139,23 +148,26 @@ export class Follow extends ClientBase {
       datas,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.dataverseConnector.getProvider(),
+      wallet: this.coreConnector.getProvider(),
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.dataverseConnector.getProvider().chain!.chainId,
+      chainId: this.coreConnector.getProvider().chain!.chainId,
     });
 
     const followWithSigData: FollowWithSigData = {
-      follower: this.dataverseConnector.getProvider().address!,
+      follower: this.coreConnector.address!,
       profileIds,
       datas,
       sig,
     };
 
-    const res = await this.dataverseConnector.contractCall({
-      contractAddress: this.lensContractsAddress.LensHubProxy,
-      abi: LensHubJson.abi,
-      method: "followWithSig",
-      params: [followWithSigData],
+    const res = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: this.lensContractsAddress.LensHubProxy,
+        abi: LensHubJson.abi,
+        method: "followWithSig",
+        params: [followWithSigData],
+      },
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -176,11 +188,14 @@ export class Follow extends ClientBase {
   }) {
     this.checker.checkWallet();
 
-    const balance = await this.dataverseConnector.contractCall({
-      contractAddress: followNFT,
-      abi: FollowNFTJson.abi,
-      method: "balanceOf",
-      params: [follower],
+    const balance = await this.coreConnector.runOS({
+      method: Methods.contractCall,
+      params: {
+        contractAddress: followNFT,
+        abi: FollowNFTJson.abi,
+        method: "balanceOf",
+        params: [follower],
+      },
     });
 
     return BigNumber.from(balance).gt(0);
@@ -208,11 +223,14 @@ export class Follow extends ClientBase {
       }
       case this.lensContractsAddress.FeeFollowModule: {
         console.log("[FeeFollowModule]");
-        profileData = await this.dataverseConnector.contractCall({
-          contractAddress: followModule,
-          abi: FeeFollowModuleJson.abi,
-          method: "getProfileData",
-          params: [profileId],
+        profileData = await this.coreConnector.runOS({
+          method: Methods.contractCall,
+          params: {
+            contractAddress: followModule,
+            abi: FeeFollowModuleJson.abi,
+            method: "getProfileData",
+            params: [profileId],
+          },
         });
         followModuleValidateData = ethers.utils.defaultAbiCoder.encode(
           ["address", "uint256"],

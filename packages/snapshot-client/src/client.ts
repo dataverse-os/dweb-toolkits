@@ -1,32 +1,46 @@
-import {DataverseConnector} from "@dataverse/dataverse-connector";
+import { CoreConnector, Methods } from "@dataverse/core-connector";
 import snapshot from "@snapshot-labs/snapshot.js";
 import Client from "@snapshot-labs/snapshot.js/dist/sign";
-import {Follow, Message, ModelIds, ModelType, Options, Proposal, Receipt, Strategy, Vote,} from "./types";
-import {ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE, ERR_WRONG_PROPOSAL_FORMAT, now} from "./constants";
-import {GraphqlApi} from "./graphql";
-import {Checker} from "@dataverse/utils-toolkit";
+import {
+  Follow,
+  Message,
+  ModelIds,
+  ModelType,
+  Options,
+  Proposal,
+  Receipt,
+  Strategy,
+  Vote,
+} from "./types";
+import {
+  ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE,
+  ERR_WRONG_PROPOSAL_FORMAT,
+  now,
+} from "./constants";
+import { GraphqlApi } from "./graphql";
+import { Checker } from "@dataverse/utils-toolkit";
 
 export class SnapshotClient extends GraphqlApi {
   public modelIds: ModelIds;
-  public dataverseConnector: DataverseConnector;
-  public checker: Checker
+  public coreConnector: CoreConnector;
+  public checker: Checker;
   public snapShot: Client;
   public env: string;
 
   constructor({
-    dataverseConnector,
+    coreConnector,
     modelIds,
     env,
     apiKey,
   }: {
-    dataverseConnector: DataverseConnector;
+    coreConnector: CoreConnector;
     modelIds: ModelIds;
     env: string;
     apiKey?: string;
   }) {
     super({ apiUrl: env, apiKey });
-    this.dataverseConnector = dataverseConnector;
-    this.checker = new Checker(dataverseConnector);
+    this.coreConnector = coreConnector;
+    this.checker = new Checker(coreConnector);
     this.env = env;
     this.snapShot = new snapshot.Client712(this.env);
     this.modelIds = modelIds;
@@ -36,14 +50,13 @@ export class SnapshotClient extends GraphqlApi {
     this.checker.checkCapability();
     this.checker.checkWallet();
     const { web3, address, msg } = this._buildMessage(proposal);
-    return this.snapShot.proposal(
-      web3,
-      address!,
-      msg as Proposal
-    ).then((receipt) => {
-      this._persistProposal(proposal, receipt);
-      return receipt as Receipt;
-    }).catch(this._processError)
+    return this.snapShot
+      .proposal(web3, address!, msg as Proposal)
+      .then((receipt) => {
+        this._persistProposal(proposal, receipt);
+        return receipt as Receipt;
+      })
+      .catch(this._processError);
   }
 
   async castVote(vote: Vote) {
@@ -155,14 +168,19 @@ export class SnapshotClient extends GraphqlApi {
   }
 
   async listVotes() {
-   return this._listStreamContent(this.modelIds[ModelType.VOTE]);
+    return this._listStreamContent(this.modelIds[ModelType.VOTE]);
   }
   private async _listStreamContent(modelId: string) {
     this.checker.checkCapability();
-    const pkh = await this.dataverseConnector.getCurrentPkh();
-    const streams = await this.dataverseConnector.loadStreamsBy({
-      modelId: modelId,
-      pkh: pkh,
+    const pkh = await this.coreConnector.runOS({
+      method: Methods.getCurrentPkh,
+    });
+    const streams = await this.coreConnector.runOS({
+      method: Methods.loadStreamsBy,
+      params: {
+        modelId: modelId,
+        pkh: pkh,
+      },
     });
 
     const items = [];
@@ -173,11 +191,11 @@ export class SnapshotClient extends GraphqlApi {
     }
     return items;
   }
-  private _buildMessage(msg: Message){
-    const web3 = this.dataverseConnector.getProvider();
-    const address = this.dataverseConnector.getProvider().address;
+  private _buildMessage(msg: Message) {
+    const web3 = this.coreConnector.getProvider();
+    const address = this.coreConnector.address;
     return { web3, address, msg };
-  };
+  }
 
   private async _persistProposal(proposal: Proposal, receipt: any) {
     const content = {
@@ -197,9 +215,12 @@ export class SnapshotClient extends GraphqlApi {
       app: proposal.app,
     };
 
-    const res = await this.dataverseConnector.createStream({
-      modelId: this.modelIds[ModelType.PROPOSAL],
-      streamContent: content,
+    const res = await this.coreConnector.runOS({
+      method: Methods.createStream,
+      params: {
+        modelId: this.modelIds[ModelType.PROPOSAL],
+        streamContent: content,
+      },
     });
 
     return res;
@@ -219,24 +240,28 @@ export class SnapshotClient extends GraphqlApi {
       created_at: now(),
     };
 
-    const res = await this.dataverseConnector.createStream({
-      modelId: this.modelIds[ModelType.VOTE],
-      streamContent: content,
+    const res = await this.coreConnector.runOS({
+      method: Methods.createStream,
+      params: {
+        modelId: this.modelIds[ModelType.VOTE],
+        streamContent: content,
+      },
     });
 
     return res;
   }
 
-
   private _processError = (error: any) => {
-    if(error.error_description == ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE) {
-      console.warn(`${ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE}, you can create a space follow the link, https://docs.snapshot.org/user-guides/spaces/create`);
+    if (error.error_description == ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE) {
+      console.warn(
+        `${ERR_ONLY_SPACE_AUTHORS_CAN_PROPOSE}, you can create a space follow the link, https://docs.snapshot.org/user-guides/spaces/create`
+      );
       return;
     }
-    if(error.error_description == ERR_WRONG_PROPOSAL_FORMAT) {
+    if (error.error_description == ERR_WRONG_PROPOSAL_FORMAT) {
       console.warn(`${ERR_WRONG_PROPOSAL_FORMAT}, check proposal format`);
       return;
     }
     throw error;
-  }
+  };
 }
