@@ -18,7 +18,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@dataverse/core-connector": "1.0.3",
+    "@dataverse/core-connector": "latest",
     "@dataverse/utils-toolkit": "workspace:*",
     "ethers": "^5.7.2",
     "graphql": "^16.6.0",
