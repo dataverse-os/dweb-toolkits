@@ -1,6 +1,6 @@
 {
   "name": "@dataverse/snapshot-client-toolkit",
-  "version": "1.0.15",
+  "version": "1.0.22",
   "description": "",
   "module": "dist/esm/src/index.js",
   "main": "dist/cjs/src/index.js",

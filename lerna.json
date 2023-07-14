@@ -11,5 +11,10 @@
     "xmtp-demo",
     "lens-demo",
     "snapshot-demo"
-  ]
+  ],
+  "command": {
+    "publish": {
+      "gitTagVersion": false
+    }
+  }
 }
