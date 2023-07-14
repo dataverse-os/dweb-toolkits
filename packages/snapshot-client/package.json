@@ -19,7 +19,7 @@
   "license": "MIT",
   "dependencies": {
     "@dataverse/core-connector": "latest",
-    "@dataverse/utils-toolkit": "workspace:*",
+    "@dataverse/utils-toolkit": "1.0.22",
     "@snapshot-labs/snapshot.js": "^0.4.100",
     "graphql": "^16.6.0",
     "graphql-request": "^6.1.0",
@@ -29,5 +29,6 @@
   },
   "devDependencies": {
     "@types/react": "^18.2.9"
-  }
+  },
+  "gitHead": "d4f8def0a7266e3b45c6e9ba44c27958ceccc721"
 }

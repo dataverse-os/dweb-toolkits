@@ -19,10 +19,10 @@
   "license": "MIT",
   "dependencies": {
     "@dataverse/core-connector": "latest",
-    "@dataverse/utils-toolkit": "workspace:*",
+    "@dataverse/utils-toolkit": "1.0.22",
     "@tableland/sdk": "^4.3.0",
     "ethers": "^5.7.2",
     "typescript": "^4.9.5"
   },
-  "gitHead": "ab790f2b49dc1533fa8f7701e4f85586575df066"
+  "gitHead": "d4f8def0a7266e3b45c6e9ba44c27958ceccc721"
 }
