@@ -300,7 +300,7 @@ export class Collect extends ClientBase {
       deadline: MAX_UINT256,
       wallet: this.coreConnector.getProvider(),
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.coreConnector.getProvider().chain!.chainId,
+      chainId: this.coreConnector.chain!.chainId,
     });
 
     const res = await this.coreConnector.runOS({
