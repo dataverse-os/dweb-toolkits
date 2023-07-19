@@ -12,20 +12,18 @@ import Client, {
 import { getCurrencyAddress } from "./utils";
 import { ethers } from "ethers";
 
-const modelIds = {
-  [ModelType.Publication]: import.meta.env.VITE_PUBLICATION_MODEL_ID,
-  [ModelType.Collection]: import.meta.env.VITE_COLLECTION_MODEL_ID,
-};
-
 const App = () => {
-  const { coreConnector } = useContext(Context);
+  const { coreConnector, modelParser } = useContext(Context);
   const lensClient = useMemo(() => {
     return new Client({
-      modelIds: modelIds,
+      modelIds: {
+        [ModelType.Publication]: modelParser.getModelByName("lenspublication").streams[0].modelId,
+        [ModelType.Collection]: modelParser.getModelByName("lenscollection").streams[0].modelId,
+      },
       coreConnector: coreConnector,
       network: LensNetwork.SandboxMumbaiTestnet,
     });
-  }, []);
+  }, [modelParser]);
   const [account, setAccount] = useState<string>();
   const [did, setDid] = useState<string>();
   const [collectModule, setCollectModule] = useState<string>();
@@ -304,7 +302,8 @@ const App = () => {
       [false]
     ) as any;
     const modelId =
-      "kjzl6hvfrbw6c91p8jnyo40e7nn0ij3uykssjjyn38fhtq5pc5wpawcwopi5v9p";
+      modelParser.getModelByName("post").streams[0].modelId;
+      console.log(modelId)
     const stream = {
       appVersion: "1.2.1",
       text: "hello world!",
@@ -357,7 +356,7 @@ const App = () => {
       [false]
     ) as any;
     const modelId =
-      "kjzl6hvfrbw6c91p8jnyo40e7nn0ij3uykssjjyn38fhtq5pc5wpawcwopi5v9p";
+      modelParser.getModelByName("post").streams[0].modelId;
     const stream = {
       appVersion: "1.2.1",
       text: "hello world!",
