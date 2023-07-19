@@ -82,7 +82,7 @@ const App = () => {
       method: Methods.createCapability,
       params: {
         wallet,
-        app: import.meta.env.VITE_APP_NAME,
+        app: modelParser.appName,
       },
     });
     setDid(did);

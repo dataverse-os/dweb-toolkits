@@ -198,7 +198,9 @@ export class Collect extends ClientBase {
     const { streamContent: unlockedStreamContent } =
       await this.coreConnector.runOS({
         method: Methods.unlock,
-        params: streamContent.content.content_uri,
+        params: {
+          streamId: streamContent.content.content_uri
+        },
       });
 
     return {
