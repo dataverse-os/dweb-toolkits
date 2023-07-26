@@ -3,3 +3,4 @@ dist/
 .env
 build/
 pnpm-lock.yaml
+**/.DS_Store
