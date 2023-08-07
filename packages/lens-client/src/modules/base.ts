@@ -1,4 +1,4 @@
-import { CoreConnector, Methods } from "@dataverse/core-connector";
+import { DataverseConnector, SYSTEM_CALL } from "@dataverse/dataverse-connector";
 import { Checker } from "@dataverse/utils-toolkit";
 import { BigNumber, BigNumberish } from "ethers";
 import {
@@ -9,45 +9,47 @@ import {
 } from "../constants";
 import { LensNetwork, ModelIds, ModelType } from "../types";
 import LensHubJson from "../../contracts/LensHub.json";
+import { WalletProvider } from "@dataverse/wallet-provider";
 
 export class ClientBase {
   public modelIds: ModelIds;
   public lensContractsAddress!: any;
   public lensApiLink!: string;
-  public coreConnector: CoreConnector;
+  public dataverseConnector: DataverseConnector;
+  public walletProvider: WalletProvider;
   public checker: Checker;
   public network: LensNetwork;
 
   constructor({
     modelIds,
-    coreConnector,
+    dataverseConnector,
+    walletProvider,
     network,
   }: {
     modelIds: ModelIds;
-    coreConnector: CoreConnector;
+    dataverseConnector: DataverseConnector;
+    walletProvider: WalletProvider;
     network: LensNetwork;
   }) {
     this.modelIds = modelIds;
-    this.coreConnector = coreConnector;
+    this.dataverseConnector = dataverseConnector;
+    this.walletProvider = walletProvider;
     this.network = network;
-    this.checker = new Checker(coreConnector);
+    this.checker = new Checker(dataverseConnector);
     this._initLensContractsAddress(network);
   }
 
   public async getSigNonce() {
     this.checker.checkWallet();
 
-    const address = this.coreConnector.address!;
+    const address = this.dataverseConnector.address!;
 
-    const nonce = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params: {
-        contractAddress: this.lensContractsAddress.LensHubProxy,
-        abi: LensHubJson.abi,
-        method: "sigNonces",
-        params: [address],
-      },
-    });
+    const nonce = await this.walletProvider.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "sigNonces",
+      params: [address],
+    })
 
     return nonce;
   }
@@ -97,72 +99,66 @@ export class ClientBase {
     spender: string;
     amount: BigNumberish;
   }) {
-    const allowance = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params: {
+    const allowance = await this.walletProvider.contractCall({
+      contractAddress: contract,
+      abi: [
+        {
+          constant: true,
+          inputs: [
+            {
+              name: "_owner",
+              type: "address",
+            },
+            {
+              name: "_spender",
+              type: "address",
+            },
+          ],
+          name: "allowance",
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+            },
+          ],
+          payable: false,
+          stateMutability: "view",
+          type: "function",
+        },
+      ],
+      method: "allowance",
+      params: [owner, spender],
+    });
+    if (BigNumber.from(allowance).lt(amount)) {
+      await this.walletProvider.contractCall({
         contractAddress: contract,
         abi: [
           {
-            constant: true,
+            constant: false,
             inputs: [
-              {
-                name: "_owner",
-                type: "address",
-              },
               {
                 name: "_spender",
                 type: "address",
               },
-            ],
-            name: "allowance",
-            outputs: [
               {
-                name: "",
+                name: "_value",
                 type: "uint256",
               },
             ],
+            name: "approve",
+            outputs: [
+              {
+                name: "",
+                type: "bool",
+              },
+            ],
             payable: false,
-            stateMutability: "view",
+            stateMutability: "nonpayable",
             type: "function",
           },
         ],
-        method: "allowance",
-        params: [owner, spender],
-      },
-    });
-    if (BigNumber.from(allowance).lt(amount)) {
-      await this.coreConnector.runOS({
-        method: Methods.contractCall,
-        params: {
-          contractAddress: contract,
-          abi: [
-            {
-              constant: false,
-              inputs: [
-                {
-                  name: "_spender",
-                  type: "address",
-                },
-                {
-                  name: "_value",
-                  type: "uint256",
-                },
-              ],
-              name: "approve",
-              outputs: [
-                {
-                  name: "",
-                  type: "bool",
-                },
-              ],
-              payable: false,
-              stateMutability: "nonpayable",
-              type: "function",
-            },
-          ],
-          method: "approve",
-          params: [spender, amount],
-        },
+        method: "approve",
+        params: [spender, amount],
       });
     }
   }
@@ -188,8 +184,8 @@ export class ClientBase {
     collectModule?: string;
     referenceModule: string;
   }) {
-    return await this.coreConnector.runOS({
-      method: Methods.createStream,
+    return await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
       params: {
         modelId: this.modelIds[ModelType.Publication],
         streamContent: {

@@ -1,4 +1,4 @@
-import { CoreConnector, Methods } from "@dataverse/core-connector";
+import { DataverseConnector } from "@dataverse/dataverse-connector";
 import { BigNumberish, ethers, Wallet } from "ethers";
 import { MAX_UINT256, EVENT_SIG_COMMENT_CREATED } from "../constants";
 import {
@@ -12,20 +12,24 @@ import {
 
 import { ClientBase } from "./base";
 import LensHubJson from "../../contracts/LensHub.json";
+import { WalletProvider } from "@dataverse/wallet-provider";
 
 export class Comment extends ClientBase {
   constructor({
     modelIds,
-    coreConnector,
+    dataverseConnector,
+    walletProvider,
     network,
   }: {
     modelIds: ModelIds;
-    coreConnector: CoreConnector;
+    dataverseConnector: DataverseConnector;
+    walletProvider: WalletProvider;
     network: LensNetwork;
   }) {
     super({
       modelIds,
-      coreConnector,
+      dataverseConnector,
+      walletProvider,
       network,
     });
   }
@@ -33,14 +37,11 @@ export class Comment extends ClientBase {
   public async comment(commentData: CommentData) {
     await this.checker.checkCapability();
 
-    const res = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params: {
-        contractAddress: this.lensContractsAddress.LensHubProxy,
-        abi: LensHubJson.abi,
-        method: "comment",
-        params: [commentData],
-      },
+    const res = await this.walletProvider.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "comment",
+      params: [commentData],
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -85,9 +86,9 @@ export class Comment extends ClientBase {
       referenceModuleInitData: commentData.referenceModuleInitData,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.coreConnector.getProvider(),
+      wallet: this.dataverseConnector.getProvider(),
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.coreConnector.chain!.chainId,
+      chainId: this.dataverseConnector.chain!.chainId,
     });
 
     const commentWithSigData: CommentWithSigData = {
@@ -95,14 +96,11 @@ export class Comment extends ClientBase {
       sig,
     };
 
-    const res = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params: {
-        contractAddress: this.lensContractsAddress.LensHubProxy,
-        abi: LensHubJson.abi,
-        method: "commentWithSig",
-        params: [commentWithSigData],
-      },
+    const res = await this.walletProvider.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "commentWithSig",
+      params: [commentWithSigData],
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {

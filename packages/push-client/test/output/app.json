@@ -1,0 +1,127 @@
+{
+  "id": "371bddcd-2a92-4350-98d4-09809cfd92c4",
+  "createdAt": 1691388770,
+  "updatedAt": 1691388770,
+  "deletedAt": null,
+  "name": "push-client-demo",
+  "logo": "https://bafybeifozdhcbbfydy2rs6vbkbbtj3wc4vjlz5zg2cnqhb2g4rm2o5ldna.ipfs.w3s.link/dataverse.svg",
+  "website": [
+    "localhost"
+  ],
+  "defaultFolderName": "Main",
+  "description": "This is push client test demo.",
+  "models": [
+    {
+      "modelName": "pushchannel",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6cawa7aekv7lhhymlb6ujjb9sy8g4hevcbpjyefga7p14nzjn8ly",
+          "createdAt": 1691388770,
+          "schema": "type pushchannel  @createModel(accountRelation: LIST, description: \"pushchannel\") {    channel_owner: DID! @documentAccount    channel_id: Int    channel: String! @string(maxLength: 2000000)    ipfshash: CID!    name: String @string(maxLength: 2000000)    info: String @string(maxLength: 2000000)    url: String @string(maxLength: 2000000)    icon: String @string(maxLength: 2000000)    processed: Int    attempts: Int    alias_address: String @string(maxLength: 2000000)    alias_verification_event: String @string(maxLength: 2000000)    is_alias_verified: Int    alias_blockchain_id: String @string(maxLength: 2000000)    activation_status: Int    verified_status: Int    timestamp: DateTime    blocked: Int    counter: Int    subgraph_details: String @string(maxLength: 2000000)    subgraph_attempts: Int}",
+          "isPublicDomain": false,
+          "encryptable": [],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "pushchatmessage",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6c7dkwe24lgggo7gg7w0vsg75p57m29sq58bdi1kmz536gl2i9uh",
+          "createdAt": 1691388770,
+          "schema": "type pushchatmessage  @createModel(accountRelation: LIST, description: \"pushchatmessage\") {  keeper: DID! @documentAccount  from: DID! @accountReference  to: DID! @accountReference  from_CAIP10: String! @string(maxLength: 100)  to_CAIP10: String! @string(maxLength: 100)  from_DID: String! @string(maxLength: 100)  to_DID: String! @string(maxLength: 100)  message_Content: String! @string(maxLength: 300000000)  message_type: String! @string(maxLength: 100)  signature: String! @string(maxLength: 300000000)  timestamp: Int!  sig_type: String! @string(maxLength: 100)  enc_type: String! @string(maxLength: 100)  encrypted_secret: String! @string(maxLength: 300000000)  link: String @string(maxLength: 200000)  cid: String @string(maxLength: 200000)}",
+          "isPublicDomain": false,
+          "encryptable": [
+            "link",
+            "cid"
+          ],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "pushnotification",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6c7gdbvsg3jqa7bxva6mv38p3l3oralbj1kn2tfk8kqv7clya1fs",
+          "createdAt": 1691388770,
+          "schema": "type pushnotification  @createModel(accountRelation: LIST, description: \"pushnotification\") {    channel_owner: DID! @documentAccount    recipient: [DID]  @list(maxLength: 2000000)    channel: String! @string(maxLength: 2000000)    cta: String @string(maxLength: 2000000)    title: String @string(maxLength: 2000000)    message: String @string(maxLength: 300000000)    icon: String @string(maxLength: 2000000)    url: String @string(maxLength: 2000000)    sid: String @string(maxLength: 2000000)    app: String @string(maxLength: 2000000)    image: String @string(maxLength: 2000000)    blockchain: String @string(maxLength: 2000000)    notification_body: String! @string(maxLength: 300000000)    notification_title: String! @string(maxLength: 2000000)    secret: String @string(maxLength: 300000000)    createdAt: DateTime!}",
+          "isPublicDomain": false,
+          "encryptable": [],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "pushchatgpgkey",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6c9gw3xo2wlvybnfmwf5dxf3qzqic2dnc6sc1rmyp7n0ko7vykqa",
+          "createdAt": 1691388770,
+          "schema": "type pushchatgpgkey  @createModel(accountRelation: LIST, description: \"pushchatgpgkey\") {    owner: DID! @documentAccount    pgp_key: String! @string(maxLength: 300000000)  }",
+          "isPublicDomain": false,
+          "encryptable": [
+            "pgp_key"
+          ],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "contentFolders",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6cavjpocbux4oo3066u8g27dwlm7qw5fofcc4vrj82tgncs8cp5v",
+          "createdAt": 1691388770,
+          "schema": "type contentFolders @createModel(accountRelation: LIST, description: \"ContentFolder\") {\n  author: DID! @documentAccount\n  version: CommitID! @documentVersion\n  indexFolderId: String! @string(maxLength: 1000)\n  mirrors: String! @string(maxLength: 300000000)\n}",
+          "isPublicDomain": false,
+          "encryptable": [],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "indexFiles",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6c6v8s352a5afb5avsx4ldhs1qqy10x4helw8mrou2rxk50pzbye",
+          "createdAt": 1691388770,
+          "schema": "type indexFiles @createModel(accountRelation: LIST, description: \"IndexFile\") {\n  author: DID! @documentAccount\n  version: CommitID! @documentVersion\n  appVersion: String! @string(maxLength: 100)\n  contentId: String! @string(maxLength: 1000)\n  contentType: String! @string(maxLength: 100)\n  comment: String! @string(maxLength: 300000000)\n  relation: String @string(maxLength: 300000000)\n  additional: String @string(maxLength: 300000000)\n  datatokenId: String @string(maxLength: 1000)\n  fileType: Int!\n  encryptedSymmetricKey: String @string(maxLength: 300000000)\n  decryptionConditions: String @string(maxLength: 300000000)\n  decryptionConditionsType: String @string(maxLength: 100)\n  createdAt: DateTime!\n  updatedAt: DateTime!\n  deleted: Boolean\n}",
+          "isPublicDomain": false,
+          "encryptable": [],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "indexFolders",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6c6f8nq54xlruzjq9ue7oli9t5k642seo8f3cud997f0gqnl1apr",
+          "createdAt": 1691388770,
+          "schema": "type indexFolders @createModel(accountRelation: LIST, description: \"IndexFolder\") {\n  author: DID! @documentAccount\n  version: CommitID! @documentVersion\n  appVersion: String! @string(maxLength: 100)\n  folderType: Int!\n  contentFolderIds: [String!]! @list(minLength: 1, maxLength: 10000) @string(maxLength: 2000)\n  createdAt: DateTime!\n  updatedAt: DateTime!\n  options: String @string(maxLength: 300000000)\n  parentFolderId: String @string(maxLength: 1000)\n  childFolderIds: [String] @list(maxLength: 10000) @string(maxLength: 2000)\n  deleted: Boolean\n}",
+          "isPublicDomain": false,
+          "encryptable": [],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    }
+  ],
+  "address": "0x9e5c996af52cfc0C57E49Ef088B2c719BA97e1B7",
+  "ceramic": "https://testnet.dataverseceramicdaemon.com"
+}

@@ -1,31 +1,36 @@
 import {
-  CoreConnector,
+  DataverseConnector,
   StreamContent,
-  Methods,
-} from "@dataverse/core-connector";
+  SYSTEM_CALL,
+} from "@dataverse/dataverse-connector";
 import { Database, helpers, Validator } from "@tableland/sdk";
 import { ChainId, TablelandContract, TransferEventSig } from "./constant";
 import { Network } from "./types";
 import { BigNumberish, ethers } from "ethers";
 import { Checker } from "@dataverse/utils-toolkit";
+import { WalletProvider } from "@dataverse/wallet-provider";
 
 export class TablelandClient {
-  coreConnector: CoreConnector;
+  dataverseConnector: DataverseConnector;
+  walletProvider: WalletProvider;
   network: Network;
   modelId: string;
   private checker: Checker;
 
   constructor({
-    coreConnector,
+    dataverseConnector,
+    walletProvider,
     network,
     modelId,
   }: {
-    coreConnector: CoreConnector;
+    dataverseConnector: DataverseConnector;
+    walletProvider: WalletProvider;
     network: Network;
     modelId: string;
   }) {
-    this.coreConnector = coreConnector;
-    this.checker = new Checker(coreConnector);
+    this.dataverseConnector = dataverseConnector;
+    this.walletProvider = walletProvider;
+    this.checker = new Checker(dataverseConnector);
     this.network = network;
     this.modelId = modelId;
   }
@@ -37,7 +42,7 @@ export class TablelandClient {
   > {
     await this.checker.checkCapability();
 
-    const tableOwner = this.coreConnector.address!;
+    const tableOwner = this.dataverseConnector.address!;
     const chainId = ChainId[this.network];
     const createTableRegex = /CREATE TABLE (\w+) \((.+)\)/;
     const result = createTableRegex.exec(sql);
@@ -48,10 +53,7 @@ export class TablelandClient {
     const params = this._getCreateParams(tableOwner, statement);
     /* tablename, chainId, colums, */
     try {
-      const res = await this.coreConnector.runOS({
-        method: Methods.contractCall,
-        params,
-      });
+      const res = await this.walletProvider.contractCall(params);
       const tableId = await this.getTableIdByTxHash(res.transactionHash);
 
       const tableContent = {
@@ -86,13 +88,10 @@ export class TablelandClient {
   public async mutateTable(tId: string, sql: string) {
     this.checker.checkWallet();
 
-    const tableOwner = this.coreConnector.address!;
+    const tableOwner = this.dataverseConnector.address!;
 
     const params = this._getMutateParams(tableOwner, tId, sql);
-    const res = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params,
-    });
+    const res = await this.walletProvider.contractCall(params);
 
     return res;
   }
@@ -136,17 +135,14 @@ export class TablelandClient {
   async getTableIdByTxHash(transactionHash: string) {
     this.checker.checkWallet();
 
-    await this.coreConnector.runOS({
-      method: Methods.switchNetwork,
-      params: ChainId[this.network],
+    await this.walletProvider.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: ChainId[this.network] }],
     });
-    const res = await this.coreConnector.runOS({
-      method: Methods.ethereumRequest,
-      params: {
-        method: "eth_getTransactionReceipt",
-        params: [transactionHash],
-      },
-    });
+    const res = await this.walletProvider.request({
+      method: "eth_getTransactionReceipt",
+      params: [transactionHash],
+    })
     let tableId: string | undefined;
     res.logs.forEach((log: any) => {
       if (log.topics[0] == TransferEventSig) {
@@ -163,11 +159,12 @@ export class TablelandClient {
   }
 
   private async _loadTableStreams() {
-    const pkh = await this.coreConnector.runOS({
-      method: Methods.getCurrentPkh,
-    });
-    return await this.coreConnector.runOS({
-      method: Methods.loadStreamsBy,
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    return await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
       params: {
         modelId: this.modelId,
         pkh: pkh,
@@ -271,8 +268,8 @@ export class TablelandClient {
   }
 
   private async _persistTable(modelId: string, streamContent: StreamContent) {
-    await this.coreConnector.runOS({
-      method: Methods.createStream,
+    await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
       params: {
         modelId,
         streamContent,

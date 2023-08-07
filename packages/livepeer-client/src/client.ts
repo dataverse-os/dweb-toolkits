@@ -1,9 +1,9 @@
 import {
   DatatokenVars,
-  CoreConnector,
+  DataverseConnector,
   StreamContent,
-  Methods,
-} from "@dataverse/core-connector";
+  SYSTEM_CALL,
+} from "@dataverse/dataverse-connector";
 
 import {
   createReactClient,
@@ -23,15 +23,15 @@ export class LivepeerClient {
   public apiKey: string;
   public reactClient: ReactClient;
   public modelId: string;
-  public coreConnector: CoreConnector;
+  public dataverseConnector: DataverseConnector;
 
   constructor({
     apiKey,
-    coreConnector,
+    dataverseConnector,
     modelId,
   }: {
     apiKey: string;
-    coreConnector: CoreConnector;
+    dataverseConnector: DataverseConnector;
     modelId: string;
   }) {
     this.apiKey = apiKey;
@@ -39,8 +39,8 @@ export class LivepeerClient {
       provider: studioProvider({ apiKey }),
     });
     this.modelId = modelId;
-    this.coreConnector = coreConnector;
-    this.checker = new Checker(coreConnector);
+    this.dataverseConnector = dataverseConnector;
+    this.checker = new Checker(dataverseConnector);
 
     this.http = axios.create({
       baseURL: "https://livepeer.studio/api/asset/",
@@ -102,11 +102,12 @@ export class LivepeerClient {
 
   public async getVideoMetaList() {
     await this.checker.checkCapability();
-    const pkh = await this.coreConnector.runOS({
-      method: Methods.getCurrentPkh,
-    });
-    const streams = await this.coreConnector.runOS({
-      method: Methods.loadStreamsBy,
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
       params: {
         modelId: this.modelId,
         pkh: pkh,
@@ -142,8 +143,8 @@ export class LivepeerClient {
       });
     }
 
-    await this.coreConnector.runOS({
-      method: Methods.monetizeFile,
+    await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.monetizeFile,
       params: {
         streamId,
         datatokenVars,
@@ -153,8 +154,8 @@ export class LivepeerClient {
 
   private _persistAssetMeta(assetMeta: any) {
     const livepeerAsset: StreamContent = this._generateAssetMeta(assetMeta);
-    return this.coreConnector.runOS({
-      method: Methods.createStream,
+    return this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
       params: {
         modelId: this.modelId,
         streamContent: livepeerAsset,
@@ -198,8 +199,8 @@ export class LivepeerClient {
       }
     });
 
-    this.coreConnector.runOS({
-      method: Methods.removeFiles,
+    this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.removeFiles,
       params: {
         indexFileIds: [...streamToDelete],
       },
@@ -207,7 +208,7 @@ export class LivepeerClient {
 
     // the remaining of videoMap should be not exist in folder, so add it
     videosMap.forEach((value: Video, _: string) => {
-      this._persistAssetMeta(value).catch((_: Error) => {});
+      this._persistAssetMeta(value).catch((_: Error) => { });
     });
   }
 
@@ -218,10 +219,7 @@ export class LivepeerClient {
     address: string;
     lensNickName?: string;
   }) {
-    const lensProfiles = await this.coreConnector.runOS({
-      method: Methods.getProfiles,
-      params: address,
-    });
+    const lensProfiles = await this.dataverseConnector.getProfiles(address);
 
     let profileId;
     if (lensProfiles?.[0]?.id) {
@@ -233,10 +231,7 @@ export class LivepeerClient {
       if (!/^[\da-z]{5,26}$/.test(lensNickName) || lensNickName.length > 26) {
         throw "Only supports lower case characters, numbers, must be minimum of 5 length and maximum of 26 length";
       }
-      profileId = await this.coreConnector.runOS({
-        method: Methods.createProfile,
-        params: lensNickName,
-      });
+      profileId = await this.dataverseConnector.createProfile(lensNickName);
     }
     return profileId;
   }

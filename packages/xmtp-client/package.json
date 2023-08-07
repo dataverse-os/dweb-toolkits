@@ -18,7 +18,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@dataverse/core-connector": "latest",
+    "@dataverse/dataverse-connector": "latest",
     "@dataverse/utils-toolkit": "^1.0.24",
     "@ethersproject/abstract-provider": "^5.7.0",
     "@ethersproject/abstract-signer": "^5.7.0",

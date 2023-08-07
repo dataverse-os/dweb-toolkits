@@ -1,21 +1,21 @@
-import { CoreConnector, Methods } from "@dataverse/core-connector";
+import { DataverseConnector, SYSTEM_CALL } from "@dataverse/dataverse-connector";
 
 export class Checker {
-  private coreConnector: CoreConnector;
+  private dataverseConnector: DataverseConnector;
 
-  constructor(coreConnector: CoreConnector) {
-    this.coreConnector = coreConnector;
+  constructor(dataverseConnector: DataverseConnector) {
+    this.dataverseConnector = dataverseConnector;
   }
 
   public checkWallet() {
-    if (!this.coreConnector.address) {
+    if (!this.dataverseConnector.address) {
       throw new Error("Need to connect wallet");
     }
   }
 
   public async checkCapability() {
-    const hasCapability = await this.coreConnector.runOS({
-      method: Methods.checkCapability,
+    const hasCapability = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.checkCapability,
     });
     if (!hasCapability) {
       throw new Error("Need to create capability");

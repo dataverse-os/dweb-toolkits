@@ -1,10 +1,9 @@
 export const config = {
-  slug: "", // app id, need to match this regular: `^[a-zA-Z][a-zA-Z0-9_]*$`
-  name: "", // app name should NOT contain "-"
-  logo: "",
-  website: "", // you can use localhost:(port) for testing
-  defaultFolderName: "Untitled",
-  description: "",
+  name: "xmtp-client-demo", 
+  logo: "https://bafybeifozdhcbbfydy2rs6vbkbbtj3wc4vjlz5zg2cnqhb2g4rm2o5ldna.ipfs.w3s.link/dataverse.svg",
+  website: ["localhost:5173"], // you can use localhost:(port) for testing
+  defaultFolderName: "Main",
+  description: "This is xmtp client test demo.",
   models: [
     {
       isPublicDomain: false, // default

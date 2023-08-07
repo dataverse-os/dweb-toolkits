@@ -5,14 +5,14 @@ import { useContext, useMemo, useState } from "react";
 import { LivepeerConfig } from "@livepeer/react";
 import {
   Currency,
-  WALLET,
   StreamContent,
-  Methods,
-} from "@dataverse/core-connector";
+  SYSTEM_CALL,
+} from "@dataverse/dataverse-connector";
 import { Context } from "./main";
 
 const App = () => {
-  const { coreConnector } = useContext(Context);
+  console.log('App loaded');
+  const { dataverseConnector } = useContext(Context);
   const livepeerClient = useMemo(() => {
     console.log(
       "VITE_LIVEPEER_API_KEY:",
@@ -23,7 +23,7 @@ const App = () => {
 
     return new LivepeerClient({
       apiKey: import.meta.env.VITE_LIVEPEER_API_KEY!,
-      coreConnector: coreConnector,
+      dataverseConnector: dataverseConnector,
       modelId: import.meta.env.VITE_MODEL_ID,
     });
   }, []);
@@ -50,15 +50,14 @@ const App = () => {
   };
 
   const createCapability = async () => {
-    const { address, wallet } =
-      await livepeerClient.coreConnector.connectWallet(WALLET.METAMASK);
+    const { address } =
+      await livepeerClient.dataverseConnector.connectWallet();
     console.log({ address });
     setAddress(address);
-    await livepeerClient.coreConnector.runOS({
-      method: Methods.createCapability,
+    await livepeerClient.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createCapability,
       params: {
-        wallet,
-        app: import.meta.env.VITE_APP_NAME,
+        appId: import.meta.env.VITE_LIVEPEER_API_KEY
       },
     });
     console.log("connected");
@@ -89,8 +88,8 @@ const App = () => {
   };
 
   const unlockVideo = async () => {
-    const content = await livepeerClient.coreConnector.runOS({
-      method: Methods.unlock,
+    const content = await livepeerClient.dataverseConnector.runOS({
+      method: SYSTEM_CALL.unlock,
       params: {
         indexFileId: streamContent?.file.indexFileId,
       },
@@ -100,7 +99,7 @@ const App = () => {
   //
   // const testDeleteStream = async () => {
   //   const indexFileId = "kjzl6kcym7w8y9i60b8nori6snffasvc0zwiegtgeh7gt2nifwcqox3xg2t90o2";
-  //   const res =  await livepeerClient.coreConnector.removeFiles({indexFileIds: [indexFileId]});
+  //   const res =  await livepeerClient.dataverseConnector.removeFiles({indexFileIds: [indexFileId]});
   //   console.log("delete res: ", res);
   // }
 

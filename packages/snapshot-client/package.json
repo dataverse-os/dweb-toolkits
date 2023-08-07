@@ -18,8 +18,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@dataverse/core-connector": "latest",
-    "@dataverse/utils-toolkit": "^1.0.24",
+    "@dataverse/dataverse-connector": "latest",
+    "@dataverse/utils-toolkit": "workspace:*",
     "@snapshot-labs/snapshot.js": "^0.4.100",
     "graphql": "16.6.0",
     "graphql-request": "^6.1.0",

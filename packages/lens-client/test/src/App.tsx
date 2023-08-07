@@ -1,6 +1,6 @@
 import "./App.scss";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { Currency, Methods, WALLET } from "@dataverse/core-connector";
+import { Currency, SYSTEM_CALL, WALLET } from "@dataverse/dataverse-connector";
 import { Context } from "./main";
 import Client, {
   CommentData,
@@ -13,14 +13,15 @@ import { getCurrencyAddress } from "./utils";
 import { ethers } from "ethers";
 
 const App = () => {
-  const { coreConnector, modelParser } = useContext(Context);
+  const { dataverseConnector, walletProvider, modelParser } = useContext(Context);
   const lensClient = useMemo(() => {
     return new Client({
       modelIds: {
         [ModelType.Publication]: modelParser.getModelByName("lenspublication").streams[0].modelId,
         [ModelType.Collection]: modelParser.getModelByName("lenscollection").streams[0].modelId,
       },
-      coreConnector: coreConnector,
+      dataverseConnector: dataverseConnector,
+      walletProvider: walletProvider,
       network: LensNetwork.SandboxMumbaiTestnet,
     });
   }, [modelParser]);
@@ -73,16 +74,15 @@ const App = () => {
   }, [profiles]);
 
   const connectIdentity = async () => {
-    const { address, wallet } = await lensClient.coreConnector.connectWallet(
-      WALLET.METAMASK
-    );
+    const { address, wallet } = await lensClient.dataverseConnector.connectWallet({
+      wallet: WALLET.METAMASK,
+    });
     console.log("address:", address);
     setAccount(address);
-    const did = await lensClient.coreConnector.runOS({
-      method: Methods.createCapability,
+    const did = await lensClient.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createCapability,
       params: {
-        wallet,
-        app: modelParser.appName,
+        appId: modelParser.appId,
       },
     });
     setDid(did);
@@ -303,7 +303,7 @@ const App = () => {
     ) as any;
     const modelId =
       modelParser.getModelByName("post").streams[0].modelId;
-      console.log(modelId)
+    console.log(modelId)
     const stream = {
       appVersion: "1.2.1",
       text: "hello world!",

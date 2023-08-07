@@ -1,4 +1,4 @@
-import { CoreConnector, Methods } from "@dataverse/core-connector";
+import { DataverseConnector } from "@dataverse/dataverse-connector";
 import { BigNumberish, ethers, Wallet } from "ethers";
 import { MAX_UINT256, EVENT_SIG_MIRROR_CREATED } from "../constants";
 import {
@@ -11,20 +11,24 @@ import {
 } from "../types";
 import LensHubJson from "../../contracts/LensHub.json";
 import { ClientBase } from "./base";
+import { WalletProvider } from "@dataverse/wallet-provider";
 
 export class Mirror extends ClientBase {
   constructor({
     modelIds,
-    coreConnector,
+    dataverseConnector,
+    walletProvider,
     network,
   }: {
     modelIds: ModelIds;
-    coreConnector: CoreConnector;
+    dataverseConnector: DataverseConnector;
+    walletProvider: WalletProvider;
     network: LensNetwork;
   }) {
     super({
       modelIds,
-      coreConnector,
+      dataverseConnector,
+      walletProvider,
       network,
     });
   }
@@ -38,14 +42,11 @@ export class Mirror extends ClientBase {
   }) {
     this.checker.checkWallet();
 
-    const referenceModule = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params: {
-        contractAddress: this.lensContractsAddress.LensHubProxy,
-        abi: LensHubJson.abi,
-        method: "getReferenceModule",
-        params: [profileId, pubId],
-      },
+    const referenceModule = await this.walletProvider.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "getReferenceModule",
+      params: [profileId, pubId],
     });
 
     return referenceModule as string;
@@ -54,14 +55,11 @@ export class Mirror extends ClientBase {
   public async isReferenceModuleWhitelisted(referenceModule: string) {
     this.checker.checkWallet();
 
-    const isWhitelisted = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params: {
-        contractAddress: this.lensContractsAddress.LensHubProxy,
-        abi: LensHubJson.abi,
-        method: "isReferenceModuleWhitelisted",
-        params: [referenceModule],
-      },
+    const isWhitelisted = await this.walletProvider.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "isReferenceModuleWhitelisted",
+      params: [referenceModule],
     });
 
     return isWhitelisted;
@@ -70,14 +68,11 @@ export class Mirror extends ClientBase {
   public async mirror(mirrorData: MirrorData) {
     await this.checker.checkCapability();
 
-    const res = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params: {
-        contractAddress: this.lensContractsAddress.LensHubProxy,
-        abi: LensHubJson.abi,
-        method: "mirror",
-        params: [mirrorData],
-      },
+    const res = await this.walletProvider.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "mirror",
+      params: [mirrorData],
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -117,9 +112,9 @@ export class Mirror extends ClientBase {
       referenceModuleInitData: mirrorData.referenceModuleInitData,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.coreConnector.getProvider(),
+      wallet: this.dataverseConnector.getProvider(),
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.coreConnector.chain!.chainId,
+      chainId: this.dataverseConnector.chain!.chainId,
     });
 
     const mirrorWithSigData: MirrorWithSigData = {
@@ -127,14 +122,11 @@ export class Mirror extends ClientBase {
       sig,
     };
 
-    const res = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params: {
-        contractAddress: this.lensContractsAddress.LensHubProxy,
-        abi: LensHubJson.abi,
-        method: "mirrorWithSig",
-        params: [mirrorWithSigData],
-      },
+    const res = await this.walletProvider.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "mirrorWithSig",
+      params: [mirrorWithSigData],
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {

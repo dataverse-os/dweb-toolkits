@@ -1,24 +1,24 @@
 {
-  "id": "ec97e9d9-db49-4761-87fd-1c49b3c35e01",
-  "createdAt": 1691382320,
-  "updatedAt": 1691382320,
+  "id": "429d050f-a921-4857-91db-aeeea7dc1a8e",
+  "createdAt": 1691390419,
+  "updatedAt": 1691390419,
   "deletedAt": null,
-  "name": "lens-toolkit-demo",
+  "name": "snapshot-client-demo",
   "logo": "https://bafybeifozdhcbbfydy2rs6vbkbbtj3wc4vjlz5zg2cnqhb2g4rm2o5ldna.ipfs.w3s.link/dataverse.svg",
   "website": [
     "localhost"
   ],
   "defaultFolderName": "Main",
-  "description": "This is lens toolkit test demo.",
+  "description": "This is snapshot client test demo.",
   "models": [
     {
-      "modelName": "lenspublication",
+      "modelName": "proposal",
       "internal": false,
       "streams": [
         {
-          "modelId": "kjzl6hvfrbw6c5571uwhzg197t2xcq5op4hanap49cxh0ufgfwylzf8uwuy6jev",
-          "createdAt": 1691382320,
-          "schema": "type lenspublication @createModel(accountRelation: LIST, description: \"lenspublication\") {  owner: DID! @documentAccount  publication_type: String! @string(maxLength: 100)  profile_id: String! @string(maxLength: 100)  pub_id: String! @string(maxLength: 100)  model_id: String @string(maxLength: 100)  profile_id_pointed: String @string(maxLength: 100)  pub_id_pointed: String @string(maxLength: 100)  content_uri: String @string(maxLength: 10000)  collect_module: String @string(maxLength: 100)  reference_module: String! @string(maxLength: 100)  created_at: Int!}",
+          "modelId": "kjzl6hvfrbw6c88kaeytrnwixvoqzculva0m5bxdqlx3vgz2kndufoeapf8fub3",
+          "createdAt": 1691390419,
+          "schema": "type proposal  @createModel(accountRelation: LIST, description: \"snapshot proposal\") {    author: DID! @documentAccount    proposal_id: String!  @string(maxLength: 66)    ipfs: CID!    title: String!  @string(maxLength: 128)    body: String!  @string(maxLength: 14400)    type: String  @string(maxLength: 128)    choices: String! @string(maxLength: 2000000)    start: Int    end: Int    snapshot: String! @string(maxLength: 128)    space: String! @string(maxLength: 12000)    relayer_address: String! @string(maxLength: 42)    relayer_receipt: String! @string(maxLength: 12000)    created_at: Int    app: String! @string(maxLength: 2000000)}",
           "isPublicDomain": false,
           "encryptable": [],
           "version": 0,
@@ -27,13 +27,13 @@
       ]
     },
     {
-      "modelName": "lenscollection",
+      "modelName": "vote",
       "internal": false,
       "streams": [
         {
-          "modelId": "kjzl6hvfrbw6c6eat1qkgt0un4m2ddqjdk4st7ywd9zvd7z0z7f8yrmd5r6sji5",
-          "createdAt": 1691382320,
-          "schema": "type lenscollection  @createModel(accountRelation: LIST, description: \"lenscollection\") {  owner: DID! @documentAccount  profile_id: String! @string(maxLength: 100)  pub_id: String! @string(maxLength: 100)  model_id: String! @string(maxLength: 100)  stream_id: String! @string(maxLength: 100)  collector: String! @string(maxLength: 100)  currency: String! @string(maxLength: 100)  amount: String! @string(maxLength: 100)  collect_limit: String! @string(maxLength: 100)  collect_nft: String! @string(maxLength: 100)  collected_at: Int!}",
+          "modelId": "kjzl6hvfrbw6c5vostutylwe82yroe4kmo0rxbyhp8cdwch1blh2luy6pyvth0b",
+          "createdAt": 1691390419,
+          "schema": "type vote  @createModel(accountRelation: LIST, description: \"snapshot vote\") {    voter: DID! @documentAccount    vote_id: String!  @string(maxLength: 66)    proposal_id: String!  @string(maxLength: 66)    ipfs: CID!    space: String! @string(maxLength: 12000)    type: String  @string(maxLength: 2000)    reason: String! @string(maxLength: 2000000)    relayer_address: String! @string(maxLength: 42)    relayer_receipt: String! @string(maxLength: 12000)    app: String! @string(maxLength: 2000000)    created_at: Int}",
           "isPublicDomain": false,
           "encryptable": [],
           "version": 0,
@@ -46,8 +46,8 @@
       "internal": false,
       "streams": [
         {
-          "modelId": "kjzl6hvfrbw6c5brxjxcqx6ys97prus6ks05ehkam6cxb9wcdhhoj3o0iybi70r",
-          "createdAt": 1691382320,
+          "modelId": "kjzl6hvfrbw6c9n3vp7nxs6zm07ufixfu51e9jdod9u72sv3jziu6n2k79s7u8l",
+          "createdAt": 1691390419,
           "schema": "type contentFolders @createModel(accountRelation: LIST, description: \"ContentFolder\") {\n  author: DID! @documentAccount\n  version: CommitID! @documentVersion\n  indexFolderId: String! @string(maxLength: 1000)\n  mirrors: String! @string(maxLength: 300000000)\n}",
           "isPublicDomain": false,
           "encryptable": [],
@@ -61,8 +61,8 @@
       "internal": false,
       "streams": [
         {
-          "modelId": "kjzl6hvfrbw6c5igk6ddrda5uhqf7k4imx0x5w7cdiy4ra34nw8vnomrg1fguqi",
-          "createdAt": 1691382320,
+          "modelId": "kjzl6hvfrbw6c84rnxss3qqwumrv1i84k35rv7qjg215gz93yri58spaf2tg185",
+          "createdAt": 1691390419,
           "schema": "type indexFiles @createModel(accountRelation: LIST, description: \"IndexFile\") {\n  author: DID! @documentAccount\n  version: CommitID! @documentVersion\n  appVersion: String! @string(maxLength: 100)\n  contentId: String! @string(maxLength: 1000)\n  contentType: String! @string(maxLength: 100)\n  comment: String! @string(maxLength: 300000000)\n  relation: String @string(maxLength: 300000000)\n  additional: String @string(maxLength: 300000000)\n  datatokenId: String @string(maxLength: 1000)\n  fileType: Int!\n  encryptedSymmetricKey: String @string(maxLength: 300000000)\n  decryptionConditions: String @string(maxLength: 300000000)\n  decryptionConditionsType: String @string(maxLength: 100)\n  createdAt: DateTime!\n  updatedAt: DateTime!\n  deleted: Boolean\n}",
           "isPublicDomain": false,
           "encryptable": [],
@@ -76,8 +76,8 @@
       "internal": false,
       "streams": [
         {
-          "modelId": "kjzl6hvfrbw6c8re41ubzstwzfuqrockx65myk5crp2484f1fg2s04i1kry2hue",
-          "createdAt": 1691382320,
+          "modelId": "kjzl6hvfrbw6ca4j6ce2qyvazqd15sjm3h83miuzwxj9h2342rxcystlsxi4r4c",
+          "createdAt": 1691390419,
           "schema": "type indexFolders @createModel(accountRelation: LIST, description: \"IndexFolder\") {\n  author: DID! @documentAccount\n  version: CommitID! @documentVersion\n  appVersion: String! @string(maxLength: 100)\n  folderType: Int!\n  contentFolderIds: [String!]! @list(minLength: 1, maxLength: 10000) @string(maxLength: 2000)\n  createdAt: DateTime!\n  updatedAt: DateTime!\n  options: String @string(maxLength: 300000000)\n  parentFolderId: String @string(maxLength: 1000)\n  childFolderIds: [String] @list(maxLength: 10000) @string(maxLength: 2000)\n  deleted: Boolean\n}",
           "isPublicDomain": false,
           "encryptable": [],
@@ -87,6 +87,6 @@
       ]
     }
   ],
-  "address": "0xF4B6Cb5116b0FbDB4d42e3aAA831C76261ebaE44",
+  "address": "0x9e5c996af52cfc0C57E49Ef088B2c719BA97e1B7",
   "ceramic": "https://testnet.dataverseceramicdaemon.com"
 }

@@ -1,6 +1,6 @@
 import "./App.scss";
 import { useContext, useState } from "react";
-import { Methods, WALLET } from "@dataverse/core-connector";
+import { SYSTEM_CALL } from "@dataverse/dataverse-connector";
 import {
   SnapshotClient,
   ModelType,
@@ -10,13 +10,12 @@ import {
   GetActionParams,
   GetProposalsParams,
   SNAP_SHOT_HUB,
-  now,
 } from "@dataverse/snapshot-client-toolkit";
 import { Context } from "./main";
 import { proposal_template, vote_template } from "./params";
 
 const App = () => {
-  const { coreConnector } = useContext(Context);
+  const { dataverseConnector, modelParser } = useContext(Context);
   const [address, setAddress] = useState<string>();
   const [proposalId, setProposalId] = useState<string>();
   const [spaceId, setSpaceId] = useState<string>();
@@ -27,22 +26,19 @@ const App = () => {
     [ModelType.VOTE]: import.meta.env.VITE_VOTE_MODEL_ID,
   };
   const snapshotClient = new SnapshotClient({
-    coreConnector,
+    dataverseConnector,
     modelIds,
     env: SNAP_SHOT_HUB.dev,
   });
 
   const createCapability = async () => {
-    const { address, wallet } = await coreConnector.connectWallet(
-      WALLET.METAMASK
-    );
+    const { address } = await dataverseConnector.connectWallet();
     console.log({ address });
     setAddress(address);
-    await coreConnector.runOS({
-      method: Methods.createCapability,
+    await dataverseConnector.runOS({
+      method: SYSTEM_CALL.createCapability,
       params: {
-        wallet,
-        app: import.meta.env.VITE_APP_NAME,
+        appId: modelParser.appId
       },
     });
     console.log("connected");
@@ -56,7 +52,7 @@ const App = () => {
     const proposal = proposal_template;
     proposal.space = spaceId as string;
     const res = await snapshotClient.createProposal(proposal);
-    setProposalId(res.id);
+    setProposalId(res?.id);
     console.log("[createProposal]res: ", res);
   };
 

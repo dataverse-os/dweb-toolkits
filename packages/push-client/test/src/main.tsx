@@ -3,21 +3,25 @@ import ReactDOM from 'react-dom/client';
 import './index.scss';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { Extension, CoreConnector } from '@dataverse/core-connector';
+import { DataverseConnector } from '@dataverse/dataverse-connector';
+import app from '../output/app.json';
+import { ModelParser, Output } from '@dataverse/model-parser';
 
 interface Context {
-  coreConnector: CoreConnector;
+  dataverseConnector: DataverseConnector;
+  modelParser: ModelParser;
 }
 
 export const Context = createContext<Context>({} as Context);
-const coreConnector = new CoreConnector(Extension);
+const dataverseConnector = new DataverseConnector();
+const modelParser = new ModelParser(app as Output);
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <Context.Provider value={{ coreConnector }}>
+    <Context.Provider value={{ dataverseConnector, modelParser }}>
       <App />
     </Context.Provider>
   </React.StrictMode>

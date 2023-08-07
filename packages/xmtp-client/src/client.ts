@@ -1,8 +1,8 @@
 import {
-  CoreConnector,
-  Methods,
+  DataverseConnector,
+  SYSTEM_CALL,
   StreamContent,
-} from "@dataverse/core-connector";
+} from "@dataverse/dataverse-connector";
 import { StreamHelper } from "@dataverse/utils-toolkit";
 import { ModelIds, XmtpEnv } from "./types";
 import {
@@ -24,7 +24,7 @@ import {
 import { Checker } from "@dataverse/utils-toolkit";
 
 export class XmtpClient {
-  public coreConnector: CoreConnector;
+  public dataverseConnector: DataverseConnector;
   public modelIds: ModelIds;
   public env: XmtpEnv;
   public xmtp?: Client;
@@ -32,18 +32,18 @@ export class XmtpClient {
   private checker: Checker;
 
   constructor({
-    coreConnector,
+    dataverseConnector,
     modelIds,
     env,
   }: {
-    coreConnector: CoreConnector;
+    dataverseConnector: DataverseConnector;
     modelIds: ModelIds;
     env: XmtpEnv;
   }) {
-    this.coreConnector = coreConnector;
+    this.dataverseConnector = dataverseConnector;
     this.modelIds = modelIds;
     this.env = env;
-    this.checker = new Checker(coreConnector);
+    this.checker = new Checker(dataverseConnector);
     this.codecs = [new AttachmentCodec(), new RemoteAttachmentCodec()];
   }
 
@@ -140,11 +140,12 @@ export class XmtpClient {
   async getPersistedMessages() {
     await this.checker.checkCapability();
 
-    const pkh = await this.coreConnector.runOS({
-      method: Methods.getCurrentPkh,
-    });
-    const streams = await this.coreConnector.runOS({
-      method: Methods.loadStreamsBy,
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
       params: { modelId: this.modelIds.message, pkh: pkh },
     });
     const messages = [];
@@ -206,7 +207,7 @@ export class XmtpClient {
       const keys = await this._unlockKeys(value);
       return stringToUint8Array(keys);
     }
-    const keys = await Client.getKeys(this.coreConnector.getProvider(), {
+    const keys = await Client.getKeys(this.dataverseConnector.getProvider(), {
       env: this.env,
     });
     await this._persistKeys(keys);
@@ -218,8 +219,8 @@ export class XmtpClient {
       if (Object.prototype.hasOwnProperty.call(value, key)) {
         const indexFileId = value[key].streamContent.file?.indexFileId;
         if (indexFileId) {
-          const unlocked = await this.coreConnector.runOS({
-            method: Methods.unlock,
+          const unlocked = await this.dataverseConnector.runOS({
+            method: SYSTEM_CALL.unlock,
             params: { indexFileId },
           });
           const streamContent = unlocked.streamContent.content as {
@@ -252,18 +253,19 @@ export class XmtpClient {
       encrypted: encrypted,
     };
 
-    await this.coreConnector.runOS({
-      method: Methods.createStream,
+    await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
       params: { modelId: this.modelIds.message, streamContent: streamContent },
     });
   }
 
   private async _persistMessages(msgList: DecodedMessage[]) {
-    const pkh = await this.coreConnector.runOS({
-      method: Methods.getCurrentPkh,
-    });
-    const streams = await this.coreConnector.runOS({
-      method: Methods.loadStreamsBy,
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
       params: { modelId: this.modelIds.message, pkh: pkh },
     });
 
@@ -296,8 +298,8 @@ export class XmtpClient {
       keys: keysStr,
       encrypted: encrypted,
     };
-    await this.coreConnector.runOS({
-      method: Methods.createStream,
+    await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
       params: {
         modelId: this.modelIds.keys_cache,
         streamContent: streamContent,
@@ -306,11 +308,12 @@ export class XmtpClient {
   }
 
   private async _checkCache(modelId: string) {
-    const pkh = await this.coreConnector.runOS({
-      method: Methods.getCurrentPkh,
-    });
-    const stream = await this.coreConnector.runOS({
-      method: Methods.loadStreamsBy,
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const stream = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
       params: {
         modelId: modelId,
         pkh: pkh,

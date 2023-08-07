@@ -15,14 +15,17 @@ import Client, {
 import {
   Extension,
   RESOURCE,
-  CoreConnector,
+  DataverseConnector,
   StreamContent,
   WALLET,
-  Methods,
-} from "@dataverse/core-connector";
+  SYSTEM_CALL,
+} from "@dataverse/dataverse-connector";
 import Upload, { web3Storage } from "./web3-storage/web3-storage";
+import { ModelParser, Output } from "@dataverse/model-parser";
+import app from "../output/app.json";
 
-const coreConnector = new CoreConnector(Extension);
+const dataverseConnector = new DataverseConnector();
+const modelParser = new ModelParser(app as Output);
 
 function App() {
   const msgReceiver = useMemo(() => {
@@ -30,7 +33,7 @@ function App() {
   }, []);
   const xmtpClient = useMemo(() => {
     return new Client({
-      coreConnector,
+      dataverseConnector,
       modelIds: {
         [ModelType.MESSAGE]: import.meta.env.VITE_MESSAGE_MODEL_ID,
         [ModelType.KEYS_CACHE]: import.meta.env.VITE_KEY_CACHE_MODEL_ID,
@@ -49,9 +52,7 @@ function App() {
 
   const connectWallet = async () => {
     try {
-      const { address } = await xmtpClient.coreConnector.connectWallet(
-        WALLET.METAMASK
-      );
+      const { address } = await xmtpClient.dataverseConnector.connectWallet();
       setAddress(address);
     } catch (error) {
       console.error(error);
@@ -61,12 +62,11 @@ function App() {
   const createCapability = async () => {
     const app = import.meta.env.VITE_APP_NAME;
     console.log("app: ", app);
-    const pkh = await xmtpClient.coreConnector.runOS({
-      method: Methods.createCapability,
+    const pkh = await xmtpClient.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createCapability,
       params: {
-        app,
+        appId: modelParser.appId,
         resource: RESOURCE.CERAMIC,
-        wallet: WALLET.METAMASK,
       },
     });
     setPkh(pkh);
@@ -75,8 +75,8 @@ function App() {
   };
 
   const checkCapability = async () => {
-    const isCurrentPkhValid = await xmtpClient.coreConnector.runOS({
-      method: Methods.checkCapability,
+    const isCurrentPkhValid = await xmtpClient.dataverseConnector.runOS({
+      method: SYSTEM_CALL.checkCapability,
     });
     console.log(isCurrentPkhValid);
     setIsCurrentPkhValid(isCurrentPkhValid);
@@ -195,8 +195,8 @@ function App() {
       encrypted: encrypted,
     };
 
-    const res = await xmtpClient.coreConnector.runOS({
-      method: Methods.createStream,
+    const res = await xmtpClient.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
       params: {
         modelId: import.meta.env.VITE_MESSAGE_MODEL_ID,
         streamContent: streamContent,
@@ -272,8 +272,8 @@ function App() {
 
   const unlockMessage = async () => {
     console.log("msgStream: ", msgStream);
-    const res = await coreConnector.runOS({
-      method: Methods.unlock,
+    const res = await dataverseConnector.runOS({
+      method: SYSTEM_CALL.unlock,
       params: {
         indexFileId: msgStream!.file.indexFileId,
       },

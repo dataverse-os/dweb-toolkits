@@ -1,5 +1,5 @@
-import { Methods, WALLET } from "@dataverse/core-connector";
-import React, { useContext, useMemo, useState } from "react";
+import { SYSTEM_CALL } from "@dataverse/dataverse-connector";
+import { useContext, useMemo, useState } from "react";
 import { Context } from "./main";
 import "./App.scss";
 import {
@@ -18,17 +18,17 @@ const modelIds = {
 };
 
 const App = () => {
-  const { coreConnector } = useContext(Context);
+  const { dataverseConnector, modelParser } = useContext(Context);
   const pushNotificationClient = useMemo(() => {
     return new PushNotificationClient({
-      coreConnector,
+      dataverseConnector,
       modelIds: modelIds,
       env: ENV.STAGING,
     });
   }, []);
   const pushChatClient = useMemo(() => {
     return new PushChatClient({
-      coreConnector,
+      dataverseConnector,
       modelIds: modelIds,
       env: ENV.STAGING,
     });
@@ -57,17 +57,14 @@ const App = () => {
   const [chatterForHistory, setChatterForHistory] = useState<string>();
 
   const connectIdentity = async () => {
-    const { address, wallet } = await coreConnector.connectWallet(
-      WALLET.METAMASK
-    );
+    const { address } = await dataverseConnector.connectWallet();
     setAccount(address);
     console.log("address:", address);
 
-    const did = await coreConnector.runOS({
-      method: Methods.createCapability,
+    const did = await dataverseConnector.runOS({
+      method: SYSTEM_CALL.createCapability,
       params: {
-        app: import.meta.env.VITE_APP_NAME,
-        wallet,
+        appId: modelParser.appId,
       },
     });
     setDid(did);

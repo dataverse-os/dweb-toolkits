@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dataverse/model-parser": "latest",
     "@dataverse/xmtp-client-toolkit": "workspace:*",
     "@xmtp/xmtp-js": "^7.10.0",
     "buffer": "^6.0.3",

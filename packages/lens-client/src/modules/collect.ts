@@ -1,4 +1,4 @@
-import { FileType, CoreConnector, Methods } from "@dataverse/core-connector";
+import { FileType, DataverseConnector, SYSTEM_CALL } from "@dataverse/dataverse-connector";
 import { BigNumber, BigNumberish, ethers, Wallet } from "ethers";
 import { EVENT_SIG_COLLECTED, MAX_UINT256 } from "../constants";
 import {
@@ -16,20 +16,24 @@ import LimitedFeeCollectModuleJson from "../../contracts/modules/collect/Limited
 import LimitedTimedFeeCollectModuleJson from "../../contracts/modules/collect/LimitedTimedFeeCollectModule.json";
 import TimedFeeCollectModuleJson from "../../contracts/modules/collect/TimedFeeCollectModule.json";
 import { ClientBase } from "./base";
+import { WalletProvider } from "@dataverse/wallet-provider";
 
 export class Collect extends ClientBase {
   constructor({
     modelIds,
-    coreConnector,
+    dataverseConnector,
+    walletProvider,
     network,
   }: {
     modelIds: ModelIds;
-    coreConnector: CoreConnector;
+    dataverseConnector: DataverseConnector;
+    walletProvider: WalletProvider;
     network: LensNetwork;
   }) {
     super({
       modelIds,
-      coreConnector,
+      dataverseConnector,
+      walletProvider,
       network,
     });
   }
@@ -43,14 +47,11 @@ export class Collect extends ClientBase {
   }) {
     this.checker.checkWallet();
 
-    const collectNFT = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params: {
-        contractAddress: this.lensContractsAddress.LensHubProxy,
-        abi: LensHubJson.abi,
-        method: "getCollectNFT",
-        params: [profileId, pubId],
-      },
+    const collectNFT = await this.walletProvider.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "getCollectNFT",
+      params: [profileId, pubId],
     });
 
     return collectNFT;
@@ -65,14 +66,11 @@ export class Collect extends ClientBase {
   }) {
     this.checker.checkWallet();
 
-    const collectModule = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params: {
-        contractAddress: this.lensContractsAddress.LensHubProxy,
-        abi: LensHubJson.abi,
-        method: "getCollectModule",
-        params: [profileId, pubId],
-      },
+    const collectModule = await this.walletProvider.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "getCollectModule",
+      params: [profileId, pubId],
     });
 
     return collectModule as string;
@@ -81,14 +79,11 @@ export class Collect extends ClientBase {
   public async isCollectModuleWhitelisted(collectModule: string) {
     this.checker.checkWallet();
 
-    const isWhitelisted = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params: {
-        contractAddress: this.lensContractsAddress.LensHubProxy,
-        abi: LensHubJson.abi,
-        method: "isCollectModuleWhitelisted",
-        params: [collectModule],
-      },
+    const isWhitelisted = await this.walletProvider.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "isCollectModuleWhitelisted",
+      params: [collectModule],
     });
 
     return isWhitelisted;
@@ -103,14 +98,11 @@ export class Collect extends ClientBase {
   }) {
     this.checker.checkWallet();
 
-    const balance = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params: {
-        contractAddress: collectNFT,
-        abi: CollectNFTJson.abi,
-        method: "balanceOf",
-        params: [collector],
-      },
+    const balance = await this.walletProvider.contractCall({
+      contractAddress: collectNFT,
+      abi: CollectNFTJson.abi,
+      method: "balanceOf",
+      params: [collector],
     });
 
     return BigNumber.from(balance).gt(0);
@@ -125,8 +117,8 @@ export class Collect extends ClientBase {
   }) {
     await this.checker.checkCapability();
 
-    const { modelId, streamContent } = await this.coreConnector.runOS({
-      method: Methods.loadStream,
+    const { modelId, streamContent } = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStream,
       params: streamId,
     });
     if (modelId != this.modelIds[ModelType.Publication]) {
@@ -138,8 +130,8 @@ export class Collect extends ClientBase {
     const pointedStreamId = streamContent.content.content_uri;
 
     const { streamContent: pointedStreamContent } =
-      await this.coreConnector.runOS({
-        method: Methods.loadStream,
+      await this.dataverseConnector.runOS({
+        method: SYSTEM_CALL.loadStream,
         params: pointedStreamId,
       });
 
@@ -149,12 +141,9 @@ export class Collect extends ClientBase {
 
     const datatokenId = pointedStreamContent.file.datatokenId!;
 
-    const isCollected = await this.coreConnector.runOS({
-      method: Methods.isCollected,
-      params: {
-        datatokenId,
-        address: this.coreConnector.address!,
-      },
+    const isCollected = await this.dataverseConnector.isCollected({
+      datatokenId,
+      address: this.dataverseConnector.address!,
     });
 
     let persistRes;
@@ -172,10 +161,7 @@ export class Collect extends ClientBase {
         });
       }
 
-      const datatokenInfo = await this.coreConnector.runOS({
-        method: Methods.getDatatokenBaseInfo,
-        params: datatokenId,
-      });
+      const datatokenInfo = await this.dataverseConnector.getDatatokenBaseInfo(datatokenId);
 
       try {
         persistRes = await this._persistCollection({
@@ -185,9 +171,8 @@ export class Collect extends ClientBase {
           streamId: streamContent.content.content_uri,
           collector: res.collector,
           currency: (datatokenInfo as any).collect_info.price.currency_addr,
-          amount: `${(datatokenInfo as any).collect_info.price.amount} ${
-            (datatokenInfo as any).collect_info.price.currency
-          }`,
+          amount: `${(datatokenInfo as any).collect_info.price.amount} ${(datatokenInfo as any).collect_info.price.currency
+            }`,
           collectLimit: (datatokenInfo as any).collect_info.total,
         });
       } catch (e) {
@@ -196,8 +181,8 @@ export class Collect extends ClientBase {
     }
 
     const { streamContent: unlockedStreamContent } =
-      await this.coreConnector.runOS({
-        method: Methods.unlock,
+      await this.dataverseConnector.runOS({
+        method: SYSTEM_CALL.unlock,
         params: {
           streamId: streamContent.content.content_uri
         },
@@ -230,20 +215,17 @@ export class Collect extends ClientBase {
     if (publicationData) {
       await this._approveERC20({
         contract: publicationData.currency,
-        owner: this.coreConnector.address!,
+        owner: this.dataverseConnector.address!,
         spender: collectModule,
         amount: publicationData.amount,
       });
     }
 
-    const res = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params: {
-        contractAddress: this.lensContractsAddress.LensHubProxy,
-        abi: LensHubJson.abi,
-        method: "collect",
-        params: [profileId, pubId, collectModuleValidateData],
-      },
+    const res = await this.walletProvider.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "collect",
+      params: [profileId, pubId, collectModuleValidateData],
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -278,13 +260,13 @@ export class Collect extends ClientBase {
     if (publicationData) {
       await this._approveERC20({
         contract: publicationData.currency,
-        owner: this.coreConnector.address!,
+        owner: this.dataverseConnector.address!,
         spender: collectModule,
         amount: publicationData.amount,
       });
     }
 
-    const collector = this.coreConnector.address!;
+    const collector = this.dataverseConnector.address!;
     const collectWithSigData: Partial<CollectWithSigData> = {
       collector: collector,
       profileId: profileId,
@@ -300,19 +282,16 @@ export class Collect extends ClientBase {
       data: collectModuleValidateData,
       nonce,
       deadline: MAX_UINT256,
-      wallet: this.coreConnector.getProvider(),
+      wallet: this.dataverseConnector.getProvider(),
       lensHubAddr: this.lensContractsAddress.LensHubProxy,
-      chainId: this.coreConnector.chain!.chainId,
+      chainId: this.dataverseConnector.chain!.chainId,
     });
 
-    const res = await this.coreConnector.runOS({
-      method: Methods.contractCall,
-      params: {
-        contractAddress: this.lensContractsAddress.LensHubProxy,
-        abi: LensHubJson.abi,
-        method: "collectWithSig",
-        params: [collectWithSigData as CollectWithSigData],
-      },
+    const res = await this.walletProvider.contractCall({
+      contractAddress: this.lensContractsAddress.LensHubProxy,
+      abi: LensHubJson.abi,
+      method: "collectWithSig",
+      params: [collectWithSigData as CollectWithSigData],
     });
 
     const targetEvent = Object.values(res.events).find((event: any) => {
@@ -341,14 +320,11 @@ export class Collect extends ClientBase {
       case this.lensContractsAddress.FeeCollectModule: {
         console.log("[FeeCollectModule]");
 
-        publicationData = await this.coreConnector.runOS({
-          method: Methods.contractCall,
-          params: {
-            contractAddress: collectModule,
-            abi: FeeCollectModuleJson.abi,
-            method: "getPublicationData",
-            params: [profileId, pubId],
-          },
+        publicationData = await this.walletProvider.contractCall({
+          contractAddress: collectModule,
+          abi: FeeCollectModuleJson.abi,
+          method: "getPublicationData",
+          params: [profileId, pubId],
         });
 
         collectModuleValidateData = ethers.utils.defaultAbiCoder.encode(
@@ -361,14 +337,11 @@ export class Collect extends ClientBase {
       case this.lensContractsAddress.LimitedFeeCollectModule: {
         console.log("[LimitedFeeCollectModule]");
 
-        publicationData = await this.coreConnector.runOS({
-          method: Methods.contractCall,
-          params: {
-            contractAddress: collectModule,
-            abi: LimitedFeeCollectModuleJson.abi,
-            method: "getPublicationData",
-            params: [profileId, pubId],
-          },
+        publicationData = await this.walletProvider.contractCall({
+          contractAddress: collectModule,
+          abi: LimitedFeeCollectModuleJson.abi,
+          method: "getPublicationData",
+          params: [profileId, pubId],
         });
 
         collectModuleValidateData = ethers.utils.defaultAbiCoder.encode(
@@ -381,14 +354,11 @@ export class Collect extends ClientBase {
       case this.lensContractsAddress.TimedFeeCollectModule: {
         console.log("[TimedFeeCollectModule]");
 
-        publicationData = await this.coreConnector.runOS({
-          method: Methods.contractCall,
-          params: {
-            contractAddress: collectModule,
-            abi: TimedFeeCollectModuleJson.abi,
-            method: "getPublicationData",
-            params: [profileId, pubId],
-          },
+        publicationData = await this.walletProvider.contractCall({
+          contractAddress: collectModule,
+          abi: TimedFeeCollectModuleJson.abi,
+          method: "getPublicationData",
+          params: [profileId, pubId],
         });
 
         collectModuleValidateData = ethers.utils.defaultAbiCoder.encode(
@@ -401,14 +371,11 @@ export class Collect extends ClientBase {
       case this.lensContractsAddress.LimitedTimedFeeCollectModule: {
         console.log("[LimitedTimedFeeCollectModule]");
 
-        publicationData = await this.coreConnector.runOS({
-          method: Methods.contractCall,
-          params: {
-            contractAddress: collectModule,
-            abi: LimitedTimedFeeCollectModuleJson.abi,
-            method: "getPublicationData",
-            params: [profileId, pubId],
-          },
+        publicationData = await this.walletProvider.contractCall({
+          contractAddress: collectModule,
+          abi: LimitedTimedFeeCollectModuleJson.abi,
+          method: "getPublicationData",
+          params: [profileId, pubId],
         });
 
         collectModuleValidateData = ethers.utils.defaultAbiCoder.encode(
@@ -509,8 +476,8 @@ export class Collect extends ClientBase {
       profileId,
       pubId,
     });
-    return await this.coreConnector.runOS({
-      method: Methods.createStream,
+    return await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
       params: {
         modelId: this.modelIds[ModelType.Collection],
         streamContent: {

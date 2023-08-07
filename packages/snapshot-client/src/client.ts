@@ -1,4 +1,4 @@
-import { CoreConnector, Methods } from "@dataverse/core-connector";
+import { DataverseConnector, SYSTEM_CALL } from "@dataverse/dataverse-connector";
 import snapshot from "@snapshot-labs/snapshot.js";
 import Client from "@snapshot-labs/snapshot.js/dist/sign";
 import {
@@ -22,25 +22,25 @@ import { Checker } from "@dataverse/utils-toolkit";
 
 export class SnapshotClient extends GraphqlApi {
   public modelIds: ModelIds;
-  public coreConnector: CoreConnector;
+  public dataverseConnector: DataverseConnector;
   public checker: Checker;
   public snapShot: Client;
   public env: string;
 
   constructor({
-    coreConnector,
+    dataverseConnector,
     modelIds,
     env,
     apiKey,
   }: {
-    coreConnector: CoreConnector;
+    dataverseConnector: DataverseConnector;
     modelIds: ModelIds;
     env: string;
     apiKey?: string;
   }) {
     super({ apiUrl: env, apiKey });
-    this.coreConnector = coreConnector;
-    this.checker = new Checker(coreConnector);
+    this.dataverseConnector = dataverseConnector;
+    this.checker = new Checker(dataverseConnector);
     this.env = env;
     this.snapShot = new snapshot.Client712(this.env);
     this.modelIds = modelIds;
@@ -172,11 +172,12 @@ export class SnapshotClient extends GraphqlApi {
   }
   private async _listStreamContent(modelId: string) {
     this.checker.checkCapability();
-    const pkh = await this.coreConnector.runOS({
-      method: Methods.getCurrentPkh,
-    });
-    const streams = await this.coreConnector.runOS({
-      method: Methods.loadStreamsBy,
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
       params: {
         modelId: modelId,
         pkh: pkh,
@@ -192,8 +193,8 @@ export class SnapshotClient extends GraphqlApi {
     return items;
   }
   private _buildMessage(msg: Message) {
-    const web3 = this.coreConnector.getProvider();
-    const address = this.coreConnector.address;
+    const web3 = this.dataverseConnector.getProvider();
+    const address = this.dataverseConnector.address;
     return { web3, address, msg };
   }
 
@@ -215,8 +216,8 @@ export class SnapshotClient extends GraphqlApi {
       app: proposal.app,
     };
 
-    const res = await this.coreConnector.runOS({
-      method: Methods.createStream,
+    const res = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
       params: {
         modelId: this.modelIds[ModelType.PROPOSAL],
         streamContent: content,
@@ -240,8 +241,8 @@ export class SnapshotClient extends GraphqlApi {
       created_at: now(),
     };
 
-    const res = await this.coreConnector.runOS({
-      method: Methods.createStream,
+    const res = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
       params: {
         modelId: this.modelIds[ModelType.VOTE],
         streamContent: content,
