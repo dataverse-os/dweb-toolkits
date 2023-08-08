@@ -59,11 +59,11 @@ export class Post extends ClientBase {
       encrypted: JSON.stringify(encrypted),
     }; 
 
-    const { streamId, streamContent } = await this.dataverseConnector.runOS({
+    const { streamId } = await this.dataverseConnector.runOS({
       method: SYSTEM_CALL.createStream,
       params: {
         modelId,
-        streamContent: stream,
+        streamContent,
       },
     });
 
@@ -71,7 +71,6 @@ export class Post extends ClientBase {
       method: SYSTEM_CALL.monetizeFile,
       params: {
         streamId,
-        indexFileId: streamContent.file.indexFileId,
         datatokenVars: {
           profileId: postParams.profileId,
           currency,
