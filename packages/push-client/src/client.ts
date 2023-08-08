@@ -368,7 +368,7 @@ export class PushChatClient extends PushClientBase {
   async sendChatMessage(
     receiver: string,
     messageContent: string,
-    messageType: "Text" | "Image" | "File" | "GIF" | "MediaURL"
+    messageType: "Text" | "Image" | "File" | "GIF" | "MediaEmbed" | "Meta"
   ) {
     await this.checker.checkCapability();
 
@@ -383,6 +383,7 @@ export class PushChatClient extends PushClientBase {
       messageContent,
       messageType, // "Text" | "Image" | "File" | "GIF"
       receiverAddress: `eip155:${receiver}`,
+      // [Push SDK] - API  - Error - API send -:   TypeError: signer.getAddress is not a function
       signer: this.dataverseConnector.getProvider(),
       pgpPrivateKey: pgpDecryptedPvtKey,
       env: this.env,

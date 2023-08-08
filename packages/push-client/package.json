@@ -23,7 +23,7 @@
     "@ethersproject/abstract-provider": "^5.7.0",
     "@ethersproject/abstract-signer": "^5.7.0",
     "@ethersproject/properties": "^5.7.0",
-    "@pushprotocol/restapi": "1.3.3",
+    "@pushprotocol/restapi": "1.4.5",
     "typescript": "^4.9.5"
   },
   "gitHead": "91bc0c5968e25f6df434e1b8e3aebd4f82f776ff"

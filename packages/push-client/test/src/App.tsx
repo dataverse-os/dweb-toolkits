@@ -10,15 +10,15 @@ import {
 } from "@dataverse/push-client-toolkit";
 import { ENV } from "@pushprotocol/restapi/src/lib/constants";
 
-const modelIds = {
-  [ModelType.MESSAGE]: import.meta.env.VITE_CHAT_MESSAGE_MODEL_ID,
-  [ModelType.USER_PGP_KEY]: import.meta.env.VITE_CHAT_PGP_KEY_MODEL_ID,
-  [ModelType.CHANNEL]: import.meta.env.VITE_CHANNEL_MODEL_ID,
-  [ModelType.NOTIFICATION]: import.meta.env.VITE_NOTIFICATION_MODEL_ID,
-};
 
 const App = () => {
   const { dataverseConnector, modelParser } = useContext(Context);
+  const modelIds = {
+    [ModelType.MESSAGE]: modelParser.getModelByName("pushchatmessage").streams[0].modelId,
+    [ModelType.USER_PGP_KEY]: modelParser.getModelByName("pushchatgpgkey").streams[0].modelId,
+    [ModelType.CHANNEL]: modelParser.getModelByName("pushchannel").streams[0].modelId,
+    [ModelType.NOTIFICATION]: modelParser.getModelByName("pushnotification").streams[0].modelId,
+  };
   const pushNotificationClient = useMemo(() => {
     return new PushNotificationClient({
       dataverseConnector,
