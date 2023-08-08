@@ -1,4 +1,3 @@
-import "./App.scss";
 import { useMemo, useState } from "react";
 import Client, {
   ModelIds,
@@ -35,8 +34,8 @@ function App() {
     return new Client({
       dataverseConnector,
       modelIds: {
-        [ModelType.MESSAGE]: import.meta.env.VITE_MESSAGE_MODEL_ID,
-        [ModelType.KEYS_CACHE]: import.meta.env.VITE_KEY_CACHE_MODEL_ID,
+        [ModelType.MESSAGE]: modelParser.getModelByName("xmtpmessage").streams[0].modelId,
+        [ModelType.KEYS_CACHE]: modelParser.getModelByName("xmtpkeycache").streams[0].modelId,
       } as ModelIds,
       env: "production",
     });
@@ -60,8 +59,6 @@ function App() {
   };
 
   const createCapability = async () => {
-    const app = import.meta.env.VITE_APP_NAME;
-    console.log("app: ", app);
     const pkh = await xmtpClient.dataverseConnector.runOS({
       method: SYSTEM_CALL.createCapability,
       params: {
@@ -283,63 +280,65 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <button onClick={connectWallet}>connectWallet</button>
-      <div className="blackText">{address}</div>
-      <hr />
-      <button onClick={createCapability}>createCapability</button>
-      <div className="blackText">{pkh}</div>
-      <hr />
-      <button onClick={checkCapability}>checkCapability</button>
-      <div className="blackText">
-        {isCurrentPkhValid !== undefined && String(isCurrentPkhValid)}
-      </div>
-      <hr />
-      <button onClick={isMsgReceiverOnNetwork}>isMsgReceiverOnNetwork</button>
-      <hr />
-      <button onClick={getAllConversations}>getAllConversations</button>
-      <hr />
-      <button onClick={sendMessageToMsgReceiver}>
-        sendMessageToMsgReceiver
-      </button>
-      <hr />
-      <button onClick={getMessageWithMsgReceiver}>
-        getMessageWithMsgReceiver
-      </button>
-      <hr />
-      <button onClick={getPaginatedMessageWithMsgReceiver}>
-        getPaginatedMessageWithMsgReceiver
-      </button>
-      <hr />
-      <button onClick={listenConversationsFromStranger}>
-        listenConversationsFromStranger
-      </button>
-      <hr />
-      <button onClick={listenNewMsgInConversation}>
-        listenNewMsgInConversation
-      </button>
-      <hr />
-      <button onClick={listenNewMsgInAllConversation}>
-        listenNewMsgInAllConversation
-      </button>
-      <hr />
-      <button onClick={getPersistedMessages}>getPersistedMessages</button>
-      <hr />
-      <div>
-        <input type="file" onChange={handleFileChange} />
-        <button onClick={handleUploadFile} disabled={uploading}>
-          uploadFileToIpfs
+    <div id="App">
+      <div className="app-body">
+        <button onClick={connectWallet}>connectWallet</button>
+        <div className="blackText">{address}</div>
+        <hr />
+        <button onClick={createCapability}>createCapability</button>
+        <div className="blackText">{pkh}</div>
+        <hr />
+        <button onClick={checkCapability}>checkCapability</button>
+        <div className="blackText">
+          {isCurrentPkhValid !== undefined && String(isCurrentPkhValid)}
+        </div>
+        <hr />
+        <button onClick={isMsgReceiverOnNetwork}>isMsgReceiverOnNetwork</button>
+        <hr />
+        <button onClick={getAllConversations}>getAllConversations</button>
+        <hr />
+        <button onClick={sendMessageToMsgReceiver}>
+          sendMessageToMsgReceiver
         </button>
-        <div className="blackText">{fileCId}</div>
-      </div>
-      <hr />
-      <div>
-        <button onClick={sentMessageWithAttachment}>
-          sentMessageWithAttachment
+        <hr />
+        <button onClick={getMessageWithMsgReceiver}>
+          getMessageWithMsgReceiver
         </button>
+        <hr />
+        <button onClick={getPaginatedMessageWithMsgReceiver}>
+          getPaginatedMessageWithMsgReceiver
+        </button>
+        <hr />
+        <button onClick={listenConversationsFromStranger}>
+          listenConversationsFromStranger
+        </button>
+        <hr />
+        <button onClick={listenNewMsgInConversation}>
+          listenNewMsgInConversation
+        </button>
+        <hr />
+        <button onClick={listenNewMsgInAllConversation}>
+          listenNewMsgInAllConversation
+        </button>
+        <hr />
+        <button onClick={getPersistedMessages}>getPersistedMessages</button>
+        <hr />
+        <div>
+          <input type="file" onChange={handleFileChange} />
+          <button onClick={handleUploadFile} disabled={uploading}>
+            uploadFileToIpfs
+          </button>
+          <div className="blackText">{fileCId}</div>
+        </div>
+        <hr />
+        <div>
+          <button onClick={sentMessageWithAttachment}>
+            sentMessageWithAttachment
+          </button>
+        </div>
+        <hr />
+        <button onClick={unlockMessage}>unlockMessage</button>
       </div>
-      <hr />
-      <button onClick={unlockMessage}>unlockMessage</button>
     </div>
   );
 }

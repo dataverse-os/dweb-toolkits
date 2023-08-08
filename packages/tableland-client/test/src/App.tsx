@@ -13,10 +13,6 @@ import {
 import { SYSTEM_CALL, WALLET } from "@dataverse/dataverse-connector";
 import { Context } from "./main";
 
-const appName = "tableland_test10";
-const modelId =
-  "kjzl6hvfrbw6c518pv58u525oeuefp86kt7kgghazwyx4sar4sb9ni3152lr2g4";
-
 const App = () => {
   const { dataverseConnector, walletProvider, modelParser } = useContext(Context);
   const [account, setAccount] = useState<string>();
@@ -39,7 +35,7 @@ const App = () => {
         dataverseConnector,
         walletProvider,
         network: Network.MUMBAI,
-        modelId,
+        modelId: modelParser.getModelByName("table").streams[0].modelId,
       });
       setClient(client);
     }

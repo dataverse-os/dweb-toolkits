@@ -22,8 +22,8 @@ const App = () => {
   const [voteId, setVoteId] = useState<string>();
 
   const modelIds = {
-    [ModelType.PROPOSAL]: import.meta.env.VITE_PROPOSAL_MODEL_ID,
-    [ModelType.VOTE]: import.meta.env.VITE_VOTE_MODEL_ID,
+    [ModelType.PROPOSAL]: modelParser.getModelByName("proposal").streams[0].modelId,
+    [ModelType.VOTE]: modelParser.getModelByName("vote").streams[0].modelId,
   };
   const snapshotClient = new SnapshotClient({
     dataverseConnector,

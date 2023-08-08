@@ -17,7 +17,7 @@
     "test:tableland-client": "lerna run test --scope=@dataverse/tableland-client-toolkit",
     "test:lens-client": "lerna run test --scope=@dataverse/lens-client-toolkit",
     "test:snapshot-client": "lerna run test --scope=@dataverse/snapshot-client-toolkit",
-    "test:xmtp-client": "lerna run test --scope=@dataverse/snapshot-client-toolkit",
+    "test:xmtp-client": "lerna run test --scope=@dataverse/xmtp-client-toolkit",
     "publish": "lerna publish --no-private"
   },
   "dependencies": {

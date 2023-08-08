@@ -207,6 +207,7 @@ export class XmtpClient {
       const keys = await this._unlockKeys(value);
       return stringToUint8Array(keys);
     }
+    // TypeError: this.signer.getAddress is not a function
     const keys = await Client.getKeys(this.dataverseConnector.getProvider(), {
       env: this.env,
     });
