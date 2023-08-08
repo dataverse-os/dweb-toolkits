@@ -300,7 +300,7 @@ const App = () => {
       [false]
     ) as any;
     const modelId =
-      modelParser.getModelByName("lenspublication").streams[0].modelId;
+      modelParser.getModelByName("post").streams[0].modelId;
     console.log(modelId)
     const stream = {
       publication_type: "post",

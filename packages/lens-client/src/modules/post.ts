@@ -36,7 +36,7 @@ export class Post extends ClientBase {
   public async postOnCeramic({
     modelId,
     stream,
-    // encrypted,
+    encrypted,
     postParams,
     currency,
     amount,
@@ -54,10 +54,10 @@ export class Post extends ClientBase {
   }) {
     await this.checker.checkCapability();
 
-    /* const streamContent = {
+    const streamContent = {
       ...stream,
       encrypted: JSON.stringify(encrypted),
-    }; */
+    }; 
 
     const { streamId, streamContent } = await this.dataverseConnector.runOS({
       method: SYSTEM_CALL.createStream,
