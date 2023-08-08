@@ -301,19 +301,17 @@ const App = () => {
     ) as any;
     const modelId =
       modelParser.getModelByName("post").streams[0].modelId;
-    console.log(modelId)
+
     const stream = {
-      publication_type: "post",
-      profile_id: profileId,
-      pub_id: pubId,
-      model_id: modelId,
-      profile_id_pointed: profileIdPointed,
-      pub_id_pointed: pubIdPointed,
-      content_uri: "https://bafkreib76wz6wewtkfmp5rhm3ep6tf4xjixvzzyh64nbyge5yhjno24yl4.ipfs.w3s.link",
-      collect_module: collectModule,
-      reference_module: referenceModule,
-      created_at: Date.now(),
-    }
+      appVersion: "1.2.1",
+      text: "hello world!",
+      images: [
+        "https://bafkreib76wz6wewtkfmp5rhm3ep6tf4xjixvzzyh64nbyge5yhjno24yl4.ipfs.w3s.link",
+      ],
+      videos: [],
+      createdAt: date,
+      updatedAt: date,
+    };
     const encrypted = {
       text: true,
       images: true,
@@ -869,7 +867,7 @@ const App = () => {
           >
             collectOnCeramicWithSig
           </button>
-          <div className="title">ProfileId</div>
+          {/* <div className="title">ProfileId</div>
           <input
             type="text"
             value={profileId || ""}
@@ -880,7 +878,7 @@ const App = () => {
             type="text"
             value={pubId || ""}
             onChange={(event) => setPubId(event.target.value)}
-          />
+          /> */}
           <div className="title">Result</div>
           <div className="textarea">{collectRes}</div>
         </div>
