@@ -148,8 +148,8 @@ export class PushNotificationClient extends PushClientBase {
       onSuccess: () => {
         console.log("opt in success");
       },
-      onError: () => {
-        console.error("opt in error");
+      onError: (err) => {
+        console.error("opt in error", err);
       },
       env: this.env,
     });
@@ -443,7 +443,7 @@ export class PushChatClient extends PushClientBase {
     await StreamHelper.traverseStreams(
       streams,
       streamFilter,
-      () => {},
+      () => { },
       unmatchedHandler
     );
 
@@ -550,7 +550,7 @@ export class PushChatClient extends PushClientBase {
       StreamHelper.traverseStreams(
         streams,
         streamFilter,
-        () => {},
+        () => { },
         unmatchedHandler
       );
     });

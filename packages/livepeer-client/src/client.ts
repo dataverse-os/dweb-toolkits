@@ -70,7 +70,7 @@ export class LivepeerClient {
 
     const http = axios.create({
       baseURL: "https://livepeer.studio/api/asset/",
-      timeout: 50000,
+      timeout: 1000 * 60 * 10,
       headers: {
         Authorization: `Bearer \t${this.apiKey}`,
         "Content-Type": rawVideoFile.type,

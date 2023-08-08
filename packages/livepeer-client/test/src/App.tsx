@@ -12,19 +12,19 @@ import { Context } from "./main";
 
 const App = () => {
   console.log('App loaded');
-  const { dataverseConnector } = useContext(Context);
+  const { dataverseConnector, modelParser } = useContext(Context);
   const livepeerClient = useMemo(() => {
     console.log(
       "VITE_LIVEPEER_API_KEY:",
       import.meta.env.VITE_LIVEPEER_API_KEY!
     );
-    console.log("VITE_MODEL_ID:", import.meta.env.VITE_MODEL_ID!);
-    console.log("VITE_APP_NAME:", import.meta.env.VITE_APP_NAME!);
+    console.log("VITE_MODEL_ID:", modelParser.getModelByName("livepeerasset").streams[0].modelId!);
+    console.log("VITE_APP_NAME:", modelParser.appName!);
 
     return new LivepeerClient({
       apiKey: import.meta.env.VITE_LIVEPEER_API_KEY!,
       dataverseConnector: dataverseConnector,
-      modelId: import.meta.env.VITE_MODEL_ID,
+      modelId: modelParser.getModelByName("livepeerasset").streams[0].modelId,
     });
   }, []);
   const [address, setAddress] = useState<string>();
@@ -35,7 +35,7 @@ const App = () => {
 
   const retrieveVideo = async () => {
     const res = await livepeerClient.retrieveVideo(
-      "be869964-4ec4-4652-bb5b-22a09112d717"
+      "b7614666-64ee-46b4-a417-ea7c42b46aa3"
     );
     console.log("retrieveAsset res:", res);
   };
@@ -46,7 +46,7 @@ const App = () => {
   };
 
   const deleteVideo = async () => {
-    await livepeerClient.deleteVideo("5561fd95-cc5b-47a9-bb79-d6d460f79883");
+    await livepeerClient.deleteVideo("cdc7ac90-6930-4bed-8c7e-3a2c8850a500");
   };
 
   const createCapability = async () => {
@@ -57,7 +57,7 @@ const App = () => {
     await livepeerClient.dataverseConnector.runOS({
       method: SYSTEM_CALL.createCapability,
       params: {
-        appId: import.meta.env.VITE_LIVEPEER_API_KEY
+        appId: modelParser.appId
       },
     });
     console.log("connected");
@@ -71,7 +71,7 @@ const App = () => {
     await livepeerClient.monetizeVideoMeta({
       address,
       streamId,
-      lensNickName: "jackieth",
+      lensNickName: "tagbug.test",
       datatokenVars: {
         currency: Currency.WMATIC,
         amount: 0.0001,
