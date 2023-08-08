@@ -7,8 +7,8 @@ export const config = {
   models: [
     {
       isPublicDomain: false, // default
-      schemaName: "livepeerasset.graphql",
-      encryptable: ["storage", "playback_id", "playback_url", "download_url"]
+      schemaName: "livepeer-asset.graphql",
+      encryptable: ["storage", "playback_id"]
     }
   ],
   ceramicUrl: null, // leave null to use dataverse test Ceramic node. Set to {Your Ceramic node Url} for mainnet, should start with "https://".

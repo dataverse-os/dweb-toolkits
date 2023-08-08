@@ -9,7 +9,7 @@
     "dist/"
   ],
   "scripts": {
-    "test": "cd test && pnpm start",
+    "test": "cd test && pnpm dev",
     "build:esm": "tsc -p tsconfig.json",
     "build:cjs": "tsc -p tsconfig-cjs.json",
     "build": "pnpm build:esm && pnpm build:cjs"

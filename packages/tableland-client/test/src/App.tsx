@@ -15,7 +15,7 @@ import { Context } from "./main";
 
 const appName = "tableland_test10";
 const modelId =
-  "kjzl6hvfrbw6c5zvcxkbclvybdjuq2owc8c49l223y9bz4radnxu9uu23mp4elj";
+  "kjzl6hvfrbw6c518pv58u525oeuefp86kt7kgghazwyx4sar4sb9ni3152lr2g4";
 
 const App = () => {
   const { dataverseConnector, walletProvider, modelParser } = useContext(Context);

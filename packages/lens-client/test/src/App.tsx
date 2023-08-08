@@ -253,9 +253,7 @@ const App = () => {
     if (!profileId || !account) {
       return;
     }
-    // free: ["0x86f7", "0x8738", "0x873a"]
-    // fee: ["0x869e", "0x80e4"]
-    const profileIds = ["0x86f7", "0x8738", "0x873a"];
+    const profileIds = ["0x02c9"];
     const res = await lensClient.follow(profileIds);
     console.log("[follow]res:", res);
     setFollowRes(JSON.stringify(res));
@@ -302,18 +300,20 @@ const App = () => {
       [false]
     ) as any;
     const modelId =
-      modelParser.getModelByName("post").streams[0].modelId;
+      modelParser.getModelByName("lenspublication").streams[0].modelId;
     console.log(modelId)
     const stream = {
-      appVersion: "1.2.1",
-      text: "hello world!",
-      images: [
-        "https://bafkreib76wz6wewtkfmp5rhm3ep6tf4xjixvzzyh64nbyge5yhjno24yl4.ipfs.w3s.link",
-      ],
-      videos: [],
-      createdAt: date,
-      updatedAt: date,
-    };
+      publication_type: "post",
+      profile_id: profileId,
+      pub_id: pubId,
+      model_id: modelId,
+      profile_id_pointed: profileIdPointed,
+      pub_id_pointed: pubIdPointed,
+      content_uri: "https://bafkreib76wz6wewtkfmp5rhm3ep6tf4xjixvzzyh64nbyge5yhjno24yl4.ipfs.w3s.link",
+      collect_module: collectModule,
+      reference_module: referenceModule,
+      created_at: Date.now(),
+    }
     const encrypted = {
       text: true,
       images: true,
