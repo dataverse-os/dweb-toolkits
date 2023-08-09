@@ -1,6 +1,6 @@
 {
   "name": "@dataverse/tableland-client-toolkit",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "description": "",
   "module": "dist/esm/index.js",
   "main": "dist/cjs/index.js",
@@ -18,12 +18,12 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@dataverse/wallet-provider": "latest",
     "@dataverse/dataverse-connector": "latest",
-    "@dataverse/utils-toolkit": "workspace:*",
+    "@dataverse/utils-toolkit": "1.0.25",
+    "@dataverse/wallet-provider": "latest",
     "@tableland/sdk": "^4.3.0",
     "ethers": "^5.7.2",
     "typescript": "^4.9.5"
   },
-  "gitHead": "91bc0c5968e25f6df434e1b8e3aebd4f82f776ff"
+  "gitHead": "4d556105050d93300ab52124f5e7df51cb9a3ac3"
 }
