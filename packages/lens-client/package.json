@@ -18,7 +18,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@dataverse/dataverse-connector": "^1.0.23",
+    "@dataverse/dataverse-connector": "latest",
     "@dataverse/utils-toolkit": "workspace:*",
     "@dataverse/wallet-provider": "latest",
     "ethers": "^5.7.2",

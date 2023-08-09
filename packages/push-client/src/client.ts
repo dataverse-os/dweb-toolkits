@@ -9,6 +9,7 @@ import { getICAPAddress } from "./utils";
 import { StreamHelper } from "@dataverse/utils-toolkit";
 import { ModelIds } from "./types";
 import { Checker } from "@dataverse/utils-toolkit";
+import { ChatSendOptionsType } from "@pushprotocol/restapi";
 
 class PushClientBase {
   public dataverseConnector: DataverseConnector;
@@ -368,7 +369,7 @@ export class PushChatClient extends PushClientBase {
   async sendChatMessage(
     receiver: string,
     messageContent: string,
-    messageType: "Text" | "Image" | "File" | "GIF" | "MediaEmbed" | "Meta"
+    messageType: ChatSendOptionsType['messageType']
   ) {
     await this.checker.checkCapability();
 
@@ -383,7 +384,6 @@ export class PushChatClient extends PushClientBase {
       messageContent,
       messageType, // "Text" | "Image" | "File" | "GIF"
       receiverAddress: `eip155:${receiver}`,
-      // [Push SDK] - API  - Error - API send -:   TypeError: signer.getAddress is not a function
       signer: this.dataverseConnector.getProvider(),
       pgpPrivateKey: pgpDecryptedPvtKey,
       env: this.env,
