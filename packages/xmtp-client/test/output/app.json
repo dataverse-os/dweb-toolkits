@@ -1,0 +1,96 @@
+{
+  "id": "dc3885c6-ff99-494c-ad8d-228132fdac7c",
+  "createdAt": 1691394157,
+  "updatedAt": 1691394157,
+  "deletedAt": null,
+  "name": "xmtp-client-demo",
+  "logo": "https://bafybeifozdhcbbfydy2rs6vbkbbtj3wc4vjlz5zg2cnqhb2g4rm2o5ldna.ipfs.w3s.link/dataverse.svg",
+  "website": [
+    "localhost"
+  ],
+  "defaultFolderName": "Main",
+  "description": "This is xmtp client test demo.",
+  "models": [
+    {
+      "modelName": "xmtpmessage",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6c5x8vb6d04irt6fm4ox3khvd5ia14ngd865qhglhu6ptax7vagg",
+          "createdAt": 1691394157,
+          "schema": "type xmtpmessage  @createModel(accountRelation: LIST, description: \"xmtp message\") {  keeper: DID! @documentAccount  sender_address: String @string(maxLength: 100)  recipient_address: String @string(maxLength: 100)  content: String @string(maxLength: 30000000)  content_topic: String @string(maxLength: 30000000)  content_type: String @string(maxLength: 30000000)  message_id: String @string(maxLength: 2000000)  message_version: String @string(maxLength: 100)  created_at: DateTime}",
+          "isPublicDomain": false,
+          "encryptable": [
+            "content"
+          ],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "xmtpkeycache",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6c555qexikktqszkr80z5yadk64oaguy54a8g5w7989899yl0gv1",
+          "createdAt": 1691394157,
+          "schema": "type xmtpkeycache  @createModel(accountRelation: LIST, description: \"xmtp key cache\") {  owner: DID! @documentAccount  keys: String! @string(maxLength: 30000000)}",
+          "isPublicDomain": false,
+          "encryptable": [
+            "keys"
+          ],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "contentFolders",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6c64bazyj52mak0hyczhxcoynvyubxusyv5bq1o3plxwldof3ozf",
+          "createdAt": 1691394157,
+          "schema": "type contentFolders @createModel(accountRelation: LIST, description: \"ContentFolder\") {\n  author: DID! @documentAccount\n  version: CommitID! @documentVersion\n  indexFolderId: String! @string(maxLength: 1000)\n  mirrors: String! @string(maxLength: 300000000)\n}",
+          "isPublicDomain": false,
+          "encryptable": [],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "indexFiles",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6cay7tszvv341aufsq64qp0ga2891clnxioi93fpr16oqbm2rfve",
+          "createdAt": 1691394157,
+          "schema": "type indexFiles @createModel(accountRelation: LIST, description: \"IndexFile\") {\n  author: DID! @documentAccount\n  version: CommitID! @documentVersion\n  appVersion: String! @string(maxLength: 100)\n  contentId: String! @string(maxLength: 1000)\n  contentType: String! @string(maxLength: 100)\n  comment: String! @string(maxLength: 300000000)\n  relation: String @string(maxLength: 300000000)\n  additional: String @string(maxLength: 300000000)\n  datatokenId: String @string(maxLength: 1000)\n  fileType: Int!\n  encryptedSymmetricKey: String @string(maxLength: 300000000)\n  decryptionConditions: String @string(maxLength: 300000000)\n  decryptionConditionsType: String @string(maxLength: 100)\n  createdAt: DateTime!\n  updatedAt: DateTime!\n  deleted: Boolean\n}",
+          "isPublicDomain": false,
+          "encryptable": [],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "indexFolders",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6c92c1sfhtgwaxygfoz68c9f3a9kzgj2fs3utpn3w7z67blyt0js",
+          "createdAt": 1691394157,
+          "schema": "type indexFolders @createModel(accountRelation: LIST, description: \"IndexFolder\") {\n  author: DID! @documentAccount\n  version: CommitID! @documentVersion\n  appVersion: String! @string(maxLength: 100)\n  folderType: Int!\n  contentFolderIds: [String!]! @list(minLength: 1, maxLength: 10000) @string(maxLength: 2000)\n  createdAt: DateTime!\n  updatedAt: DateTime!\n  options: String @string(maxLength: 300000000)\n  parentFolderId: String @string(maxLength: 1000)\n  childFolderIds: [String] @list(maxLength: 10000) @string(maxLength: 2000)\n  deleted: Boolean\n}",
+          "isPublicDomain": false,
+          "encryptable": [],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    }
+  ],
+  "address": "0xA1366898DD82adda7d475D0f9Be7f4a7dC9ad3dB",
+  "ceramic": "https://testnet.dataverseceramicdaemon.com"
+}

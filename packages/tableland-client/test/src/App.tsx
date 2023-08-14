@@ -10,14 +10,11 @@ import {
   INSERT_TABLE_SQL,
   UPDATE_TABLE_SQL,
 } from "./constant";
-import { WALLET } from "@dataverse/runtime-connector";
-import { Context } from ".";
-
-const appName = "tableland_test10";
-const modelId = "kjzl6hvfrbw6c5zvcxkbclvybdjuq2owc8c49l223y9bz4radnxu9uu23mp4elj";
+import { SYSTEM_CALL, WALLET } from "@dataverse/dataverse-connector";
+import { Context } from "./main";
 
 const App = () => {
-  const { runtimeConnector } = useContext(Context);
+  const { dataverseConnector, walletProvider, modelParser } = useContext(Context);
   const [account, setAccount] = useState<string>();
   const [did, setDid] = useState<string>();
   const [network, setNetwork] = useState<Network>();
@@ -35,9 +32,10 @@ const App = () => {
   useEffect(() => {
     if (did) {
       const client = new Client({
-        runtimeConnector,
+        dataverseConnector,
+        walletProvider,
         network: Network.MUMBAI,
-        modelId,
+        modelId: modelParser.getModelByName("table").streams[0].modelId,
       });
       setClient(client);
     }
@@ -51,15 +49,15 @@ const App = () => {
   }, [tableName]);
 
   const connectIdentity = async () => {
-    const { address, wallet } = await runtimeConnector.connectWallet(
-      WALLET.METAMASK
-    );
+    const { address, wallet } = await dataverseConnector.connectWallet();
     setAccount(address);
     console.log("address:", address);
 
-    const did = await runtimeConnector.createCapability({
-      app: appName,
-      wallet,
+    const did = await dataverseConnector.runOS({
+      method: SYSTEM_CALL.createCapability,
+      params: {
+        appId: modelParser.appId,
+      },
     });
     setDid(did);
     console.log("did:", did);
@@ -153,7 +151,10 @@ const App = () => {
   };
 
   const selectNetwork = async (network: Network) => {
-    await runtimeConnector.switchNetwork(ChainId[network]);
+    await walletProvider.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: ChainId[network] }],
+    })
     setNetwork(network);
   };
 

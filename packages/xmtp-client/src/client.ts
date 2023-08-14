@@ -1,5 +1,9 @@
-import { RuntimeConnector, StreamContent } from "@dataverse/runtime-connector";
-import { RuntimeConnectorSigner, StreamHelper } from "@dataverse/utils-toolkit";
+import {
+  DataverseConnector,
+  SYSTEM_CALL,
+  StreamContent,
+} from "@dataverse/dataverse-connector";
+import { StreamHelper } from "@dataverse/utils-toolkit";
 import { ModelIds, XmtpEnv } from "./types";
 import {
   Client,
@@ -17,36 +21,35 @@ import {
   AttachmentCodec,
   RemoteAttachmentCodec,
 } from "xmtp-content-type-remote-attachment";
+import { Checker } from "@dataverse/utils-toolkit";
 
 export class XmtpClient {
-  public appName: string;
-  public runtimeConnector: RuntimeConnector;
-  public signer: RuntimeConnectorSigner;
+  public dataverseConnector: DataverseConnector;
   public modelIds: ModelIds;
   public env: XmtpEnv;
   public xmtp?: Client;
   public codecs: ContentCodec<Object>[];
+  private checker: Checker;
 
   constructor({
-    runtimeConnector,
-    appName,
+    dataverseConnector,
     modelIds,
     env,
   }: {
-    runtimeConnector: RuntimeConnector;
-    appName: string;
+    dataverseConnector: DataverseConnector;
     modelIds: ModelIds;
     env: XmtpEnv;
   }) {
-    this.runtimeConnector = runtimeConnector;
-    this.appName = appName;
+    this.dataverseConnector = dataverseConnector;
     this.modelIds = modelIds;
     this.env = env;
-    this.signer = new RuntimeConnectorSigner(this.runtimeConnector);
+    this.checker = new Checker(dataverseConnector);
     this.codecs = [new AttachmentCodec(), new RemoteAttachmentCodec()];
   }
 
   public async sendMessageTo({ user, msg }: { user: string; msg: string }) {
+    await this.checker.checkCapability();
+
     if (!(await this.isUserOnNetwork(user, this.env))) {
       throw new Error(`${user} is not on network`);
     }
@@ -67,6 +70,8 @@ export class XmtpClient {
     content: any;
     options?: SendOptions;
   }) {
+    await this.checker.checkCapability();
+
     if (!(await this.isUserOnNetwork(user, this.env))) {
       throw new Error(`${user} is not on network`);
     }
@@ -94,6 +99,8 @@ export class XmtpClient {
   }
 
   public async getAllConversations() {
+    await this.checker.checkCapability();
+
     const xmtp = await this._lazyInitClient();
     return xmtp.conversations.list();
   }
@@ -107,6 +114,8 @@ export class XmtpClient {
     options?: ListMessagesOptions;
     paginatedOptions?: ListMessagesPaginatedOptions;
   }) {
+    await this.checker.checkCapability();
+
     if (!(await this.isUserOnNetwork(user, this.env))) {
       throw new Error(`${user} is not on network`);
     }
@@ -129,10 +138,15 @@ export class XmtpClient {
   }
 
   async getPersistedMessages() {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    const streams = await this.runtimeConnector.loadStreamsBy({
-      modelId: this.modelIds.message,
-      pkh: pkh,
+    await this.checker.checkCapability();
+
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
+      params: { modelId: this.modelIds.message, pkh: pkh },
     });
     const messages = [];
     for (const key in streams) {
@@ -144,11 +158,15 @@ export class XmtpClient {
   }
 
   async getConversationStream() {
+    await this.checker.checkCapability();
+
     const xmtp = await this._lazyInitClient();
     return xmtp.conversations.stream();
   }
 
   async getMessageStream(user?: string) {
+    await this.checker.checkCapability();
+
     const xmtp = await this._lazyInitClient();
     if (user) {
       if (!(await this.isUserOnNetwork(user, this.env))) {
@@ -167,6 +185,8 @@ export class XmtpClient {
   }
 
   private async _lazyInitClient() {
+    await this.checker.checkCapability();
+
     if (!this.xmtp) {
       const keys = await this._getKeys();
       this.xmtp = await Client.create(null, {
@@ -180,12 +200,17 @@ export class XmtpClient {
   }
 
   private async _getKeys() {
+    await this.checker.checkCapability();
+
     const { exist, value } = await this._checkCache(this.modelIds.keys_cache);
     if (exist) {
       const keys = await this._unlockKeys(value);
       return stringToUint8Array(keys);
     }
-    const keys = await Client.getKeys(this.signer, { env: this.env });
+    // TypeError: this.signer.getAddress is not a function
+    const keys = await Client.getKeys(this.dataverseConnector.getProvider(), {
+      env: this.env,
+    });
     await this._persistKeys(keys);
     return keys;
   }
@@ -195,7 +220,10 @@ export class XmtpClient {
       if (Object.prototype.hasOwnProperty.call(value, key)) {
         const indexFileId = value[key].streamContent.file?.indexFileId;
         if (indexFileId) {
-          const unlocked = await this.runtimeConnector.unlock({ indexFileId });
+          const unlocked = await this.dataverseConnector.runOS({
+            method: SYSTEM_CALL.unlock,
+            params: { indexFileId },
+          });
           const streamContent = unlocked.streamContent.content as {
             keys: string;
             encrypted: string;
@@ -226,17 +254,20 @@ export class XmtpClient {
       encrypted: encrypted,
     };
 
-    await this.runtimeConnector.createStream({
-      modelId: this.modelIds.message,
-      streamContent: streamContent,
+    await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
+      params: { modelId: this.modelIds.message, streamContent: streamContent },
     });
   }
 
   private async _persistMessages(msgList: DecodedMessage[]) {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    const streams = await this.runtimeConnector.loadStreamsBy({
-      modelId: this.modelIds.message,
-      pkh: pkh,
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
+      params: { modelId: this.modelIds.message, pkh: pkh },
     });
 
     msgList.map(async (msg) => {
@@ -268,17 +299,26 @@ export class XmtpClient {
       keys: keysStr,
       encrypted: encrypted,
     };
-    await this.runtimeConnector.createStream({
-      modelId: this.modelIds.keys_cache,
-      streamContent: streamContent,
+    await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
+      params: {
+        modelId: this.modelIds.keys_cache,
+        streamContent: streamContent,
+      },
     });
   }
 
   private async _checkCache(modelId: string) {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    const stream = await this.runtimeConnector.loadStreamsBy({
-      modelId: modelId,
-      pkh: pkh,
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const stream = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
+      params: {
+        modelId: modelId,
+        pkh: pkh,
+      },
     });
     if (Object.keys(stream).length == 0) {
       return { exist: false, value: null };

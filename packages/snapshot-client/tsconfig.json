@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["./src/**/*"],
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "./dist/esm",
+    "jsx": "react-jsx",
+    "resolveJsonModule": true,
+    "composite": true,
+    "experimentalDecorators": true
+  }
+}

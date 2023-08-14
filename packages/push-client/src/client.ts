@@ -1,31 +1,33 @@
-import { RuntimeConnector, StreamContent } from "@dataverse/runtime-connector";
+import {
+  DataverseConnector,
+  SYSTEM_CALL,
+  StreamContent,
+} from "@dataverse/dataverse-connector";
 import * as PushAPI from "@pushprotocol/restapi";
 import { ENV } from "@pushprotocol/restapi/src/lib/constants";
 import { getICAPAddress } from "./utils";
-import { RuntimeConnectorSigner, StreamHelper } from "@dataverse/utils-toolkit";
+import { StreamHelper } from "@dataverse/utils-toolkit";
 import { ModelIds } from "./types";
+import { Checker } from "@dataverse/utils-toolkit";
+import { ChatSendOptionsType } from "@pushprotocol/restapi";
 
 class PushClientBase {
-  public appName: string;
-  public runtimeConnector: RuntimeConnector;
-  public signer: RuntimeConnectorSigner;
+  public dataverseConnector: DataverseConnector;
   public env: ENV;
   public modelIds: ModelIds;
+  protected checker: Checker;
 
   constructor({
-    runtimeConnector,
+    dataverseConnector,
     modelIds,
-    appName,
     env,
   }: {
-    runtimeConnector: RuntimeConnector;
+    dataverseConnector: DataverseConnector;
     modelIds: ModelIds;
-    appName: string;
     env: ENV;
   }) {
-    this.appName = appName;
-    this.runtimeConnector = runtimeConnector;
-    this.signer = new RuntimeConnectorSigner(runtimeConnector);
+    this.dataverseConnector = dataverseConnector;
+    this.checker = new Checker(dataverseConnector);
     this.env = env;
     this.modelIds = modelIds;
   }
@@ -33,20 +35,17 @@ class PushClientBase {
 
 export class PushNotificationClient extends PushClientBase {
   constructor({
-    runtimeConnector,
+    dataverseConnector,
     modelIds,
-    appName,
     env,
   }: {
-    runtimeConnector: RuntimeConnector;
+    dataverseConnector: DataverseConnector;
     modelIds: ModelIds;
-    appName: string;
     env: ENV;
   }) {
     super({
-      runtimeConnector,
+      dataverseConnector,
       modelIds,
-      appName,
       env,
     });
   }
@@ -58,6 +57,8 @@ export class PushNotificationClient extends PushClientBase {
     img?: string,
     cta?: string
   ) {
+    await this.checker.checkCapability();
+
     await this._checkChannelExist();
 
     const channelDetail = await this.getChannelDetail(channel);
@@ -70,9 +71,12 @@ export class PushNotificationClient extends PushClientBase {
         cta
       );
 
-      await this.runtimeConnector.createStream({
-        modelId: this.modelIds.notification,
-        streamContent,
+      await this.dataverseConnector.runOS({
+        method: SYSTEM_CALL.createStream,
+        params: {
+          modelId: this.modelIds.notification,
+          streamContent,
+        },
       });
     };
 
@@ -82,16 +86,19 @@ export class PushNotificationClient extends PushClientBase {
       }
       const streamContent =
         this._generateChannelInfoStreamContent(channelDetail);
-      await this.runtimeConnector.createStream({
-        modelId: this.modelIds.channel,
-        streamContent,
+      await this.dataverseConnector.runOS({
+        method: SYSTEM_CALL.createStream,
+        params: {
+          modelId: this.modelIds.channel,
+          streamContent,
+        },
       });
     };
 
     await Promise.all([createNotificationStream(), createChannelInfoStream()]);
 
     return PushAPI.payloads.sendNotification({
-      signer: this.signer,
+      signer: this.dataverseConnector.getProvider(),
       type: 1, // broadcast
       identityType: 2, // direct payload
       notification: {
@@ -136,24 +143,26 @@ export class PushNotificationClient extends PushClientBase {
 
   async subscribeChannel(channel: string) {
     await PushAPI.channels.subscribe({
-      signer: this.signer,
+      signer: this.dataverseConnector.getProvider(),
       channelAddress: channel, // channel address in CAIP
-      userAddress: getICAPAddress(await this.signer.getAddress()), // user address in CAIP
+      userAddress: getICAPAddress(this.dataverseConnector.address!), // user address in CAIP
       onSuccess: () => {
         console.log("opt in success");
       },
-      onError: () => {
-        console.error("opt in error");
+      onError: (err) => {
+        console.error("opt in error", err);
       },
       env: this.env,
     });
   }
 
   async unsubscribeChannel(channel: string) {
+    this.checker.checkWallet();
+
     await PushAPI.channels.unsubscribe({
-      signer: this.signer,
+      signer: this.dataverseConnector.getProvider(),
       channelAddress: channel, // channel address in CAIP
-      userAddress: getICAPAddress(await this.signer.getAddress()), // user address in CAIP
+      userAddress: getICAPAddress(this.dataverseConnector.address!), // user address in CAIP
       onSuccess: () => {
         console.log("opt out success");
       },
@@ -189,10 +198,18 @@ export class PushNotificationClient extends PushClientBase {
   }
 
   async getNotificationList() {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    const notificationStreams = await this.runtimeConnector.loadStreamsBy({
-      modelId: this.modelIds.notification,
-      pkh: pkh,
+    await this.checker.checkCapability();
+
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const notificationStreams = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
+      params: {
+        modelId: this.modelIds.notification,
+        pkh: pkh,
+      },
     });
     const notification = [];
     for (const key in notificationStreams) {
@@ -262,7 +279,7 @@ export class PushNotificationClient extends PushClientBase {
   };
 
   private async _checkChannelExist() {
-    const address = await this.signer.getAddress();
+    const address = this.dataverseConnector.address!;
     const detail = await this.getChannelDetail(getICAPAddress(address));
     if (detail == null) {
       throw new Error(`this account does not have channel`);
@@ -270,10 +287,16 @@ export class PushNotificationClient extends PushClientBase {
   }
 
   private async _isChannelInfoStreamExist() {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    const streams = await this.runtimeConnector.loadStreamsBy({
-      modelId: this.modelIds.channel,
-      pkh: pkh,
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
+      params: {
+        modelId: this.modelIds.channel,
+        pkh: pkh,
+      },
     });
 
     return Object.keys(streams).length > 0;
@@ -282,20 +305,17 @@ export class PushNotificationClient extends PushClientBase {
 
 export class PushChatClient extends PushClientBase {
   constructor({
-    runtimeConnector,
+    dataverseConnector,
     modelIds,
-    appName,
     env,
   }: {
-    runtimeConnector: RuntimeConnector;
+    dataverseConnector: DataverseConnector;
     modelIds: ModelIds;
-    appName: string;
     env: ENV;
   }) {
     super({
-      runtimeConnector,
+      dataverseConnector,
       modelIds,
-      appName,
       env,
     });
   }
@@ -308,11 +328,14 @@ export class PushChatClient extends PushClientBase {
   }
 
   async createPushChatUser() {
-    const address = await this.signer.getAddress();
-    const user = await this.getPushChatUser(address);
+    this.checker.checkWallet();
+
+    const user = await this.getPushChatUser(
+      this.dataverseConnector.address!
+    );
     if (!user?.encryptedPrivateKey) {
       return await PushAPI.user.create({
-        signer: this.signer, // ethers.js signer
+        signer: this.dataverseConnector.getProvider(), // ethers.js signer
         env: this.env,
       });
     }
@@ -320,7 +343,11 @@ export class PushChatClient extends PushClientBase {
   }
 
   async decryptPushGPGKey() {
-    const user = await this.getPushChatUser(await this.signer.getAddress());
+    await this.checker.checkCapability();
+
+    const user = await this.getPushChatUser(
+      this.dataverseConnector.address!
+    );
     if (!user) {
       throw new Error("user not exist");
     }
@@ -331,7 +358,7 @@ export class PushChatClient extends PushClientBase {
       const pgpKey = await PushAPI.chat.decryptPGPKey({
         encryptedPGPPrivateKey: user.encryptedPrivateKey,
         account: user.wallets,
-        signer: this.signer,
+        signer: this.dataverseConnector.getProvider(),
         env: this.env,
       });
       await this._persistPgpKey(pgpKey);
@@ -342,9 +369,13 @@ export class PushChatClient extends PushClientBase {
   async sendChatMessage(
     receiver: string,
     messageContent: string,
-    messageType: "Text" | "Image" | "File" | "GIF" | "MediaURL"
+    messageType: ChatSendOptionsType['messageType']
   ) {
-    const user = await this.getPushChatUser(await this.signer.getAddress());
+    await this.checker.checkCapability();
+
+    const user = await this.getPushChatUser(
+      this.dataverseConnector.address!
+    );
     if (!user) {
       throw new Error("user not exist");
     }
@@ -353,21 +384,26 @@ export class PushChatClient extends PushClientBase {
       messageContent,
       messageType, // "Text" | "Image" | "File" | "GIF"
       receiverAddress: `eip155:${receiver}`,
-      signer: this.signer,
+      signer: this.dataverseConnector.getProvider(),
       pgpPrivateKey: pgpDecryptedPvtKey,
       env: this.env,
     });
     const streamContent = this._generateChatMessageStreamContent(msg);
 
-    await this.runtimeConnector.createStream({
-      modelId: this.modelIds.message,
-      streamContent,
+    await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
+      params: {
+        modelId: this.modelIds.message,
+        streamContent,
+      },
     });
     return msg;
   }
 
   async fetchUserChats() {
-    const address = await this.signer.getAddress();
+    await this.checker.checkCapability();
+
+    const address = this.dataverseConnector.address!;
     const pgpDecryptedPvtKey = await this.decryptPushGPGKey();
     const chats = await PushAPI.chat.chats({
       account: `eip155:${address}`,
@@ -381,25 +417,34 @@ export class PushChatClient extends PushClientBase {
     const msgStreamContent = this._generateChatMessageStreamContent(
       chats[0].msg
     );
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    const streams = await this.runtimeConnector.loadStreamsBy({
-      modelId: this.modelIds.message,
-      pkh: pkh,
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
+      params: {
+        modelId: this.modelIds.message,
+        pkh: pkh,
+      },
     });
     const streamFilter = (streamContent: StreamContent) => {
       return streamContent.content.timestamp === msgStreamContent.timestamp;
     };
     const unmatchedHandler = async () => {
-      await this.runtimeConnector.createStream({
-        modelId: this.modelIds.message,
-        streamContent: msgStreamContent,
+      await this.dataverseConnector.runOS({
+        method: SYSTEM_CALL.createStream,
+        params: {
+          modelId: this.modelIds.message,
+          streamContent: msgStreamContent,
+        },
       });
     };
 
     await StreamHelper.traverseStreams(
       streams,
       streamFilter,
-      () => {},
+      () => { },
       unmatchedHandler
     );
 
@@ -407,7 +452,9 @@ export class PushChatClient extends PushClientBase {
   }
 
   async fetchChatRequest() {
-    const address = await this.signer.getAddress();
+    this.checker.checkWallet();
+
+    const address = this.dataverseConnector.address!;
     const pgpDecryptedPvtKey = await this.decryptPushGPGKey();
     const response = await PushAPI.chat.requests({
       account: `eip155:${address}`,
@@ -419,7 +466,9 @@ export class PushChatClient extends PushClientBase {
   }
 
   async approveChatRequest(senderAddress: string) {
-    const address = await this.signer.getAddress();
+    this.checker.checkWallet();
+
+    const address = this.dataverseConnector.address!;
     const pgpDecryptedPvtKey = await this.decryptPushGPGKey();
     const response = await PushAPI.chat.approve({
       senderAddress: senderAddress,
@@ -432,7 +481,9 @@ export class PushChatClient extends PushClientBase {
   }
 
   async fetchLatestChats(receiverAddress: string) {
-    const address = await this.signer.getAddress();
+    this.checker.checkWallet();
+
+    const address = this.dataverseConnector.address!;
     const pgpDecryptedPvtKey = await this.decryptPushGPGKey();
     const conversationHash = await this.getConversationHash(
       address,
@@ -449,7 +500,9 @@ export class PushChatClient extends PushClientBase {
   }
 
   async fetchHistoryChats(receiverAddress: string, limit: number) {
-    const address = await this.signer.getAddress();
+    await this.checker.checkCapability();
+
+    const address = this.dataverseConnector.address!;
     const pgpDecryptedPvtKey = await this.decryptPushGPGKey();
     const conversationHash = await this.getConversationHash(
       address,
@@ -466,10 +519,16 @@ export class PushChatClient extends PushClientBase {
     const streamContents =
       this._batchGenerateChatMessageStreamContent(chatHistory);
 
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    const streams = await this.runtimeConnector.loadStreamsBy({
-      modelId: this.modelIds.message,
-      pkh: pkh,
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
+      params: {
+        modelId: this.modelIds.message,
+        pkh: pkh,
+      },
     });
 
     streamContents.map(async (msgStreamContent) => {
@@ -480,16 +539,19 @@ export class PushChatClient extends PushClientBase {
         if (msgStreamContent.link === null) {
           msgStreamContent.link = undefined;
         }
-        await this.runtimeConnector.createStream({
-          modelId: this.modelIds.message,
-          streamContent: msgStreamContent,
+        await this.dataverseConnector.runOS({
+          method: SYSTEM_CALL.createStream,
+          params: {
+            modelId: this.modelIds.message,
+            streamContent: msgStreamContent,
+          },
         });
       };
 
       StreamHelper.traverseStreams(
         streams,
         streamFilter,
-        () => {},
+        () => { },
         unmatchedHandler
       );
     });
@@ -511,10 +573,18 @@ export class PushChatClient extends PushClientBase {
   }
 
   async getMessageList() {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    const streams = await this.runtimeConnector.loadStreamsBy({
-      modelId: this.modelIds.message,
-      pkh: pkh,
+    await this.checker.checkCapability();
+
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
+      params: {
+        modelId: this.modelIds.message,
+        pkh: pkh,
+      },
     });
     const messages = [];
     for (const key in streams) {
@@ -526,10 +596,16 @@ export class PushChatClient extends PushClientBase {
   }
 
   private async _checkCache(modelId: string) {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    const stream = await this.runtimeConnector.loadStreamsBy({
-      modelId: modelId,
-      pkh: pkh,
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const stream = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
+      params: {
+        modelId: modelId,
+        pkh: pkh,
+      },
     });
     if (Object.keys(stream).length == 0) {
       return { exist: false, value: null };
@@ -543,7 +619,12 @@ export class PushChatClient extends PushClientBase {
       if (Object.prototype.hasOwnProperty.call(value, key)) {
         const indexFileId = value[key].streamContent.file?.indexFileId;
         if (indexFileId) {
-          const unlocked = await this.runtimeConnector.unlock({ indexFileId });
+          const unlocked = await this.dataverseConnector.runOS({
+            method: SYSTEM_CALL.unlock,
+            params: {
+              indexFileId,
+            },
+          });
           const pgpContent = unlocked.streamContent.content as {
             pgp_key: string;
             encrypted: string;
@@ -567,9 +648,12 @@ export class PushChatClient extends PushClientBase {
       encrypted: encrypted,
     };
 
-    await this.runtimeConnector.createStream({
-      modelId: this.modelIds.user_pgp_key,
-      streamContent,
+    await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
+      params: {
+        modelId: this.modelIds.user_pgp_key,
+        streamContent,
+      },
     });
   }
 

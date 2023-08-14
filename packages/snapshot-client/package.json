@@ -1,0 +1,34 @@
+{
+  "name": "@dataverse/snapshot-client-toolkit",
+  "version": "1.0.25",
+  "description": "",
+  "module": "dist/esm/src/index.js",
+  "main": "dist/cjs/src/index.js",
+  "types": "dist/esm/src/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "test": "cd test && pnpm dev",
+    "build:esm": "tsc -p tsconfig.json",
+    "build:cjs": "tsc -p tsconfig-cjs.json",
+    "build": "pnpm build:esm && pnpm build:cjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@dataverse/dataverse-connector": "latest",
+    "@dataverse/utils-toolkit": "1.0.25",
+    "@snapshot-labs/snapshot.js": "^0.4.100",
+    "graphql": "16.6.0",
+    "graphql-request": "^6.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^4.9.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.9"
+  },
+  "gitHead": "4d556105050d93300ab52124f5e7df51cb9a3ac3"
+}

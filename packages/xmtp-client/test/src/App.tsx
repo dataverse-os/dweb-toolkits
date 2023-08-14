@@ -1,4 +1,3 @@
-import "./App.css";
 import { useMemo, useState } from "react";
 import Client, {
   ModelIds,
@@ -15,12 +14,17 @@ import Client, {
 import {
   Extension,
   RESOURCE,
-  RuntimeConnector, StreamContent,
+  DataverseConnector,
+  StreamContent,
   WALLET,
-} from "@dataverse/runtime-connector";
+  SYSTEM_CALL,
+} from "@dataverse/dataverse-connector";
 import Upload, { web3Storage } from "./web3-storage/web3-storage";
+import { ModelParser, Output } from "@dataverse/model-parser";
+import app from "../output/app.json";
 
-const runtimeConnector = new RuntimeConnector(Extension);
+const dataverseConnector = new DataverseConnector();
+const modelParser = new ModelParser(app as Output);
 
 function App() {
   const msgReceiver = useMemo(() => {
@@ -28,11 +32,10 @@ function App() {
   }, []);
   const xmtpClient = useMemo(() => {
     return new Client({
-      runtimeConnector,
-      appName: import.meta.env.VITE_APP_NAME,
+      dataverseConnector,
       modelIds: {
-        [ModelType.MESSAGE]: import.meta.env.VITE_MESSAGE_MODEL_ID,
-        [ModelType.KEYS_CACHE]: import.meta.env.VITE_KEY_CACHE_MODEL_ID,
+        [ModelType.MESSAGE]: modelParser.getModelByName("xmtpmessage").streams[0].modelId,
+        [ModelType.KEYS_CACHE]: modelParser.getModelByName("xmtpkeycache").streams[0].modelId,
       } as ModelIds,
       env: "production",
     });
@@ -48,9 +51,7 @@ function App() {
 
   const connectWallet = async () => {
     try {
-      const { address } = await xmtpClient.runtimeConnector.connectWallet(
-        WALLET.METAMASK
-      );
+      const { address } = await xmtpClient.dataverseConnector.connectWallet();
       setAddress(address);
     } catch (error) {
       console.error(error);
@@ -58,12 +59,12 @@ function App() {
   };
 
   const createCapability = async () => {
-    const app = import.meta.env.VITE_APP_NAME;
-    console.log("app: ", app);
-    const pkh = await xmtpClient.runtimeConnector.createCapability({
-      app,
-      resource: RESOURCE.CERAMIC,
-      wallet: WALLET.METAMASK,
+    const pkh = await xmtpClient.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createCapability,
+      params: {
+        appId: modelParser.appId,
+        resource: RESOURCE.CERAMIC,
+      },
     });
     setPkh(pkh);
     console.log(pkh);
@@ -71,8 +72,9 @@ function App() {
   };
 
   const checkCapability = async () => {
-    const isCurrentPkhValid =
-      await xmtpClient.runtimeConnector.checkCapability();
+    const isCurrentPkhValid = await xmtpClient.dataverseConnector.runOS({
+      method: SYSTEM_CALL.checkCapability,
+    });
     console.log(isCurrentPkhValid);
     setIsCurrentPkhValid(isCurrentPkhValid);
   };
@@ -190,9 +192,12 @@ function App() {
       encrypted: encrypted,
     };
 
-    const res = await xmtpClient.runtimeConnector.createStream({
-      modelId: import.meta.env.VITE_MESSAGE_MODEL_ID,
-      streamContent: streamContent,
+    const res = await xmtpClient.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
+      params: {
+        modelId: import.meta.env.VITE_MESSAGE_MODEL_ID,
+        streamContent: streamContent,
+      },
     });
 
     return res;
@@ -264,71 +269,76 @@ function App() {
 
   const unlockMessage = async () => {
     console.log("msgStream: ", msgStream);
-    const res = await runtimeConnector.unlock({indexFileId: msgStream!.file.indexFileId});
-    console.log("msgStream.file?.indexFileId", msgStream!.file.indexFileId)
+    const res = await dataverseConnector.runOS({
+      method: SYSTEM_CALL.unlock,
+      params: {
+        indexFileId: msgStream!.file.indexFileId,
+      },
+    });
+    console.log("msgStream.file?.indexFileId", msgStream!.file.indexFileId);
     console.log(res);
-  }
+  };
 
   return (
-    <div className="App">
-      <button onClick={connectWallet}>connectWallet</button>
-      <div className="blackText">{address}</div>
-      <hr />
-      <button onClick={createCapability}>createCapability</button>
-      <div className="blackText">{pkh}</div>
-      <hr />
-      <button onClick={checkCapability}>checkCapability</button>
-      <div className="blackText">
-        {isCurrentPkhValid !== undefined && String(isCurrentPkhValid)}
-      </div>
-      <hr />
-      <button onClick={isMsgReceiverOnNetwork}>isMsgReceiverOnNetwork</button>
-      <hr />
-      <button onClick={getAllConversations}>getAllConversations</button>
-      <hr />
-      <button onClick={sendMessageToMsgReceiver}>
-        sendMessageToMsgReceiver
-      </button>
-      <hr />
-      <button onClick={getMessageWithMsgReceiver}>
-        getMessageWithMsgReceiver
-      </button>
-      <hr />
-      <button onClick={getPaginatedMessageWithMsgReceiver}>
-        getPaginatedMessageWithMsgReceiver
-      </button>
-      <hr />
-      <button onClick={listenConversationsFromStranger}>
-        listenConversationsFromStranger
-      </button>
-      <hr />
-      <button onClick={listenNewMsgInConversation}>
-        listenNewMsgInConversation
-      </button>
-      <hr />
-      <button onClick={listenNewMsgInAllConversation}>
-        listenNewMsgInAllConversation
-      </button>
-      <hr />
-      <button onClick={getPersistedMessages}>getPersistedMessages</button>
-      <hr />
-      <div>
-        <input type="file" onChange={handleFileChange} />
-        <button onClick={handleUploadFile} disabled={uploading}>
-          uploadFileToIpfs
+    <div id="App">
+      <div className="app-body">
+        <button onClick={connectWallet}>connectWallet</button>
+        <div className="blackText">{address}</div>
+        <hr />
+        <button onClick={createCapability}>createCapability</button>
+        <div className="blackText">{pkh}</div>
+        <hr />
+        <button onClick={checkCapability}>checkCapability</button>
+        <div className="blackText">
+          {isCurrentPkhValid !== undefined && String(isCurrentPkhValid)}
+        </div>
+        <hr />
+        <button onClick={isMsgReceiverOnNetwork}>isMsgReceiverOnNetwork</button>
+        <hr />
+        <button onClick={getAllConversations}>getAllConversations</button>
+        <hr />
+        <button onClick={sendMessageToMsgReceiver}>
+          sendMessageToMsgReceiver
         </button>
-        <div className="blackText">{fileCId}</div>
-      </div>
-      <hr />
-      <div>
-        <button onClick={sentMessageWithAttachment}>
-          sentMessageWithAttachment
+        <hr />
+        <button onClick={getMessageWithMsgReceiver}>
+          getMessageWithMsgReceiver
         </button>
+        <hr />
+        <button onClick={getPaginatedMessageWithMsgReceiver}>
+          getPaginatedMessageWithMsgReceiver
+        </button>
+        <hr />
+        <button onClick={listenConversationsFromStranger}>
+          listenConversationsFromStranger
+        </button>
+        <hr />
+        <button onClick={listenNewMsgInConversation}>
+          listenNewMsgInConversation
+        </button>
+        <hr />
+        <button onClick={listenNewMsgInAllConversation}>
+          listenNewMsgInAllConversation
+        </button>
+        <hr />
+        <button onClick={getPersistedMessages}>getPersistedMessages</button>
+        <hr />
+        <div>
+          <input type="file" onChange={handleFileChange} />
+          <button onClick={handleUploadFile} disabled={uploading}>
+            uploadFileToIpfs
+          </button>
+          <div className="blackText">{fileCId}</div>
+        </div>
+        <hr />
+        <div>
+          <button onClick={sentMessageWithAttachment}>
+            sentMessageWithAttachment
+          </button>
+        </div>
+        <hr />
+        <button onClick={unlockMessage}>unlockMessage</button>
       </div>
-      <hr />
-      <button onClick={unlockMessage}>
-        unlockMessage
-      </button>
     </div>
   );
 }

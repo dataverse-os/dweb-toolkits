@@ -1,12 +1,16 @@
 {
   "$schema": "node_modules/lerna/schemas/lerna-schema.json",
-  "version": "1.0.18",
+  "version": "1.0.25",
   "npmClient": "pnpm",
   "ignore": [
+    "template",
+    "template-demo",
     "livepeer-demo",
     "push-demo",
     "tableland-demo",
-    "xmtp-demo"
+    "xmtp-demo",
+    "lens-demo",
+    "snapshot-demo"
   ],
   "command": {
     "publish": {

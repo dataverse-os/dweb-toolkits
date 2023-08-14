@@ -1,28 +1,36 @@
 import {
-  Mode,
-  RuntimeConnector,
+  DataverseConnector,
   StreamContent,
-} from "@dataverse/runtime-connector";
+  SYSTEM_CALL,
+} from "@dataverse/dataverse-connector";
 import { Database, helpers, Validator } from "@tableland/sdk";
 import { ChainId, TablelandContract, TransferEventSig } from "./constant";
 import { Network } from "./types";
 import { BigNumberish, ethers } from "ethers";
+import { Checker } from "@dataverse/utils-toolkit";
+import { WalletProvider } from "@dataverse/wallet-provider";
 
 export class TablelandClient {
-  runtimeConnector: RuntimeConnector;
+  dataverseConnector: DataverseConnector;
+  walletProvider: WalletProvider;
   network: Network;
   modelId: string;
+  private checker: Checker;
 
   constructor({
-    runtimeConnector,
+    dataverseConnector,
+    walletProvider,
     network,
     modelId,
   }: {
-    runtimeConnector: RuntimeConnector;
+    dataverseConnector: DataverseConnector;
+    walletProvider: WalletProvider;
     network: Network;
     modelId: string;
   }) {
-    this.runtimeConnector = runtimeConnector;
+    this.dataverseConnector = dataverseConnector;
+    this.walletProvider = walletProvider;
+    this.checker = new Checker(dataverseConnector);
     this.network = network;
     this.modelId = modelId;
   }
@@ -32,7 +40,9 @@ export class TablelandClient {
   ): Promise<
     { tableName: string; chainId: number; tableId: string } | undefined
   > {
-    const tableOwner = await this.getAddress();
+    await this.checker.checkCapability();
+
+    const tableOwner = this.dataverseConnector.address!;
     const chainId = ChainId[this.network];
     const createTableRegex = /CREATE TABLE (\w+) \((.+)\)/;
     const result = createTableRegex.exec(sql);
@@ -43,7 +53,7 @@ export class TablelandClient {
     const params = this._getCreateParams(tableOwner, statement);
     /* tablename, chainId, colums, */
     try {
-      const res = await this.runtimeConnector.contractCall(params);
+      const res = await this.walletProvider.contractCall(params);
       const tableId = await this.getTableIdByTxHash(res.transactionHash);
 
       const tableContent = {
@@ -52,9 +62,9 @@ export class TablelandClient {
         create_sql: statement,
         chainId: chainId,
         columns: columns,
-        created_at: new Date().toISOString()
-      }
-      await this.persistTable(this.modelId, tableContent);
+        created_at: new Date().toISOString(),
+      };
+      await this._persistTable(this.modelId, tableContent);
 
       return {
         tableName,
@@ -68,49 +78,20 @@ export class TablelandClient {
   }
 
   public async getTableList() {
-    const streams = await this.loadTableStreams();
-    const tables = await this.fetchTables(streams);
-    return tables;
-  }
+    await this.checker.checkCapability();
 
-  private async loadTableStreams() {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    return await this.runtimeConnector.loadStreamsBy({
-      modelId: this.modelId,
-      pkh: pkh,
-    });
-  }
-
-  private async fetchTables(streams: any) {
-    const chainId = ChainId[this.network];
-    const db = new Database({
-      baseUrl: helpers.getBaseUrl(chainId),
-    });
-    const obj = new Validator(db.config);
-    const tables: any[] = [];
-    for (const key in streams) {
-      // loop through the RecordType
-      if (Object.prototype.hasOwnProperty.call(streams, key)) {
-        const tableId = streams[key].streamContent.content.tableId;
-        const { name, schema } = await obj.getTableById({
-          chainId: chainId,
-          tableId: tableId,
-        });
-        tables.push({
-          name: name,
-          schema: schema,
-          ...streams[key].streamContent.content,
-        });
-      }
-    }
+    const streams = await this._loadTableStreams();
+    const tables = await this._fetchTables(streams);
     return tables;
   }
 
   public async mutateTable(tId: string, sql: string) {
-    const tableOwner = await this.getAddress();
+    this.checker.checkWallet();
+
+    const tableOwner = this.dataverseConnector.address!;
 
     const params = this._getMutateParams(tableOwner, tId, sql);
-    const res = await this.runtimeConnector.contractCall(params);
+    const res = await this.walletProvider.contractCall(params);
 
     return res;
   }
@@ -152,11 +133,16 @@ export class TablelandClient {
   }
 
   async getTableIdByTxHash(transactionHash: string) {
-    await this.runtimeConnector.switchNetwork(ChainId[this.network]);
-    const res = await this.runtimeConnector.ethereumRequest({
+    this.checker.checkWallet();
+
+    await this.walletProvider.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: ChainId[this.network] }],
+    });
+    const res = await this.walletProvider.request({
       method: "eth_getTransactionReceipt",
       params: [transactionHash],
-    });
+    })
     let tableId: string | undefined;
     res.logs.forEach((log: any) => {
       if (log.topics[0] == TransferEventSig) {
@@ -170,6 +156,45 @@ export class TablelandClient {
     } else {
       throw new Error("Unable to got tableId");
     }
+  }
+
+  private async _loadTableStreams() {
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    return await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
+      params: {
+        modelId: this.modelId,
+        pkh: pkh,
+      },
+    });
+  }
+
+  private async _fetchTables(streams: any) {
+    const chainId = ChainId[this.network];
+    const db = new Database({
+      baseUrl: helpers.getBaseUrl(chainId),
+    });
+    const obj = new Validator(db.config);
+    const tables: any[] = [];
+    for (const key in streams) {
+      // loop through the RecordType
+      if (Object.prototype.hasOwnProperty.call(streams, key)) {
+        const tableId = streams[key].streamContent.content.tableId;
+        const { name, schema } = await obj.getTableById({
+          chainId: chainId,
+          tableId: tableId,
+        });
+        tables.push({
+          name: name,
+          schema: schema,
+          ...streams[key].streamContent.content,
+        });
+      }
+    }
+    return tables;
   }
 
   private _getCreateParams(owner: string, statement: string) {
@@ -203,7 +228,6 @@ export class TablelandClient {
       ],
       method: "create",
       params: [owner, statement],
-      mode: Mode.Write,
     };
   }
   private _getMutateParams(
@@ -240,17 +264,16 @@ export class TablelandClient {
       ],
       method: "mutate",
       params: [caller, tableId, statement],
-      mode: Mode.Write,
     };
   }
 
-  async getAddress(): Promise<string> {
-    const did = await this.runtimeConnector.wallet.getCurrentPkh();
-    const address = did.split(":")[4];
-    return address;
-  }
-
-  async persistTable(modelId: string, streamContent: StreamContent) {
-    this.runtimeConnector.createStream({ modelId, streamContent });
+  private async _persistTable(modelId: string, streamContent: StreamContent) {
+    await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
+      params: {
+        modelId,
+        streamContent,
+      },
+    });
   }
 }

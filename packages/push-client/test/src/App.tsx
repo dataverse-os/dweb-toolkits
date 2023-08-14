@@ -1,5 +1,5 @@
-import { WALLET } from "@dataverse/runtime-connector";
-import React, { useContext, useMemo, useState } from "react";
+import { SYSTEM_CALL } from "@dataverse/dataverse-connector";
+import { useContext, useMemo, useState } from "react";
 import { Context } from "./main";
 import "./App.scss";
 import {
@@ -10,28 +10,26 @@ import {
 } from "@dataverse/push-client-toolkit";
 import { ENV } from "@pushprotocol/restapi/src/lib/constants";
 
-const modelIds = {
-  [ModelType.MESSAGE]: import.meta.env.VITE_CHAT_MESSAGE_MODEL_ID,
-  [ModelType.USER_PGP_KEY]: import.meta.env.VITE_CHAT_PGP_KEY_MODEL_ID,
-  [ModelType.CHANNEL]: import.meta.env.VITE_CHANNEL_MODEL_ID,
-  [ModelType.NOTIFICATION]: import.meta.env.VITE_NOTIFICATION_MODEL_ID,
-};
 
 const App = () => {
-  const { runtimeConnector } = useContext(Context);
+  const { dataverseConnector, modelParser } = useContext(Context);
+  const modelIds = {
+    [ModelType.MESSAGE]: modelParser.getModelByName("pushchatmessage").streams[0].modelId,
+    [ModelType.USER_PGP_KEY]: modelParser.getModelByName("pushchatgpgkey").streams[0].modelId,
+    [ModelType.CHANNEL]: modelParser.getModelByName("pushchannel").streams[0].modelId,
+    [ModelType.NOTIFICATION]: modelParser.getModelByName("pushnotification").streams[0].modelId,
+  };
   const pushNotificationClient = useMemo(() => {
     return new PushNotificationClient({
-      runtimeConnector,
+      dataverseConnector,
       modelIds: modelIds,
-      appName: import.meta.env.VITE_APP_NAME,
       env: ENV.STAGING,
     });
   }, []);
   const pushChatClient = useMemo(() => {
     return new PushChatClient({
-      runtimeConnector,
+      dataverseConnector,
       modelIds: modelIds,
-      appName: import.meta.env.VITE_APP_NAME,
       env: ENV.STAGING,
     });
   }, []);
@@ -59,15 +57,15 @@ const App = () => {
   const [chatterForHistory, setChatterForHistory] = useState<string>();
 
   const connectIdentity = async () => {
-    const { address, wallet } = await runtimeConnector.connectWallet(
-      WALLET.METAMASK
-    );
+    const { address } = await dataverseConnector.connectWallet();
     setAccount(address);
     console.log("address:", address);
 
-    const did = await runtimeConnector.createCapability({
-      app: import.meta.env.VITE_APP_NAME,
-      wallet,
+    const did = await dataverseConnector.runOS({
+      method: SYSTEM_CALL.createCapability,
+      params: {
+        appId: modelParser.appId,
+      },
     });
     setDid(did);
     console.log("did:", did);
@@ -258,7 +256,10 @@ const App = () => {
       console.error("undefined chatterForHistory");
       return;
     }
-    console.log("import.meta.env.VITE_CHAT_MESSAGE_MODEL_ID:", import.meta.env.VITE_CHAT_MESSAGE_MODEL_ID)
+    console.log(
+      "import.meta.env.VITE_CHAT_MESSAGE_MODEL_ID:",
+      import.meta.env.VITE_CHAT_MESSAGE_MODEL_ID
+    );
     const res = await pushChatClient.fetchHistoryChats(chatterForHistory, 20);
     console.log("[getHistoryChats]res:", res);
   };

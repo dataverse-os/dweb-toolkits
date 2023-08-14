@@ -6,13 +6,18 @@
   "scripts": {
     "build": "lerna run build",
     "build:utils": "lerna run build --scope=@dataverse/utils-toolkit",
+    "build:lens-client": "lerna run build --scope=@dataverse/lens-client-toolkit",
     "build:livepeer-client": "lerna run build --scope=@dataverse/livepeer-client-toolkit",
+    "build:snapshot-client": "lerna run build --scope=@dataverse/snapshot-client-toolkit",
     "build:push-client": "lerna run build --scope=@dataverse/push-client-toolkit",
     "build:tableland-client": "lerna run build --scope=@dataverse/tableland-client-toolkit",
     "build:xmtp-client": "lerna run build --scope=@dataverse/xmtp-client-toolkit",
     "test:livepeer-client": "lerna run test --scope=@dataverse/livepeer-client-toolkit",
     "test:push-client": "lerna run test --scope=@dataverse/push-client-toolkit",
     "test:tableland-client": "lerna run test --scope=@dataverse/tableland-client-toolkit",
+    "test:lens-client": "lerna run test --scope=@dataverse/lens-client-toolkit",
+    "test:snapshot-client": "lerna run test --scope=@dataverse/snapshot-client-toolkit",
+    "test:xmtp-client": "lerna run test --scope=@dataverse/xmtp-client-toolkit",
     "publish": "lerna publish --no-private"
   },
   "dependencies": {

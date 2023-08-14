@@ -1,22 +1,26 @@
-import { Extension, RuntimeConnector } from "@dataverse/runtime-connector";
+import { DataverseConnector } from "@dataverse/dataverse-connector";
 import React, { createContext } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import "./index.css";
+import "./index.scss";
+import { ModelParser, Output } from "@dataverse/model-parser";
+import app from "../output/app.json";
 
 interface Context {
-  runtimeConnector: RuntimeConnector;
+  dataverseConnector: DataverseConnector;
+  modelParser: ModelParser;
 }
 
 export const Context = createContext<Context>({} as Context);
-const runtimeConnector = new RuntimeConnector(Extension);
+const dataverseConnector = new DataverseConnector();
+const modelParser = new ModelParser(app as Output);
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <Context.Provider value={{ runtimeConnector }}>
+    <Context.Provider value={{ dataverseConnector, modelParser }}>
       <App />
     </Context.Provider>
   </React.StrictMode>

@@ -1,8 +1,9 @@
 import {
   DatatokenVars,
-  RuntimeConnector,
+  DataverseConnector,
   StreamContent,
-} from "@dataverse/runtime-connector";
+  SYSTEM_CALL,
+} from "@dataverse/dataverse-connector";
 
 import {
   createReactClient,
@@ -11,35 +12,35 @@ import {
   studioProvider,
 } from "@livepeer/react";
 import axios, { AxiosInstance } from "axios";
+import { Checker } from "@dataverse/utils-toolkit";
+import { Video, Stream, IndexFileId } from "./types";
 
 export { LivepeerConfig, createReactClient, ReactClient };
 
 export class LivepeerClient {
   private http: AxiosInstance;
+  private checker: Checker;
   public apiKey: string;
   public reactClient: ReactClient;
-  public appName: string;
   public modelId: string;
-  public runtimeConnector: RuntimeConnector;
+  public dataverseConnector: DataverseConnector;
 
   constructor({
     apiKey,
-    runtimeConnector,
+    dataverseConnector,
     modelId,
-    appName,
   }: {
     apiKey: string;
-    runtimeConnector: RuntimeConnector;
+    dataverseConnector: DataverseConnector;
     modelId: string;
-    appName: string;
   }) {
     this.apiKey = apiKey;
     this.reactClient = createReactClient({
       provider: studioProvider({ apiKey }),
     });
-    this.appName = appName;
     this.modelId = modelId;
-    this.runtimeConnector = runtimeConnector;
+    this.dataverseConnector = dataverseConnector;
+    this.checker = new Checker(dataverseConnector);
 
     this.http = axios.create({
       baseURL: "https://livepeer.studio/api/asset/",
@@ -61,13 +62,15 @@ export class LivepeerClient {
   }
 
   public async uploadVideo(rawVideoFile: any) {
+    await this.checker.checkCapability();
+
     const postRes = await this.http.post("request-upload", {
       name: rawVideoFile.name,
     });
 
     const http = axios.create({
       baseURL: "https://livepeer.studio/api/asset/",
-      timeout: 50000,
+      timeout: 1000 * 60 * 10,
       headers: {
         Authorization: `Bearer \t${this.apiKey}`,
         "Content-Type": rawVideoFile.type,
@@ -78,10 +81,10 @@ export class LivepeerClient {
 
     const videoMeta = (postRes as any).asset;
     const stream = await this._persistAssetMeta(videoMeta);
-    
+
     return {
       videoMeta,
-      stream
+      stream,
     };
   }
 
@@ -98,10 +101,17 @@ export class LivepeerClient {
   }
 
   public async getVideoMetaList() {
-    const pkh = await this.runtimeConnector.wallet.getCurrentPkh();
-    const streams = await this.runtimeConnector.loadStreamsBy({
-      modelId: this.modelId,
-      pkh: pkh,
+    await this.checker.checkCapability();
+    const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
+    this.dataverseConnector.connectWallet({ wallet });
+
+    const pkh = this.dataverseConnector.getCurrentPkh();
+    const streams = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadStreamsBy,
+      params: {
+        modelId: this.modelId,
+        pkh: pkh,
+      },
     });
     const assets = [];
     for (const key in streams) {
@@ -109,6 +119,7 @@ export class LivepeerClient {
         assets.push(streams[key]);
       }
     }
+    await this._syncVideoWithLivepeer(assets as unknown as Stream[]);
     return assets;
   }
 
@@ -123,6 +134,8 @@ export class LivepeerClient {
     lensNickName?: string;
     datatokenVars: Omit<DatatokenVars, "streamId">;
   }) {
+    await this.checker.checkCapability();
+
     if (!datatokenVars.profileId) {
       datatokenVars.profileId = await this._getProfileId({
         address,
@@ -130,17 +143,23 @@ export class LivepeerClient {
       });
     }
 
-    await this.runtimeConnector.monetizeFile({
-      streamId,
-      datatokenVars,
+    await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.monetizeFile,
+      params: {
+        streamId,
+        datatokenVars,
+      },
     });
   }
 
   private _persistAssetMeta(assetMeta: any) {
     const livepeerAsset: StreamContent = this._generateAssetMeta(assetMeta);
-    return this.runtimeConnector.createStream({
-      modelId: this.modelId,
-      streamContent: livepeerAsset,
+    return this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createStream,
+      params: {
+        modelId: this.modelId,
+        streamContent: livepeerAsset,
+      },
     });
   }
 
@@ -163,6 +182,36 @@ export class LivepeerClient {
     };
   }
 
+  private async _syncVideoWithLivepeer(streams: Stream[]) {
+    const videos = (await this.retrieveVideos()) as unknown as Video[];
+    const videosMap = new Map<string, Video>();
+    videos.forEach((video: Video) => {
+      videosMap.set(video.id, video);
+    });
+
+    // find out no exist stream to delete , remove matched video from videoMap
+    const streamToDelete = new Set<IndexFileId>();
+    streams.forEach((stream) => {
+      if (!videosMap.has(stream.streamContent.content.asset_id)) {
+        streamToDelete.add(stream.streamContent.file.indexFileId);
+      } else {
+        videosMap.delete(stream.streamContent.content.asset_id);
+      }
+    });
+
+    this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.removeFiles,
+      params: {
+        indexFileIds: [...streamToDelete],
+      },
+    });
+
+    // the remaining of videoMap should be not exist in folder, so add it
+    videosMap.forEach((value: Video, _: string) => {
+      this._persistAssetMeta(value).catch((_: Error) => { });
+    });
+  }
+
   private async _getProfileId({
     address,
     lensNickName,
@@ -170,7 +219,7 @@ export class LivepeerClient {
     address: string;
     lensNickName?: string;
   }) {
-    const lensProfiles = await this.runtimeConnector.getProfiles(address);
+    const lensProfiles = await this.dataverseConnector.getProfiles(address);
 
     let profileId;
     if (lensProfiles?.[0]?.id) {
@@ -182,7 +231,7 @@ export class LivepeerClient {
       if (!/^[\da-z]{5,26}$/.test(lensNickName) || lensNickName.length > 26) {
         throw "Only supports lower case characters, numbers, must be minimum of 5 length and maximum of 26 length";
       }
-      profileId = await this.runtimeConnector.createProfile(lensNickName);
+      profileId = await this.dataverseConnector.createProfile(lensNickName);
     }
     return profileId;
   }
