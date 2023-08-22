@@ -1,6 +1,6 @@
 {
   "name": "@dataverse/lens-client-toolkit",
-  "version": "1.0.25",
+  "version": "1.0.27",
   "description": "",
   "module": "dist/esm/src/index.js",
   "main": "dist/cjs/src/index.js",
@@ -18,9 +18,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@dataverse/dataverse-connector": "latest",
-    "@dataverse/utils-toolkit": "1.0.25",
-    "@dataverse/wallet-provider": "latest",
+    "@dataverse/dataverse-connector": "^1.0.25",
+    "@dataverse/utils-toolkit": "^1.0.27",
+    "@dataverse/wallet-provider": "^1.0.12",
     "ethers": "^5.7.2",
     "graphql": "16.6.0",
     "graphql-request": "^6.1.0",
@@ -31,5 +31,5 @@
   "devDependencies": {
     "@types/react": "^18.2.9"
   },
-  "gitHead": "4d556105050d93300ab52124f5e7df51cb9a3ac3"
+  "gitHead": "99e60a6990fdd2b10c0f428002a1fc227bb87f60"
 }

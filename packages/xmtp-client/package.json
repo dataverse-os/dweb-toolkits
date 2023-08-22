@@ -1,6 +1,6 @@
 {
   "name": "@dataverse/xmtp-client-toolkit",
-  "version": "1.0.25",
+  "version": "1.0.27",
   "description": "",
   "module": "dist/esm/index.js",
   "main": "dist/cjs/index.js",
@@ -18,8 +18,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@dataverse/dataverse-connector": "latest",
-    "@dataverse/utils-toolkit": "^1.0.25",
+    "@dataverse/dataverse-connector": "^1.0.25",
+    "@dataverse/utils-toolkit": "^1.0.27",
     "@ethersproject/abstract-provider": "^5.7.0",
     "@ethersproject/abstract-signer": "^5.7.0",
     "@ethersproject/properties": "^5.7.0",
@@ -28,5 +28,5 @@
     "typescript": "^4.9.5",
     "xmtp-content-type-remote-attachment": "^1.0.7"
   },
-  "gitHead": "4d556105050d93300ab52124f5e7df51cb9a3ac3"
+  "gitHead": "99e60a6990fdd2b10c0f428002a1fc227bb87f60"
 }

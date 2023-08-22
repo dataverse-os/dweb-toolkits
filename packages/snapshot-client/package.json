@@ -1,6 +1,6 @@
 {
   "name": "@dataverse/snapshot-client-toolkit",
-  "version": "1.0.25",
+  "version": "1.0.27",
   "description": "",
   "module": "dist/esm/src/index.js",
   "main": "dist/cjs/src/index.js",
@@ -18,8 +18,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@dataverse/dataverse-connector": "latest",
-    "@dataverse/utils-toolkit": "1.0.25",
+    "@dataverse/dataverse-connector": "^1.0.25",
+    "@dataverse/utils-toolkit": "^1.0.27",
     "@snapshot-labs/snapshot.js": "^0.4.100",
     "graphql": "16.6.0",
     "graphql-request": "^6.1.0",
@@ -30,5 +30,5 @@
   "devDependencies": {
     "@types/react": "^18.2.9"
   },
-  "gitHead": "4d556105050d93300ab52124f5e7df51cb9a3ac3"
+  "gitHead": "99e60a6990fdd2b10c0f428002a1fc227bb87f60"
 }
