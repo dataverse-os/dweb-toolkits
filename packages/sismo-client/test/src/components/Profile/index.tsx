@@ -1,11 +1,11 @@
 import { abbreviateAddress } from "../../utils";
 import React from "react";
 import "./index.scss";
-import { ReputationInfo, SismoGroupInfo } from "@dataverse/sismo-client";
+import { CredentialInfo, SismoGroupInfo } from "@dataverse/sismo-client";
 
 interface IProps {
   address?: string;
-  credentialInfoList?: ReputationInfo[];
+  credentialInfoList?: CredentialInfo[];
   groupInfoList?: SismoGroupInfo[];
 }
 
@@ -25,11 +25,11 @@ const Profile = ({ address, credentialInfoList, groupInfoList }: IProps) => {
   return (
     <div className='profile'>
       <div className='profile__address'>
-        <h4>address</h4>
+        <h4>Address</h4>
         {address ? abbreviateAddress(address) : ""}
       </div>
       <div className='profile__reputations'>
-        <h4>Reputations</h4>
+        <h4>Credentials</h4>
         {groupInfoList?.map((groupInfo: SismoGroupInfo, index) => {
           return (
             <div className='profile__reputations-item' key={index}>

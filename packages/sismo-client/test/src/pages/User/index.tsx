@@ -3,40 +3,16 @@ import {
   AuthType,
   ClaimRequest,
   SismoConnectButton,
-  SismoConnectConfig,
 } from "@sismo-core/sismo-connect-react";
 import { ethers } from "ethers";
 import {
-  ReputationInfo,
+  CredentialInfo,
   SismoGroupInfo,
   SismoClient,
 } from "@dataverse/sismo-client";
 import { Profile } from "../../components";
 import { abiCoder } from "../../utils";
 import { useNavigate } from "react-router-dom";
-
-const sismoConnectConfig: SismoConnectConfig = {
-  appId: "0x1267ea070ec44221e85667a731eee045",
-};
-const AUTHS = [{ authType: AuthType.VAULT }];
-const MULTI_CLAIMS: ClaimRequest[] = [
-  {
-    groupId: "0x7cccd0183c6ca02e76600996a671a824", // CY Group1
-    isOptional: true,
-  },
-  {
-    groupId: "0xf44c3e70f9147f1a4d59077451535f00", // CY Group2
-    isOptional: true,
-  },
-  {
-    groupId: "0xaa329246800f36e70eefbc38c7bb018e", // Yf Cy Access
-    isOptional: true,
-  },
-  {
-    groupId: "0xb3ac412738ed399acab21fbda9add42c",
-    isOptional: true,
-  },
-];
 
 const User = () => {
   const navigate = useNavigate();
@@ -45,7 +21,7 @@ const User = () => {
     React.useState<SismoClient>();
 
   const [credentialInfoList, setCredentialInfoList] =
-    React.useState<ReputationInfo[]>();
+    React.useState<CredentialInfo[]>();
   const [groupInfoList, setGroupInfoList] = React.useState<SismoGroupInfo[]>();
   const [responseBytes, setResponseBytes] = React.useState<string>();
 
@@ -66,6 +42,19 @@ const User = () => {
         setGroupInfoList(groupInfoList);
         console.log("groupInfoList:", groupInfoList);
       })();
+    }
+  }, [credentialInfoList]);
+
+  const sismoClaims: ClaimRequest[] = React.useMemo(() => {
+    if (credentialInfoList) {
+      return credentialInfoList.map((credentialInfo: CredentialInfo) => {
+        return {
+          groupId: credentialInfo.groupId,
+          isOptional: true,
+        };
+      });
+    } else {
+      return [];
     }
   }, [credentialInfoList]);
 
@@ -134,9 +123,11 @@ const User = () => {
       <br />
       <SismoConnectButton
         disabled={address ? false : true}
-        config={sismoConnectConfig}
-        auths={AUTHS}
-        claims={MULTI_CLAIMS}
+        config={{
+          appId: process.env.SISMO_APP_ID!,
+        }}
+        auths={[{ authType: AuthType.VAULT }]}
+        claims={sismoClaims}
         signature={
           address
             ? {

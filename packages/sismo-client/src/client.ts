@@ -1,6 +1,6 @@
 import SismoCredentialJson from "./contracts/SismoCredential.json";
 import { Contract, Signer } from "ethers";
-import { ReputationInfo, GroupSetup } from "./types";
+import { CredentialInfo, GroupSetup } from "./types";
 import { querySismoGroupInfoById } from "./services";
 
 export class SismoClient {
@@ -48,8 +48,8 @@ export class SismoClient {
 
   public async getCredentialInfoList(
     accountAddress: string,
-  ): Promise<ReputationInfo[]> {
-    const reputationInfo: ReputationInfo[] =
+  ): Promise<CredentialInfo[]> {
+    const reputationInfo: CredentialInfo[] =
       await this._sismoCrendential.getCredentialInfoList(accountAddress);
     return reputationInfo;
   }

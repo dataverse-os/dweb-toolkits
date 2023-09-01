@@ -10,6 +10,7 @@ export default defineConfig({
   },
   define: {
     "process.env": {
+      SISMO_APP_ID: "0x1267ea070ec44221e85667a731eee045",
       SISMO_CREDENTIAL_CONTRACT: "0xb179298764e548877658fa9978817fc79c82f111",
     },
   },

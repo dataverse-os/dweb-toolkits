@@ -1,6 +1,6 @@
 import { BigNumberish } from "ethers";
 
-export type ReputationInfo = {
+export type CredentialInfo = {
   groupId: string;
   expiredAt: BigNumberish;
   value: boolean;
