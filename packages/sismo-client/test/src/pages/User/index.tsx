@@ -6,7 +6,11 @@ import {
   SismoConnectConfig,
 } from "@sismo-core/sismo-connect-react";
 import { ethers } from "ethers";
-import { ReputationInfo, SismoGroupInfo, SismoClient } from "@dataverse/sismo-client";
+import {
+  ReputationInfo,
+  SismoGroupInfo,
+  SismoClient,
+} from "@dataverse/sismo-client";
 import { Profile } from "../../components";
 import { abiCoder } from "../../utils";
 import { useNavigate } from "react-router-dom";
@@ -24,14 +28,10 @@ const MULTI_CLAIMS: ClaimRequest[] = [
     groupId: "0xf44c3e70f9147f1a4d59077451535f00", // CY Group2
     isOptional: true,
   },
-  // {
-  //   groupId: "0x4350b6e49eb734978ec285e740f54848", // Dataverse Test Lyf
-  //   isOptional: true,
-  // },
-  // {
-  //   groupId: "0xaa329246800f36e70eefbc38c7bb018e", // Yf Cy Access
-  //   isOptional: true,
-  // },
+  {
+    groupId: "0xaa329246800f36e70eefbc38c7bb018e", // Yf Cy Access
+    isOptional: true,
+  },
   {
     groupId: "0xb3ac412738ed399acab21fbda9add42c",
     isOptional: true,
@@ -52,12 +52,19 @@ const User = () => {
   React.useEffect(() => {
     if (sismoCredentialClient && credentialInfoList) {
       (async () => {
-        const groupInfoList = await Promise.all(
-          credentialInfoList.map(reputationInfo =>
-            sismoCredentialClient.getSismoGroupInfo(reputationInfo.groupId),
-          ),
+        const settleList = await Promise.allSettled(
+          credentialInfoList.map((reputationInfo) =>
+            sismoCredentialClient.getSismoGroupInfo(reputationInfo.groupId)
+          )
         );
+        const groupInfoList: SismoGroupInfo[] = [];
+        settleList.map((elem) => {
+          if (elem.status === "fulfilled") {
+            groupInfoList.push(elem.value);
+          }
+        });
         setGroupInfoList(groupInfoList);
+        console.log("groupInfoList:", groupInfoList);
       })();
     }
   }, [credentialInfoList]);
@@ -73,7 +80,7 @@ const User = () => {
       alert("Please install metamask first!");
     }
     const provider = new ethers.providers.Web3Provider(
-      (window as any).ethereum,
+      (window as any).ethereum
     );
 
     const [address] = await provider.send("eth_requestAccounts", []);
@@ -82,7 +89,7 @@ const User = () => {
     const signer = provider.getSigner();
 
     const client = new SismoClient({
-      contractAddr: "0xaf61e05CCa3197D74EE059a02be281Ed6b90203F",
+      contractAddr: process.env.SISMO_CREDENTIAL_CONTRACT!,
       signer,
     });
 
@@ -109,7 +116,7 @@ const User = () => {
       throw new Error("Address undefined!");
     }
     const result = await sismoCredentialClient?.getCredentialInfoList(address);
-    console.log("getReputations result:", result);
+    console.log("getCredentialInfoList result:", result);
     setCredentialInfoList(result);
   };
 
@@ -145,7 +152,7 @@ const User = () => {
       <br />
       <button onClick={bindCredential}> bindCredential</button>
       <br />
-      <button className='router' onClick={() => navigate("/admin")}>
+      <button className="router" onClick={() => navigate("/admin")}>
         Go to Admin
       </button>
     </>

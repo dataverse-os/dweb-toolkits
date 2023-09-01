@@ -4,7 +4,7 @@ import { GroupSetup, SismoClient } from "@dataverse/sismo-client";
 import { abbreviateAddress } from "../../utils";
 import { useNavigate } from "react-router-dom";
 
-const mockGroupId_01 = "0x4350b6e49eb734978ec285e740f54848";
+const mockGroupId_01 = "0x4350b6e49eb734978ec285e740f54848";  
 const mockGroupId_02 = "0xaa329246800f36e70eefbc38c7bb018e";
 
 const Admin = () => {
@@ -27,12 +27,17 @@ const Admin = () => {
     const signer = provider.getSigner();
 
     const client = new SismoClient({
-      contractAddr: "0xaf61e05CCa3197D74EE059a02be281Ed6b90203F",
+      contractAddr: process.env.SISMO_CREDENTIAL_CONTRACT!,
       signer,
     });
 
     setSismoCredentialClient(client);
   };
+
+  const getGroupIds = async () => {
+    const result = await sismoCredentialClient?.getGroupIds();
+    console.log("getGroupIds result:", result);
+  }
 
   const addDataGroups = async () => {
     if (!address) {
@@ -63,7 +68,7 @@ const Admin = () => {
       throw new Error("Address undefined!");
     }
 
-    const dataGroups = [mockGroupId_01, mockGroupId_02];
+    const dataGroups = [mockGroupId_01];
     const result = await sismoCredentialClient?.deleteDataGroups(dataGroups);
     console.log("deleteDataGroups result:", result);
   };
@@ -73,6 +78,8 @@ const Admin = () => {
       <button onClick={connectWallet}> connectWallet</button>
       <br />
       {address ? abbreviateAddress(address) : undefined}
+      <br />
+      <button onClick={getGroupIds}> getGroupIds</button>
       <br />
       <button onClick={addDataGroups}> addDataGroups</button>
       <br />

@@ -45,6 +45,7 @@ export const querySismoGroupInfoById = async (groupId: string) => {
     query,
     variables: { groupId },
   });
+  console.log("response apollo:", response);
   return response.data.group as SismoGroupInfo;
 };
 

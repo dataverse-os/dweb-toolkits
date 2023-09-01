@@ -43,8 +43,7 @@ export class SismoClient {
       accountAddress,
       responseBytes,
     );
-    const result = await tx.wait();
-    return result;
+    return tx.wait();
   }
 
   public async getCredentialInfoList(
