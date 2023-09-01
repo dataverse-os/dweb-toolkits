@@ -10,7 +10,8 @@
     "tableland-demo",
     "xmtp-demo",
     "lens-demo",
-    "snapshot-demo"
+    "snapshot-demo",
+    "sismo-credentials-demo"
   ],
   "command": {
     "publish": {
