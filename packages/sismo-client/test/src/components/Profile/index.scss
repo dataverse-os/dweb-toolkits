@@ -1,0 +1,34 @@
+.profile {
+  border: 1px solid gainsboro;
+  text-align: left;
+
+  h4 {
+    margin: 10px 0;
+  }
+  
+  .profile__address {
+    padding: 10px;
+  }
+
+  .profile__reputations {
+    padding: 10px;
+    .profile__reputations-item {
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid gainsboro;
+      margin: 5px;
+      .name {
+        font-size: 18px;
+        font-weight: 650;
+      }
+      .group-id {
+        font-size: 10px;
+        color: rgb(190, 190, 190);
+      }
+      .description {
+        margin-top: 10px;
+        font-size: 12px;
+      }
+    }
+  }
+}

@@ -11,7 +11,7 @@
     "xmtp-demo",
     "lens-demo",
     "snapshot-demo",
-    "sismo-credentials-demo"
+    "sismo-demo"
   ],
   "command": {
     "publish": {
