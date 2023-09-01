@@ -1,10 +1,10 @@
-import SismoCredentialsJson from "./contracts/SismoCredentials.json";
+import SismoCredentialJson from "./contracts/SismoCredential.json";
 import { Contract, Signer } from "ethers";
 import { ReputationInfo, GroupSetup } from "./types";
 import { querySismoGroupInfoById } from "./services";
 
 export class SismoClient {
-  private _sismoCrendentials: Contract;
+  private _sismoCrendential: Contract;
 
   constructor({
     contractAddr,
@@ -13,15 +13,15 @@ export class SismoClient {
     contractAddr: string;
     signer: Signer;
   }) {
-    this._sismoCrendentials = new Contract(
+    this._sismoCrendential = new Contract(
       contractAddr,
-      SismoCredentialsJson.abi,
+      SismoCredentialJson.abi,
       signer,
     );
   }
 
   public getGroupIds() {
-    return this._sismoCrendentials.getGroupIds();
+    return this._sismoCrendential.getGroupIds();
   }
 
   public getSismoGroupInfo(groupId: string) {
@@ -29,7 +29,7 @@ export class SismoClient {
   }
 
   public hasCredential(accountAddress: string): Promise<boolean> {
-    return this._sismoCrendentials.isInDataGroup(accountAddress);
+    return this._sismoCrendential.isInDataGroup(accountAddress);
   }
 
   public async bindCredential({
@@ -39,7 +39,7 @@ export class SismoClient {
     accountAddress: string;
     responseBytes: string;
   }) {
-    const tx = await this._sismoCrendentials.bindCredential(
+    const tx = await this._sismoCrendential.bindCredential(
       accountAddress,
       responseBytes,
     );
@@ -51,7 +51,7 @@ export class SismoClient {
     accountAddress: string,
   ): Promise<ReputationInfo[]> {
     const reputationInfo: ReputationInfo[] =
-      await this._sismoCrendentials.getCredentialInfoList(accountAddress);
+      await this._sismoCrendential.getCredentialInfoList(accountAddress);
     return reputationInfo;
   }
 
@@ -59,7 +59,7 @@ export class SismoClient {
    * @notice only callable by contract owner
    */
   public async addDataGroups(groupSetup: GroupSetup[]) {
-    const tx = await this._sismoCrendentials.addDataGroups(groupSetup);
+    const tx = await this._sismoCrendential.addDataGroups(groupSetup);
     return tx.wait();
   }
 
@@ -67,7 +67,7 @@ export class SismoClient {
    * @notice only callable by contract owner
    */
   public async deleteDataGroups(groupIds: string[]) {
-    const tx = await this._sismoCrendentials.deleteDataGroups(groupIds);
+    const tx = await this._sismoCrendential.deleteDataGroups(groupIds);
     return tx.wait();
   }
 }
