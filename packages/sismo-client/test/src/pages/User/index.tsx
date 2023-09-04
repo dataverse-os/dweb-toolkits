@@ -14,6 +14,9 @@ import { Profile } from "../../components";
 import { abiCoder } from "../../utils";
 import { useNavigate } from "react-router-dom";
 
+const mockGroupId_01 = "0x4350b6e49eb734978ec285e740f54848";
+// const mockGroupId_02 = "0xaa329246800f36e70eefbc38c7bb018e";
+
 const User = () => {
   const navigate = useNavigate();
   const [address, setAddress] = React.useState<string>();
@@ -108,6 +111,27 @@ const User = () => {
     console.log("getCredentialInfoList result:", result);
     setCredentialInfoList(result);
   };
+  
+  const getCredentialInfo = async () => {
+    if (!address) {
+      throw new Error("Address undefined!");
+    }
+    const result = await sismoCredentialClient?.getCredentialInfo({
+      accountAddress: address,
+      groupId: "0x7cccd0183c6ca02e76600996a671a824"
+    });
+    console.log("getCredentialInfo result:", result);
+  };
+  
+  const getGroupSetup = async () => {
+    if (!address) {
+      throw new Error("Address undefined!");
+    }
+    const result = await sismoCredentialClient?.getGroupSetup(mockGroupId_01);
+    console.log("getGroupSetup result:", result);
+  };
+  
+  
 
   return (
     <>
@@ -142,6 +166,10 @@ const User = () => {
       />
       <br />
       <button onClick={bindCredential}> bindCredential</button>
+      <br />
+      <button onClick={getCredentialInfo}> getCredentialInfo</button>
+      <br />
+      <button onClick={getGroupSetup}> getGroupSetup</button>
       <br />
       <button className="router" onClick={() => navigate("/admin")}>
         Go to Admin
