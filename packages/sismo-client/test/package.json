@@ -9,11 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@dataverse/sismo-client": "workspace:*",
-    "@dataverse/lens-client-toolkit": "workspace:*",
     "@dataverse/dataverse-connector": "latest",
-    "@dataverse/wallet-provider": "latest",
-    "@dataverse/model-parser": "latest",
+    "@dataverse/lens-client-toolkit": "workspace:*",
+    "@dataverse/model-parser": "^1.0.2",
+    "@dataverse/sismo-client": "workspace:*",
+    "@dataverse/wallet-provider": "^1.0.12",
     "@sismo-core/sismo-connect-client": "^0.0.23",
     "@sismo-core/sismo-connect-react": "^0.0.23",
     "apollo-boost": "^0.4.9",

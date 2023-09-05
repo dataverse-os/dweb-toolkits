@@ -1,0 +1,31 @@
+.post {
+  border: 1px solid gainsboro;
+  text-align: left;
+
+  h4 {
+    margin: 10px 0;
+  }
+  
+  .post__address {
+    padding: 10px;
+  }
+
+  .post__reputations {
+    padding: 10px;
+    display: flex;
+    .post__reputations-item {
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid gainsboro;
+      margin: 5px;
+      .name {
+        font-size: 10px;
+        font-weight: 550;
+      }
+    }
+  }
+
+  .post_content {
+    padding: 10px;
+  }
+}
