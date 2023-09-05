@@ -24,8 +24,13 @@ export class SismoClient {
     return this._sismoCredential.getGroupIds();
   }
 
-  public getSismoGroupInfo(groupId: string) {
-    return querySismoGroupInfoById(groupId);
+  public async getSismoGroupInfo(groupId: string) {
+    try{
+      const res = await querySismoGroupInfoById(groupId)
+      return res;
+    } catch (e) {
+      throw new Error("query sismo group info error");
+    }
   }
 
   public hasCredential(accountAddress: string): Promise<boolean> {
@@ -70,8 +75,22 @@ export class SismoClient {
    * @notice only callable by contract owner
    */
   public async addDataGroups(groupSetup: GroupSetup[]) {
+    if (!groupSetup || groupSetup.length === 0) {
+      throw new Error("groupSetup is empty or null");
+    }
+    await this._checkGroupIds(groupSetup);
     const tx = await this._sismoCredential.addDataGroups(groupSetup);
     return tx.wait();
+  }
+  
+  private async _checkGroupIds(groupSetup: GroupSetup[]) {
+    for (const setup of groupSetup) {
+      try {
+        await this.getSismoGroupInfo(setup.groupId);
+      } catch (e) {
+        throw new Error(`${setup.groupId} does not exist in sismo.io`);
+      }
+    }
   }
 
   /**

@@ -1,0 +1,111 @@
+{
+  "id": "477f747b-d450-49aa-9275-89be234bb388",
+  "createdAt": 1691488784,
+  "updatedAt": 1691488784,
+  "deletedAt": null,
+  "name": "lens-toolkit-demo",
+  "logo": "https://bafybeifozdhcbbfydy2rs6vbkbbtj3wc4vjlz5zg2cnqhb2g4rm2o5ldna.ipfs.w3s.link/dataverse.svg",
+  "website": [
+    "localhost"
+  ],
+  "defaultFolderName": "Main",
+  "description": "This is lens toolkit test demo.",
+  "models": [
+    {
+      "modelName": "post",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6c7jkwp1nyxxh5hw7tmzie6vvjn03a7thxtbx59uhwqyhqa5x9zy",
+          "createdAt": 1691488784,
+          "schema": "type post @createModel(accountRelation: LIST, description: \"post\") {  author: DID! @documentAccount  version: CommitID! @documentVersion  appVersion: String! @string(maxLength: 100)  text: String @string(maxLength: 300000000)  images: [String] @list(maxLength: 10000000) @string(maxLength: 2000000)  videos: [String] @list(maxLength: 10000000) @string(maxLength: 2000000)  options: String @string(maxLength: 300000000)  createdAt: DateTime!  updatedAt: DateTime!}",
+          "isPublicDomain": false,
+          "encryptable": [
+            "text",
+            "images",
+            "videos"
+          ],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "lenspublication",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6capgj3isnku9aogi0pivt6yfa2f135sx9ele3vfjv1q9bxjecu6",
+          "createdAt": 1691488784,
+          "schema": "type lenspublication @createModel(accountRelation: LIST, description: \"lenspublication\") {  owner: DID! @documentAccount  publication_type: String! @string(maxLength: 100)  profile_id: String! @string(maxLength: 100)  pub_id: String! @string(maxLength: 100)  model_id: String @string(maxLength: 100)  profile_id_pointed: String @string(maxLength: 100)  pub_id_pointed: String @string(maxLength: 100)  content_uri: String @string(maxLength: 10000)  collect_module: String @string(maxLength: 100)  reference_module: String! @string(maxLength: 100)  created_at: Int!}",
+          "isPublicDomain": false,
+          "encryptable": [],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "lenscollection",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6cagx8gvioztv1g21ai5vety2jo8k3mxargncclnta7pxn7b94i8",
+          "createdAt": 1691488784,
+          "schema": "type lenscollection  @createModel(accountRelation: LIST, description: \"lenscollection\") {  owner: DID! @documentAccount  profile_id: String! @string(maxLength: 100)  pub_id: String! @string(maxLength: 100)  model_id: String! @string(maxLength: 100)  stream_id: String! @string(maxLength: 100)  collector: String! @string(maxLength: 100)  currency: String! @string(maxLength: 100)  amount: String! @string(maxLength: 100)  collect_limit: String! @string(maxLength: 100)  collect_nft: String! @string(maxLength: 100)  collected_at: Int!}",
+          "isPublicDomain": false,
+          "encryptable": [],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "contentFolders",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6cb5e2sbl34448wbbkb47e7h7sf2cn14hq2kr92biugcngbukkxd",
+          "createdAt": 1691488784,
+          "schema": "type contentFolders @createModel(accountRelation: LIST, description: \"ContentFolder\") {\n  author: DID! @documentAccount\n  version: CommitID! @documentVersion\n  indexFolderId: String! @string(maxLength: 1000)\n  mirrors: String! @string(maxLength: 300000000)\n}",
+          "isPublicDomain": false,
+          "encryptable": [],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "indexFiles",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6c62px9972fcdxzuddpuj846mqjw0giz4klf7dngrqzpan3ej7ok",
+          "createdAt": 1691488784,
+          "schema": "type indexFiles @createModel(accountRelation: LIST, description: \"IndexFile\") {\n  author: DID! @documentAccount\n  version: CommitID! @documentVersion\n  appVersion: String! @string(maxLength: 100)\n  contentId: String! @string(maxLength: 1000)\n  contentType: String! @string(maxLength: 100)\n  comment: String! @string(maxLength: 300000000)\n  relation: String @string(maxLength: 300000000)\n  additional: String @string(maxLength: 300000000)\n  datatokenId: String @string(maxLength: 1000)\n  fileType: Int!\n  encryptedSymmetricKey: String @string(maxLength: 300000000)\n  decryptionConditions: String @string(maxLength: 300000000)\n  decryptionConditionsType: String @string(maxLength: 100)\n  createdAt: DateTime!\n  updatedAt: DateTime!\n  deleted: Boolean\n}",
+          "isPublicDomain": false,
+          "encryptable": [],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    },
+    {
+      "modelName": "indexFolders",
+      "internal": false,
+      "streams": [
+        {
+          "modelId": "kjzl6hvfrbw6canznttzqkhti8o4eqqodoc30xpk7t0xe0avisu5stp347mcbf0",
+          "createdAt": 1691488784,
+          "schema": "type indexFolders @createModel(accountRelation: LIST, description: \"IndexFolder\") {\n  author: DID! @documentAccount\n  version: CommitID! @documentVersion\n  appVersion: String! @string(maxLength: 100)\n  folderType: Int!\n  contentFolderIds: [String!]! @list(minLength: 1, maxLength: 10000) @string(maxLength: 2000)\n  createdAt: DateTime!\n  updatedAt: DateTime!\n  options: String @string(maxLength: 300000000)\n  parentFolderId: String @string(maxLength: 1000)\n  childFolderIds: [String] @list(maxLength: 10000) @string(maxLength: 2000)\n  deleted: Boolean\n}",
+          "isPublicDomain": false,
+          "encryptable": [],
+          "version": 0,
+          "latest": true
+        }
+      ]
+    }
+  ],
+  "address": "0x13a6D1fe418de7e5B03Fb4a15352DfeA3249eAA4",
+  "ceramic": "https://testnet.dataverseceramicdaemon.com"
+}
