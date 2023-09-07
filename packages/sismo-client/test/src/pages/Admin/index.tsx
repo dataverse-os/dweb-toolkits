@@ -1,8 +1,10 @@
 import React from "react";
 import {ethers} from "ethers";
-import {GroupSetup, SismoClient} from "@dataverse/sismo-client";
+import {GroupSetup, SismoCredentialAdminClient} from "@dataverse/sismo-client";
 import {abbreviateAddress} from "../../utils";
 import {useNavigate} from "react-router-dom";
+import { WalletProvider } from "@dataverse/wallet-provider";
+import { WALLET } from "@dataverse/dataverse-connector";
 
 const mockGroupId_01 = "0x4350b6e49eb734978ec285e740f54848";
 const mockGroupId_02 = "0xaa329246800f36e70eefbc38c7bb018e";
@@ -10,31 +12,25 @@ const mockGroupId_02 = "0xaa329246800f36e70eefbc38c7bb018e";
 const Admin = () => {
   const navigate = useNavigate();
   const [address, setAddress] = React.useState<string>();
-  const [sismoCredentialClient, setSismoCredentialClient] =
-	React.useState<SismoClient>();
+  const [sismoCredentialAdminClient, setSismoCredentialAdminClient] =
+	React.useState<SismoCredentialAdminClient>();
   
   const connectWallet = async () => {
-	if (!(window as any).ethereum) {
-	  alert("Please install metamask first!");
-	}
-	const provider = new ethers.providers.Web3Provider(
-	  (window as any).ethereum,
-	);
-	
-	const [address] = await provider.send("eth_requestAccounts", []);
-	setAddress(address);
+    const walletProvider = new WalletProvider();
+
+    const { address } = await walletProvider.connectWallet(WALLET.METAMASK);
+    setAddress(address);
+
+    const provider = new ethers.providers.Web3Provider(walletProvider);
 	
 	const signer = provider.getSigner();
+	const client = new SismoCredentialAdminClient(signer, process.env.SISMO_CREDENTIAL_CONTRACT!);
 	
-	const client = new SismoClient(signer);
-	
-	client.attach(process.env.SISMO_CREDENTIAL_CONTRACT!)
-	
-	setSismoCredentialClient(client);
+	setSismoCredentialAdminClient(client);
   };
   
   const getGroupIds = async () => {
-	const result = await sismoCredentialClient?.getGroupIds();
+	const result = await sismoCredentialAdminClient?.getGroupIds();
 	console.log("getGroupIds result:", result);
   }
   
@@ -58,7 +54,7 @@ const Admin = () => {
 	  },
 	];
 	
-	const result = await sismoCredentialClient?.addDataGroups(dataGroups);
+	const result = await sismoCredentialAdminClient?.addDataGroups(dataGroups);
 	console.log("addDataGroups result:", result);
   };
   
@@ -68,7 +64,7 @@ const Admin = () => {
 	}
 	
 	const dataGroups = [mockGroupId_01];
-	const result = await sismoCredentialClient?.deleteDataGroups(dataGroups);
+	const result = await sismoCredentialAdminClient?.deleteDataGroups(dataGroups);
 	console.log("deleteDataGroups result:", result);
   };
   

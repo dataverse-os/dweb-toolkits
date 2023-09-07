@@ -1,17 +1,11 @@
-import SismoCredentialJson from "../contracts/SismoCredential.json";
-import { Contract, Signer } from "ethers";
+import { Signer } from "ethers";
 import { GroupSetup } from "../types";
 import { querySismoGroupInfoById } from "../services";
+import { SismoCredentialClientBase } from "./base/SismoCredentialClientBase";
 
-export class SismoCredentialAdminClient {
-  private _sismoCredential: Contract;
-
+export class SismoCredentialAdminClient extends SismoCredentialClientBase {
   constructor(signer: Signer, contractAddr: string) {
-    this._sismoCredential = new Contract(
-      contractAddr,
-      SismoCredentialJson.abi,
-      signer
-    );
+    super(signer, contractAddr);
   }
 
   /**

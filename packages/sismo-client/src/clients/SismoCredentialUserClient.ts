@@ -1,34 +1,9 @@
-import SismoCredentialJson from "../contracts/SismoCredential.json";
-import { Contract, Signer } from "ethers";
-import { CredentialInfo, GroupSetup } from "../types";
-import { querySismoGroupInfoById } from "../services";
+import { Signer } from "ethers";
+import { SismoCredentialClientBase } from "./base/SismoCredentialClientBase";
 
-export class SismoCredentialUserClient {
-  private _sismoCredential: Contract;
-
+export class SismoCredentialUserClient extends SismoCredentialClientBase {
   constructor(signer: Signer, contractAddr: string) {
-    this._sismoCredential = new Contract(
-      contractAddr,
-      SismoCredentialJson.abi,
-      signer
-    );
-  }
-
-  public getGroupIds() {
-    return this._sismoCredential.getGroupIds();
-  }
-
-  public async getSismoGroupInfo(groupId: string) {
-    try {
-      const res = await querySismoGroupInfoById(groupId);
-      return res;
-    } catch (e) {
-      throw new Error("query sismo group info error");
-    }
-  }
-
-  public hasCredential(accountAddress: string): Promise<boolean> {
-    return this._sismoCredential.isInDataGroup(accountAddress);
+    super(signer, contractAddr);
   }
 
   public async bindCredential({
@@ -43,33 +18,6 @@ export class SismoCredentialUserClient {
       responseBytes
     );
     return tx.wait();
-  }
-
-  public async getCredentialInfo({
-    accountAddress,
-    groupId,
-  }: {
-    accountAddress: string;
-    groupId: string;
-  }): Promise<CredentialInfo> {
-    const reputationInfo: CredentialInfo =
-      await this._sismoCredential.getCredentialInfo(accountAddress, groupId);
-    return reputationInfo;
-  }
-
-  public async getGroupSetup(groupId: string): Promise<GroupSetup> {
-    const groupSetup: GroupSetup = await this._sismoCredential.getGroupSetup(
-      groupId
-    );
-    return groupSetup;
-  }
-
-  public async getCredentialInfoList(
-    accountAddress: string
-  ): Promise<CredentialInfo[]> {
-    const reputationInfo: CredentialInfo[] =
-      await this._sismoCredential.getCredentialInfoList(accountAddress);
-    return reputationInfo;
   }
 }
 
