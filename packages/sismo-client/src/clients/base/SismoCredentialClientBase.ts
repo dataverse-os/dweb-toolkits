@@ -14,17 +14,16 @@ export class SismoCredentialClientBase {
     );
   }
 
+  public getRefreshDuration() {
+    return this._sismoCredential.getRefreshDuration();
+  }
+
   public getGroupIds() {
     return this._sismoCredential.getGroupIds();
   }
 
   public async getSismoGroupInfo(groupId: string) {
-    try {
-      const res = await querySismoGroupInfoById(groupId);
-      return res;
-    } catch (e) {
-      throw new Error("query sismo group info error");
-    }
+    return querySismoGroupInfoById(groupId);
   }
 
   public hasCredential(accountAddress: string): Promise<boolean> {

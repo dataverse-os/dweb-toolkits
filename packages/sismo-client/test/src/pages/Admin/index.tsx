@@ -33,6 +33,17 @@ const Admin = () => {
 	const result = await sismoCredentialAdminClient?.getGroupIds();
 	console.log("getGroupIds result:", result);
   }
+
+  const getRefreshDuration = async () => {
+	const result = await sismoCredentialAdminClient?.getRefreshDuration();
+	console.log("getRefreshDuration:", result);
+  }
+
+  const setRefreshDuration = async () => {
+	const thirtyDays = 2592000;
+	const result = await sismoCredentialAdminClient?.setRefreshDuration(thirtyDays);
+	console.log("setRefreshDuration:", result);
+  }
   
   const addDataGroups = async () => {
 	if (!address) {
@@ -74,7 +85,11 @@ const Admin = () => {
 	  <br/>
 	  {address ? abbreviateAddress(address) : undefined}
 	  <br/>
+	  <button onClick={getRefreshDuration}> getRefreshDuration</button>
+	  <br/>
 	  <button onClick={getGroupIds}> getGroupIds</button>
+	  <br/>
+	  <button onClick={setRefreshDuration}> setRefreshDuration</button>
 	  <br/>
 	  <button onClick={addDataGroups}> addDataGroups</button>
 	  <br/>

@@ -1,6 +1,5 @@
-import { Signer } from "ethers";
+import { Signer, BigNumberish } from "ethers";
 import { GroupSetup } from "../types";
-import { querySismoGroupInfoById } from "../services";
 import { SismoCredentialClientBase } from "./base/SismoCredentialClientBase";
 
 export class SismoCredentialAdminClient extends SismoCredentialClientBase {
@@ -8,9 +7,11 @@ export class SismoCredentialAdminClient extends SismoCredentialClientBase {
     super(signer, contractAddr);
   }
 
-  /**
-   * @notice only callable by contract owner
-   */
+  public async setRefreshDuration(refreshDuration: BigNumberish) {
+    const tx = await this._sismoCredential.setRefreshDuration(refreshDuration);
+    return tx.wait();
+  }
+
   public async addDataGroups(groupSetup: GroupSetup[]) {
     if (!groupSetup || groupSetup.length === 0) {
       throw new Error("groupSetup is empty or null");
@@ -20,9 +21,6 @@ export class SismoCredentialAdminClient extends SismoCredentialClientBase {
     return tx.wait();
   }
 
-  /**
-   * @notice only callable by contract owner
-   */
   public async deleteDataGroups(groupIds: string[]) {
     const tx = await this._sismoCredential.deleteDataGroups(groupIds);
     return tx.wait();
@@ -31,7 +29,7 @@ export class SismoCredentialAdminClient extends SismoCredentialClientBase {
   private async _checkGroupIds(groupSetup: GroupSetup[]) {
     for (const setup of groupSetup) {
       try {
-        await querySismoGroupInfoById(setup.groupId);
+        await this.getSismoGroupInfo(setup.groupId);
       } catch (e) {
         throw new Error(`${setup.groupId} does not exist in sismo.io`);
       }
