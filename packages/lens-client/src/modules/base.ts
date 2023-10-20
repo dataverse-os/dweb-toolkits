@@ -185,10 +185,10 @@ export class ClientBase {
     referenceModule: string;
   }) {
     return await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.createStream,
+      method: SYSTEM_CALL.createIndexFile,
       params: {
         modelId: this.modelIds[ModelType.Publication],
-        streamContent: {
+        fileContent: {
           publication_type: pubType,
           profile_id: profileId,
           pub_id: pubId,

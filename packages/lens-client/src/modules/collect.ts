@@ -117,33 +117,36 @@ export class Collect extends ClientBase {
   }) {
     await this.checker.checkCapability();
 
-    const { modelId, streamContent } = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.loadStream,
+    const { modelId, fileContent } = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.loadFile,
       params: streamId,
     });
     if (modelId != this.modelIds[ModelType.Publication]) {
       throw new Error("stream id not available to collect");
     }
 
-    const profileId = streamContent.content.profile_id;
-    const pubId = streamContent.content.pub_id;
-    const pointedStreamId = streamContent.content.content_uri;
+    const profileId = fileContent.content.profile_id;
+    const pubId = fileContent.content.pub_id;
+    const pointedStreamId = fileContent.content.content_uri;
 
-    const { streamContent: pointedStreamContent } =
+    const { fileContent: pointedfileContent } =
       await this.dataverseConnector.runOS({
-        method: SYSTEM_CALL.loadStream,
+        method: SYSTEM_CALL.loadFile,
         params: pointedStreamId,
       });
 
-    if (pointedStreamContent.file.fileType !== FileType.Datatoken) {
+    if (pointedfileContent.file.fileType !== FileType.PayableFileType) {
       throw new Error("stream id pointed not available to collect");
     }
 
-    const datatokenId = pointedStreamContent.file.datatokenId!;
+    const datatokenId = pointedfileContent.file.datatokenId!;
 
-    const isCollected = await this.dataverseConnector.isCollected({
-      datatokenId,
-      address: this.dataverseConnector.address!,
+    const isCollected = await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.checkIsDataTokenCollectedByAddress,
+      params: { 
+        datatokenId,
+        address: this.dataverseConnector.address!,
+      }
     });
 
     let persistRes;
@@ -161,14 +164,17 @@ export class Collect extends ClientBase {
         });
       }
 
-      const datatokenInfo = await this.dataverseConnector.getDatatokenBaseInfo(datatokenId);
+      const datatokenInfo = await this.dataverseConnector.runOS({
+        method: SYSTEM_CALL.getDatatokenBaseInfo,
+        params: datatokenId
+      });
 
       try {
         persistRes = await this._persistCollection({
           profileId: res.profileId,
           pubId: res.pubId,
-          modelId: streamContent.content.model_id,
-          streamId: streamContent.content.content_uri,
+          modelId: fileContent.content.model_id,
+          streamId: fileContent.content.content_uri,
           collector: res.collector,
           currency: (datatokenInfo as any).collect_info.price.currency_addr,
           amount: `${(datatokenInfo as any).collect_info.price.amount} ${(datatokenInfo as any).collect_info.price.currency
@@ -180,17 +186,15 @@ export class Collect extends ClientBase {
       }
     }
 
-    const { streamContent: unlockedStreamContent } =
+    const { fileContent: unlockedfileContent } =
       await this.dataverseConnector.runOS({
-        method: SYSTEM_CALL.unlock,
-        params: {
-          streamId: streamContent.content.content_uri
-        },
+        method: SYSTEM_CALL.unlockFile,
+        params: fileContent.content.content_uri,
       });
 
     return {
-      collectionStreamId: persistRes?.streamId,
-      unlockedStreamContent,
+      collectionStreamId: persistRes?.fileContent.file.fileId,
+      unlockedfileContent,
     };
   }
 
@@ -477,10 +481,10 @@ export class Collect extends ClientBase {
       pubId,
     });
     return await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.createStream,
+      method: SYSTEM_CALL.createIndexFile,
       params: {
         modelId: this.modelIds[ModelType.Collection],
-        streamContent: {
+        fileContent: {
           profile_id: profileId,
           pub_id: pubId,
           model_id: modelId,

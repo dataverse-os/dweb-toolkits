@@ -1,3 +1,5 @@
+import { ReturnType } from "@dataverse/dataverse-connector";
+
 interface Hash {
   hash: string;
   algorithm: string;
@@ -50,52 +52,6 @@ export interface Video {
 }
 
 
-export interface Stream {
-  pkh: string;
-  app: string;
-  modelId: string;
-  streamId: string;
-  streamContent: {
-    content: {
-      name: string;
-      storage: string;
-      user_id: string;
-      asset_id: string;
-      encrypted: string;
-      created_at: number;
-      playback_id: string;
-      source_type: string;
-      status_phase: string;
-      status_updated_at: number;
-    },
-    file: {
-      appVersion: string;
-      contentId: string;
-      contentType: string;
-      comment: {
-        mirrorName: string;
-        note: string;
-        tags: string[];
-      },
-      fileType: number;
-      encryptedSymmetricKey: string;
-      decryptionConditions: {
-        contractAddress: string;
-        standardContractType: string;
-        chain: string;
-        method: string;
-        parameters: string[];
-        returnValueTest: {
-          comparator: string;
-          value: string;
-        }
-      }[];
-      decryptionConditionsType: string;
-      createdAt: string;
-      updatedAt: string;
-      indexFileId: string;
-    }
-  }
-}
+export type Stream = Awaited<ReturnType['loadFile']>;
 
 export type IndexFileId = string;

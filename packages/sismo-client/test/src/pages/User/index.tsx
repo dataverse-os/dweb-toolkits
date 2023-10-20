@@ -94,7 +94,7 @@ const User = () => {
   const connectWallet = async () => {
     const walletProvider = new WalletProvider();
 
-    const { address } = await walletProvider.connectWallet(WALLET.METAMASK);
+    const { address } = await walletProvider.connectWallet({ wallet: WALLET.METAMASK });
     setAddress(address);
 
     const provider = new ethers.providers.Web3Provider(walletProvider);
@@ -207,10 +207,10 @@ const User = () => {
     });
 
     const res = await dataverseConnector.runOS({
-      method: SYSTEM_CALL.createStream,
+      method: SYSTEM_CALL.createIndexFile,
       params: {
         modelId: modelParser.getModelByName("post").streams[0].modelId,
-        streamContent: {
+        fileContent: {
           appVersion: "0.0.1",
           text: "Hello, My name is Moon.",
           images: [
@@ -225,7 +225,7 @@ const User = () => {
     });
 
     console.log(res);
-    setCurrentPost(res.streamContent.content.text);
+    setCurrentPost(res.fileContent.content.text);
   };
 
   return (

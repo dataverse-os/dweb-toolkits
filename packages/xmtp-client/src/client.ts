@@ -1,7 +1,6 @@
 import {
   DataverseConnector,
   SYSTEM_CALL,
-  StreamContent,
 } from "@dataverse/dataverse-connector";
 import { StreamHelper } from "@dataverse/utils-toolkit";
 import { ModelIds, XmtpEnv } from "./types";
@@ -22,6 +21,7 @@ import {
   RemoteAttachmentCodec,
 } from "xmtp-content-type-remote-attachment";
 import { Checker } from "@dataverse/utils-toolkit";
+import { FileContent } from "@dataverse/dataverse-connector/dist/esm/types/fs";
 
 export class XmtpClient {
   public dataverseConnector: DataverseConnector;
@@ -145,13 +145,13 @@ export class XmtpClient {
 
     const pkh = this.dataverseConnector.getCurrentPkh();
     const streams = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.loadStreamsBy,
+      method: SYSTEM_CALL.loadFilesBy,
       params: { modelId: this.modelIds.message, pkh: pkh },
     });
     const messages = [];
     for (const key in streams) {
       if (Object.prototype.hasOwnProperty.call(streams, key)) {
-        messages.push(streams[key].streamContent);
+        messages.push(streams[key].fileContent);
       }
     }
     return messages;
@@ -218,19 +218,19 @@ export class XmtpClient {
   private async _unlockKeys(value: any) {
     for (const key in value) {
       if (Object.prototype.hasOwnProperty.call(value, key)) {
-        const indexFileId = value[key].streamContent.file?.indexFileId;
-        if (indexFileId) {
+        const fileId = value[key].fileContent.file?.fileId;
+        if (fileId) {
           const unlocked = await this.dataverseConnector.runOS({
-            method: SYSTEM_CALL.unlock,
-            params: { indexFileId },
+            method: SYSTEM_CALL.unlockFile,
+            params: fileId,
           });
-          const streamContent = unlocked.streamContent.content as {
+          const fileContent = unlocked.fileContent.content as {
             keys: string;
             encrypted: string;
           };
-          return streamContent.keys;
+          return fileContent.keys;
         } else {
-          return value[key].streamContent.content.keys;
+          return value[key].fileContent.content.keys;
         }
       }
     }
@@ -242,7 +242,7 @@ export class XmtpClient {
       content: true,
     });
 
-    const streamContent = {
+    const fileContent = {
       sender_address: message.senderAddress,
       recipient_address: message.recipientAddress ?? "",
       content: message.content,
@@ -255,8 +255,8 @@ export class XmtpClient {
     };
 
     await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.createStream,
-      params: { modelId: this.modelIds.message, streamContent: streamContent },
+      method: SYSTEM_CALL.createIndexFile,
+      params: { modelId: this.modelIds.message, fileContent: fileContent },
     });
   }
 
@@ -266,19 +266,19 @@ export class XmtpClient {
 
     const pkh = this.dataverseConnector.getCurrentPkh();
     const streams = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.loadStreamsBy,
+      method: SYSTEM_CALL.loadFilesBy,
       params: { modelId: this.modelIds.message, pkh: pkh },
     });
 
     msgList.map(async (msg) => {
-      const fileFilter = (streamContent: StreamContent) => {
-        return streamContent.content.message_id == msg.id;
+      const fileFilter = (fileContent: FileContent) => {
+        return fileContent.content.message_id == msg.id;
       };
       const unMatchHandler = async () => {
         await this._persistMessage(msg);
       };
 
-      const voidHandler = (_: StreamContent) => {};
+      const voidHandler = (_: FileContent) => {};
 
       await StreamHelper.traverseStreams(
         streams,
@@ -295,15 +295,15 @@ export class XmtpClient {
       keys: true,
     });
 
-    const streamContent = {
+    const fileContent = {
       keys: keysStr,
       encrypted: encrypted,
     };
     await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.createStream,
+      method: SYSTEM_CALL.createIndexFile,
       params: {
         modelId: this.modelIds.keys_cache,
-        streamContent: streamContent,
+        fileContent: fileContent,
       },
     });
   }
@@ -314,7 +314,7 @@ export class XmtpClient {
 
     const pkh = this.dataverseConnector.getCurrentPkh();
     const stream = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.loadStreamsBy,
+      method: SYSTEM_CALL.loadFilesBy,
       params: {
         modelId: modelId,
         pkh: pkh,

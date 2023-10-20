@@ -18,7 +18,7 @@ const Admin = () => {
   const connectWallet = async () => {
     const walletProvider = new WalletProvider();
 
-    const { address } = await walletProvider.connectWallet(WALLET.METAMASK);
+		const { address } = await walletProvider.connectWallet({ wallet: WALLET.METAMASK });
     setAddress(address);
 
     const provider = new ethers.providers.Web3Provider(walletProvider);

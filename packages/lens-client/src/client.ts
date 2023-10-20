@@ -32,7 +32,7 @@ class LensClient extends ClientBase {
 
     const pkh = this.dataverseConnector.getCurrentPkh();
     const streams = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.loadStreamsBy,
+      method: SYSTEM_CALL.loadFilesBy,
       params: {
         modelId: this.modelIds[ModelType.Publication],
         pkh,
@@ -48,7 +48,7 @@ class LensClient extends ClientBase {
 
     const pkh = this.dataverseConnector.getCurrentPkh();
     const streams = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.loadStreamsBy,
+      method: SYSTEM_CALL.loadFilesBy,
       params: {
         modelId: this.modelIds[ModelType.Collection],
         pkh,

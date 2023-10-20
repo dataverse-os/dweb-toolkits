@@ -54,23 +54,23 @@ export class Post extends ClientBase {
   }) {
     await this.checker.checkCapability();
 
-    const streamContent = {
+    const fileContent = {
       ...stream,
       encrypted: JSON.stringify(encrypted),
     }; 
 
-    const { streamId } = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.createStream,
+    const fileId = (await this.dataverseConnector.runOS({
+      method: SYSTEM_CALL.createIndexFile,
       params: {
         modelId,
-        streamContent,
+        fileContent,
       },
-    });
+    })).fileContent.file.fileId;
 
     await this.dataverseConnector.runOS({
       method: SYSTEM_CALL.monetizeFile,
       params: {
-        streamId,
+        fileId,
         datatokenVars: {
           profileId: postParams.profileId,
           currency,
@@ -82,7 +82,7 @@ export class Post extends ClientBase {
 
     const postData: PostData = {
       ...postParams,
-      contentURI: streamId,
+      contentURI: fileId,
     };
 
     let res: EventPostCreated;
@@ -108,7 +108,7 @@ export class Post extends ClientBase {
     }
 
     return {
-      publicationStreamId: persistRes?.streamId,
+      publicationStreamId: persistRes?.fileContent.file.fileId,
       ...res,
     };
   }

@@ -15,13 +15,13 @@ import {
   Extension,
   RESOURCE,
   DataverseConnector,
-  StreamContent,
   WALLET,
   SYSTEM_CALL,
 } from "@dataverse/dataverse-connector";
 import Upload, { web3Storage } from "./web3-storage/web3-storage";
 import { ModelParser, Output } from "@dataverse/model-parser";
 import app from "../output/app.json";
+import { FileContent } from "@dataverse/dataverse-connector/dist/esm/types/fs";
 
 const dataverseConnector = new DataverseConnector();
 const modelParser = new ModelParser(app as Output);
@@ -47,7 +47,7 @@ function App() {
   const [uploading, setUploading] = useState(false);
   const [fileCId, setFileCId] = useState(false);
   const [fileUrl, setFileUrl] = useState("");
-  const [msgStream, setMsgStream] = useState<StreamContent | null>(null);
+  const [msgStream, setMsgStream] = useState<FileContent | null>(null);
 
   const connectWallet = async () => {
     try {
@@ -121,7 +121,7 @@ function App() {
     let index = 0;
     console.log("[getPaginatedMessageWithMsgReceiver]res:");
     for await (const page of pages) {
-      let tempArr = [];
+      const tempArr = [];
       for (const msg of page) {
         tempArr.push(msg);
       }
@@ -180,7 +180,7 @@ function App() {
       content: true,
     });
 
-    const streamContent = {
+    const fileContent = {
       sender_address: message.senderAddress,
       recipient_address: message.recipientAddress ?? "",
       content: message.content,
@@ -193,10 +193,10 @@ function App() {
     };
 
     const res = await xmtpClient.dataverseConnector.runOS({
-      method: SYSTEM_CALL.createStream,
+      method: SYSTEM_CALL.createIndexFile,
       params: {
         modelId: import.meta.env.VITE_MESSAGE_MODEL_ID,
-        streamContent: streamContent,
+        fileContent,
       },
     });
 
@@ -270,12 +270,10 @@ function App() {
   const unlockMessage = async () => {
     console.log("msgStream: ", msgStream);
     const res = await dataverseConnector.runOS({
-      method: SYSTEM_CALL.unlock,
-      params: {
-        indexFileId: msgStream!.file.indexFileId,
-      },
+      method: SYSTEM_CALL.unlockFile,
+      params: msgStream!.file.fileId,
     });
-    console.log("msgStream.file?.indexFileId", msgStream!.file.indexFileId);
+    console.log("msgStream.file?.fileId", msgStream!.file.fileId);
     console.log(res);
   };
 

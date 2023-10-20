@@ -5,10 +5,10 @@ import { useContext, useMemo, useState } from "react";
 import { LivepeerConfig } from "@livepeer/react";
 import {
   Currency,
-  StreamContent,
   SYSTEM_CALL,
 } from "@dataverse/dataverse-connector";
 import { Context } from "./main";
+import { FileContent } from "@dataverse/dataverse-connector/dist/esm/types/fs";
 
 const App = () => {
   console.log('App loaded');
@@ -29,7 +29,7 @@ const App = () => {
   }, []);
   const [address, setAddress] = useState<string>();
   const [streamId, setStreamId] = useState<string>();
-  const [streamContent, setStreamContent] = useState<StreamContent | null>(
+  const [fileContent, setFileContent] = useState<FileContent | null>(
     null
   );
 
@@ -83,16 +83,14 @@ const App = () => {
 
   const getVideoMetaList = async () => {
     const assets = await livepeerClient.getVideoMetaList();
-    setStreamContent(assets[0].streamContent);
+    setFileContent(assets[0].fileContent);
     console.log("AssetMetaList:", assets);
   };
 
   const unlockVideo = async () => {
     const content = await livepeerClient.dataverseConnector.runOS({
-      method: SYSTEM_CALL.unlock,
-      params: {
-        indexFileId: streamContent?.file.indexFileId,
-      },
+      method: SYSTEM_CALL.unlockFile,
+      params: fileContent?.file.fileId,
     });
     console.log("unlock content: ", content);
   };

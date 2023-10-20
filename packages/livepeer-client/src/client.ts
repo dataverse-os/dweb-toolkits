@@ -1,7 +1,6 @@
 import {
   DatatokenVars,
   DataverseConnector,
-  StreamContent,
   SYSTEM_CALL,
 } from "@dataverse/dataverse-connector";
 
@@ -14,6 +13,7 @@ import {
 import axios, { AxiosInstance } from "axios";
 import { Checker } from "@dataverse/utils-toolkit";
 import { Video, Stream, IndexFileId } from "./types";
+import { FileContent } from "@dataverse/dataverse-connector/dist/esm/types/fs";
 
 export { LivepeerConfig, createReactClient, ReactClient };
 
@@ -107,7 +107,7 @@ export class LivepeerClient {
 
     const pkh = this.dataverseConnector.getCurrentPkh();
     const streams = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.loadStreamsBy,
+      method: SYSTEM_CALL.loadFilesBy,
       params: {
         modelId: this.modelId,
         pkh: pkh,
@@ -146,19 +146,19 @@ export class LivepeerClient {
     await this.dataverseConnector.runOS({
       method: SYSTEM_CALL.monetizeFile,
       params: {
-        streamId,
+        fileId: streamId,
         datatokenVars,
       },
     });
   }
 
   private _persistAssetMeta(assetMeta: any) {
-    const livepeerAsset: StreamContent = this._generateAssetMeta(assetMeta);
+    const livepeerAsset: FileContent = this._generateAssetMeta(assetMeta);
     return this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.createStream,
+      method: SYSTEM_CALL.createIndexFile,
       params: {
         modelId: this.modelId,
-        streamContent: livepeerAsset,
+        fileContent: livepeerAsset,
       },
     });
   }
@@ -192,17 +192,17 @@ export class LivepeerClient {
     // find out no exist stream to delete , remove matched video from videoMap
     const streamToDelete = new Set<IndexFileId>();
     streams.forEach((stream) => {
-      if (!videosMap.has(stream.streamContent.content.asset_id)) {
-        streamToDelete.add(stream.streamContent.file.indexFileId);
+      if (!videosMap.has(stream.fileContent.content.asset_id)) {
+        streamToDelete.add(stream.fileContent.file.fileId);
       } else {
-        videosMap.delete(stream.streamContent.content.asset_id);
+        videosMap.delete(stream.fileContent.content.asset_id);
       }
     });
 
     this.dataverseConnector.runOS({
       method: SYSTEM_CALL.removeFiles,
       params: {
-        indexFileIds: [...streamToDelete],
+        fileIds: [...streamToDelete],
       },
     });
 

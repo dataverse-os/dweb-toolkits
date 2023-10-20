@@ -1,7 +1,6 @@
 import {
   DataverseConnector,
   SYSTEM_CALL,
-  StreamContent,
 } from "@dataverse/dataverse-connector";
 import * as PushAPI from "@pushprotocol/restapi";
 import { ENV } from "@pushprotocol/restapi/src/lib/constants";
@@ -10,6 +9,7 @@ import { StreamHelper } from "@dataverse/utils-toolkit";
 import { ModelIds } from "./types";
 import { Checker } from "@dataverse/utils-toolkit";
 import { ChatSendOptionsType } from "@pushprotocol/restapi";
+import { FileContent } from "@dataverse/dataverse-connector/dist/esm/types/fs";
 
 class PushClientBase {
   public dataverseConnector: DataverseConnector;
@@ -63,7 +63,7 @@ export class PushNotificationClient extends PushClientBase {
 
     const channelDetail = await this.getChannelDetail(channel);
     const createNotificationStream = async () => {
-      const streamContent = this._generateNotificationStreamContent(
+      const fileContent = this._generateNotificationFileContent(
         channelDetail,
         title,
         body,
@@ -72,10 +72,10 @@ export class PushNotificationClient extends PushClientBase {
       );
 
       await this.dataverseConnector.runOS({
-        method: SYSTEM_CALL.createStream,
+        method: SYSTEM_CALL.createIndexFile,
         params: {
           modelId: this.modelIds.notification,
-          streamContent,
+          fileContent,
         },
       });
     };
@@ -84,13 +84,13 @@ export class PushNotificationClient extends PushClientBase {
       if (await this._isChannelInfoStreamExist()) {
         return;
       }
-      const streamContent =
-        this._generateChannelInfoStreamContent(channelDetail);
+      const fileContent =
+        this._generateChannelInfoFileContent(channelDetail);
       await this.dataverseConnector.runOS({
-        method: SYSTEM_CALL.createStream,
+        method: SYSTEM_CALL.createIndexFile,
         params: {
           modelId: this.modelIds.channel,
-          streamContent,
+          fileContent,
         },
       });
     };
@@ -205,7 +205,7 @@ export class PushNotificationClient extends PushClientBase {
 
     const pkh = this.dataverseConnector.getCurrentPkh();
     const notificationStreams = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.loadStreamsBy,
+      method: SYSTEM_CALL.loadFilesBy,
       params: {
         modelId: this.modelIds.notification,
         pkh: pkh,
@@ -215,13 +215,13 @@ export class PushNotificationClient extends PushClientBase {
     for (const key in notificationStreams) {
       // loop through the RecordType
       if (Object.prototype.hasOwnProperty.call(notificationStreams, key)) {
-        notification.push(notificationStreams[key].streamContent.content);
+        notification.push(notificationStreams[key].fileContent.content);
       }
     }
     return notification;
   }
 
-  private _generateNotificationStreamContent = (
+  private _generateNotificationFileContent = (
     channelDetail: any,
     title: string,
     body: string,
@@ -247,7 +247,7 @@ export class PushNotificationClient extends PushClientBase {
     };
   };
 
-  private _generateChannelInfoStreamContent = (channelDetail: any) => {
+  private _generateChannelInfoFileContent = (channelDetail: any) => {
     return {
       channel_id: channelDetail.id,
       channel: channelDetail.channel,
@@ -292,7 +292,7 @@ export class PushNotificationClient extends PushClientBase {
 
     const pkh = this.dataverseConnector.getCurrentPkh();
     const streams = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.loadStreamsBy,
+      method: SYSTEM_CALL.loadFilesBy,
       params: {
         modelId: this.modelIds.channel,
         pkh: pkh,
@@ -388,13 +388,13 @@ export class PushChatClient extends PushClientBase {
       pgpPrivateKey: pgpDecryptedPvtKey,
       env: this.env,
     });
-    const streamContent = this._generateChatMessageStreamContent(msg);
+    const fileContent = this._generateChatMessageFileContent(msg);
 
     await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.createStream,
+      method: SYSTEM_CALL.createIndexFile,
       params: {
         modelId: this.modelIds.message,
-        streamContent,
+        fileContent,
       },
     });
     return msg;
@@ -414,7 +414,7 @@ export class PushChatClient extends PushClientBase {
       limit: 10,
     });
 
-    const msgStreamContent = this._generateChatMessageStreamContent(
+    const msgFileContent = this._generateChatMessageFileContent(
       chats[0].msg
     );
     const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
@@ -422,21 +422,21 @@ export class PushChatClient extends PushClientBase {
 
     const pkh = this.dataverseConnector.getCurrentPkh();
     const streams = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.loadStreamsBy,
+      method: SYSTEM_CALL.loadFilesBy,
       params: {
         modelId: this.modelIds.message,
         pkh: pkh,
       },
     });
-    const streamFilter = (streamContent: StreamContent) => {
-      return streamContent.content.timestamp === msgStreamContent.timestamp;
+    const streamFilter = (fileContent: FileContent) => {
+      return fileContent.content.timestamp === msgFileContent.timestamp;
     };
     const unmatchedHandler = async () => {
       await this.dataverseConnector.runOS({
-        method: SYSTEM_CALL.createStream,
+        method: SYSTEM_CALL.createIndexFile,
         params: {
           modelId: this.modelIds.message,
-          streamContent: msgStreamContent,
+          fileContent: msgFileContent,
         },
       });
     };
@@ -516,34 +516,34 @@ export class PushChatClient extends PushClientBase {
       pgpPrivateKey: pgpDecryptedPvtKey,
       env: this.env,
     });
-    const streamContents =
-      this._batchGenerateChatMessageStreamContent(chatHistory);
+    const fileContents =
+      this._batchGenerateChatMessageFileContent(chatHistory);
 
     const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
     this.dataverseConnector.connectWallet({ wallet });
 
     const pkh = this.dataverseConnector.getCurrentPkh();
     const streams = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.loadStreamsBy,
+      method: SYSTEM_CALL.loadFilesBy,
       params: {
         modelId: this.modelIds.message,
         pkh: pkh,
       },
     });
 
-    streamContents.map(async (msgStreamContent) => {
-      const streamFilter = (streamContent: StreamContent) => {
-        return streamContent.content.timestamp === msgStreamContent.timestamp;
+    fileContents.map(async (msgFileContent) => {
+      const streamFilter = (fileContent: FileContent) => {
+        return fileContent.content.timestamp === msgFileContent.timestamp;
       };
       const unmatchedHandler = async () => {
-        if (msgStreamContent.link === null) {
-          msgStreamContent.link = undefined;
+        if (msgFileContent.link === null) {
+          msgFileContent.link = undefined;
         }
         await this.dataverseConnector.runOS({
-          method: SYSTEM_CALL.createStream,
+          method: SYSTEM_CALL.createIndexFile,
           params: {
             modelId: this.modelIds.message,
-            streamContent: msgStreamContent,
+            fileContent: msgFileContent,
           },
         });
       };
@@ -580,7 +580,7 @@ export class PushChatClient extends PushClientBase {
 
     const pkh = this.dataverseConnector.getCurrentPkh();
     const streams = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.loadStreamsBy,
+      method: SYSTEM_CALL.loadFilesBy,
       params: {
         modelId: this.modelIds.message,
         pkh: pkh,
@@ -589,7 +589,7 @@ export class PushChatClient extends PushClientBase {
     const messages = [];
     for (const key in streams) {
       if (Object.prototype.hasOwnProperty.call(streams, key)) {
-        messages.push(streams[key].streamContent.content);
+        messages.push(streams[key].fileContent.content);
       }
     }
     return messages;
@@ -601,7 +601,7 @@ export class PushChatClient extends PushClientBase {
 
     const pkh = this.dataverseConnector.getCurrentPkh();
     const stream = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.loadStreamsBy,
+      method: SYSTEM_CALL.loadFilesBy,
       params: {
         modelId: modelId,
         pkh: pkh,
@@ -617,21 +617,19 @@ export class PushChatClient extends PushClientBase {
   private async _unlockPgpKey(value: any) {
     for (const key in value) {
       if (Object.prototype.hasOwnProperty.call(value, key)) {
-        const indexFileId = value[key].streamContent.file?.indexFileId;
-        if (indexFileId) {
+        const fileId = value[key].fileContent.file?.fileId;
+        if (fileId) {
           const unlocked = await this.dataverseConnector.runOS({
-            method: SYSTEM_CALL.unlock,
-            params: {
-              indexFileId,
-            },
+            method: SYSTEM_CALL.unlockFile,
+            params: fileId,
           });
-          const pgpContent = unlocked.streamContent.content as {
+          const pgpContent = unlocked.fileContent.content as {
             pgp_key: string;
             encrypted: string;
           };
           return pgpContent.pgp_key;
         } else {
-          return value[key].streamContent.content.pgp_key;
+          return value[key].fileContent.content.pgp_key;
         }
       }
     }
@@ -643,30 +641,30 @@ export class PushChatClient extends PushClientBase {
       pgp_key: true,
     });
 
-    const streamContent = {
+    const fileContent = {
       pgp_key: pgpKey,
       encrypted: encrypted,
     };
 
     await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.createStream,
+      method: SYSTEM_CALL.createIndexFile,
       params: {
         modelId: this.modelIds.user_pgp_key,
-        streamContent,
+        fileContent,
       },
     });
   }
 
-  private _batchGenerateChatMessageStreamContent(chatMessages: any[]) {
-    const contents: StreamContent[] = [];
+  private _batchGenerateChatMessageFileContent(chatMessages: any[]) {
+    const contents: FileContent[] = [];
     chatMessages.forEach((chatMessage: any) => {
-      const content = this._generateChatMessageStreamContent(chatMessage);
-      contents.push(content as StreamContent);
+      const content = this._generateChatMessageFileContent(chatMessage);
+      contents.push(content as FileContent);
     });
-    return contents as StreamContent[];
+    return contents as FileContent[];
   }
 
-  private _generateChatMessageStreamContent(msg: any) {
+  private _generateChatMessageFileContent(msg: any) {
     const encrypted = JSON.stringify({
       link: true,
       cid: true,
@@ -692,6 +690,6 @@ export class PushChatClient extends PushClientBase {
       link: msg.link,
       cid: msg.cid == null ? "" : msg.cid,
       encrypted: encrypted,
-    } as StreamContent;
+    } as FileContent;
   }
 }

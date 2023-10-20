@@ -164,20 +164,20 @@ export class SnapshotClient extends GraphqlApi {
   }
 
   async listProposals() {
-    return this._listStreamContent(this.modelIds[ModelType.PROPOSAL]);
+    return this._listFileContent(this.modelIds[ModelType.PROPOSAL]);
   }
 
   async listVotes() {
-    return this._listStreamContent(this.modelIds[ModelType.VOTE]);
+    return this._listFileContent(this.modelIds[ModelType.VOTE]);
   }
-  private async _listStreamContent(modelId: string) {
+  private async _listFileContent(modelId: string) {
     this.checker.checkCapability();
     const { wallet } = (await this.dataverseConnector.getCurrentWallet())!;
     this.dataverseConnector.connectWallet({ wallet });
 
     const pkh = this.dataverseConnector.getCurrentPkh();
     const streams = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.loadStreamsBy,
+      method: SYSTEM_CALL.loadFilesBy,
       params: {
         modelId: modelId,
         pkh: pkh,
@@ -187,7 +187,7 @@ export class SnapshotClient extends GraphqlApi {
     const items = [];
     for (const key in streams) {
       if (Object.prototype.hasOwnProperty.call(streams, key)) {
-        items.push(streams[key].streamContent);
+        items.push(streams[key].fileContent);
       }
     }
     return items;
@@ -217,10 +217,10 @@ export class SnapshotClient extends GraphqlApi {
     };
 
     const res = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.createStream,
+      method: SYSTEM_CALL.createIndexFile,
       params: {
         modelId: this.modelIds[ModelType.PROPOSAL],
-        streamContent: content,
+        fileContent: content,
       },
     });
 
@@ -242,10 +242,10 @@ export class SnapshotClient extends GraphqlApi {
     };
 
     const res = await this.dataverseConnector.runOS({
-      method: SYSTEM_CALL.createStream,
+      method: SYSTEM_CALL.createIndexFile,
       params: {
         modelId: this.modelIds[ModelType.VOTE],
-        streamContent: content,
+        fileContent: content,
       },
     });
 
